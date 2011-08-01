@@ -1,0 +1,115 @@
+#-------------------------------------------------------------------------#
+
+number_of_variables 3
+
+variable_names pressure x-velocity y-velocity
+
+connectivity f ff ff
+
+maximum_order 3 3 3
+
+weight_exponent 1.0 1.0 1.0
+
+geometry_filename cavity.geometry
+
+#-------------------------------------------------------------------------#
+
+#iterations_per_step 5
+#timestep 1.0
+#number_of_steps 2
+#number_of_steps_per_output 1
+
+#-------------------------------------------------------------------------#
+
+# total 712 faces and 456 volumes
+# north boundary faces 605 -> 618
+#  east boundary faces 619 -> 632
+# south boundary faces 633 -> 646
+#  west boundary faces 647 -> 660
+
+# zones / unknowns and boundary conditions
+# label id location indices variable condition value
+
+## velocity inlet to pressure outlet
+##    id location indices variable condition value
+#zone  1        f   1:618        1         u   0.0
+#zone  2        f 633:712        1         u   0.0
+#zone  3        v   1:456        2         u   0.0
+#zone  4        v   1:456        3         u   0.0
+#zone  5        f 605:618        2         d   0.0
+#zone  6        f 605:618        3         d   0.0
+#zone  7        f 619:632        1         d 100.0
+#zone  8        f 633:646        2         d   0.0
+#zone  9        f 633:646        3         d   0.0
+#zone 10        f 647:660        2         d   1.0
+#zone 11        f 647:660        3         d   0.0
+
+# lid driven
+#    id location indices variable condition value
+zone  1        f   1:712        1         u   0.0
+zone  2        v   1:456        2         u   0.0
+zone  3        v   1:456        3         u   0.0
+zone  4        f 605:618        2         d   1.0
+zone  5        f 605:618        3         d   0.0
+zone  6        f 619:632        2         d   0.0
+zone  7        f 619:632        3         d   0.0
+zone  8        f 633:646        2         d   0.0
+zone  9        f 633:646        3         d   0.0
+zone 10        f 647:660        2         d   0.0
+zone 11        f 647:660        3         d   0.0
+
+#-------------------------------------------------------------------------#
+
+# STEADY STOKES
+# 0 = d_dx( rhou ) + d_dy( rhov )
+# 0 = d_dx( -p ) + d_dx( 2.0*mu*du_dx ) + d_dy( mu*du_dy ) + d_dy( mu*dv_dx )
+# 0 = d_dy( -p ) + d_dx( mu*du_dy ) + d_dx( mu*dv_dx ) + d_dy( 2.0*mu*dv_dy )
+
+## accumulations / time derivatives
+##            id variable implicit constant
+#accumulation  1        2      1.0      0.0
+#accumulation  2        3      1.0      0.0
+
+## divergences / space derivatives / fluxes
+##          id equation variable direction differential constant
+#divergence  1        1        2         x            0    +2.00
+#divergence  2        1        3         y            0    +2.00
+#divergence  3        2        1         x            0    -1.00
+#divergence  4        2        2         x            x    +0.10
+#divergence  5        2        2         y            y    +0.05
+#divergence  6        2        3         y            x    +0.05
+#divergence  7        3        1         y            0    -1.00
+#divergence  8        3        2         x            y    +0.05
+#divergence  9        3        3         x            x    +0.05
+#divergence 10        3        3         y            y    +0.10
+
+#-------------------------------------------------------------------------#
+
+# INCOMPRESSIBLE NAVIER STOKES
+#            0 = d_dx( rhou ) + d_dy( rhov )
+# d_dt( rhou ) = d_dx( -p ) + d_dx( - u*rhou ) + d_dy( - v*rhou ) + d_dx( 2.0*mu*du_dx ) + d_dy( mu*du_dy ) + d_dy( mu*dv_dx )
+# d_dt( rhov ) = d_dy( -p ) + d_dx( - u*rhov ) + d_dy( - v*rhov ) + d_dx( mu*du_dy ) + d_dx( mu*dv_dx ) + d_dy( 2.0*mu*dv_dy )
+
+#            id variable implicit constant
+accumulation  1        2      1.0      1.0
+accumulation  2        3      1.0      1.0
+
+#          id equation variable direction differential constant
+divergence  1        1        2         x           0     +1.00
+divergence  2        1        3         y           0     +1.00
+
+divergence  3        2        1         x           0     -1.00
+divergence  4        2      2,2         x         0,0     -1.00
+divergence  5        2      2,3         y         0,0     -1.00
+divergence  6        2        2         x           x     +0.01
+divergence  7        2        2         y           y     +0.01
+divergence  8        2        3         y           x     +0.02
+
+divergence  9        3        1         y           0     -1.00
+divergence 10        3      3,2         x         0,0     -1.00
+divergence 11        3      3,3         y         0,0     -1.00
+divergence 12        3        2         x           y     +0.01
+divergence 13        3        3         x           x     +0.01
+divergence 14        3        3         y           y     +0.02
+
+#-------------------------------------------------------------------------#
