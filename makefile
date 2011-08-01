@@ -5,7 +5,7 @@ LIBS		= -L -lm
 
 MAINSRCS	= preprocess.c
 COMMONSRCS 	= allocate.c io.c
-HEADS		= caspar.h allocate.h
+HEADS		= auplas.h allocate.h
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)
 
