@@ -48,8 +48,8 @@ struct ZONE
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_labelled_values_from_file(FILE *file, char *label, char type, int n, void *value);
-int read_geometry_file(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
+int read_labelled_values(char *filename, char *label, char *type, void *value);
+int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 
 void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 

@@ -1,9 +1,9 @@
 AUPLAS
 ======
 
-* Author:Will Bainbridge
-* Date:August, 2011
-* GitHub:<https://github.com/maninthemail/AUPLAS>
+* Author:	Will Bainbridge
+* Date:		August, 2011
+* GitHub:	<https://github.com/maninthemail/AUPLAS>
 
 LICENSE
 -------
