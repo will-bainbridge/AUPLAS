@@ -52,11 +52,16 @@ int main(int argc, char *argv[])
 	struct NODE *node;
 	struct FACE *face;
 	struct CELL *cell;
-	if(read_geometry_file(geometry_filename, &n_nodes, node, &n_faces, face, &n_cells, cell) != SUCCESS)
+	if(read_geometry_file(geometry_filename, &n_nodes, &node, &n_faces, &face, &n_cells, &cell) != SUCCESS)
 	{ printf("\nERROR - reading geometry file\n\n"); return ERROR; }
 
-	printf("%i %i %i\n", n_nodes, n_faces, n_cells);
-	
+	/*int f;
+	for(f = 0; f < n_faces; f ++)
+	{
+		printf("%lf %lf\n",face[f].node[0]->x[0],face[f].node[0]->x[1]);
+		printf("%lf %lf\n\n",face[f].node[1]->x[0],face[f].node[1]->x[1]);
+	}*/
+
 	//--------------------------------------------------------------------//
 
 	//clean up
@@ -65,8 +70,26 @@ int main(int argc, char *argv[])
 	free_vector(maximum_order);
 	free_vector(weight_exponent);
 	free_matrix((void*)connectivity);
+	free_mesh_structures(n_nodes, node, n_faces, face, n_cells, cell);
 
 	return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell)
+{
+	int i;
+
+	free(node);
+
+	free(face);
+
+	for(i = 0; i < n_cells; i ++)
+	{
+		free(cell[i].face);
+	}
+	free(cell);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
