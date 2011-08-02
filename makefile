@@ -4,7 +4,7 @@ INCLS		= -I ~/include/
 LIBS		= -L -lm
 
 MAINSRCS	= preprocess.c
-COMMONSRCS 	= allocate.c io.c
+COMMONSRCS 	= allocate.c io.c connectivity.c
 HEADS		= auplas.h allocate.h
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)

@@ -64,6 +64,13 @@ int main(int argc, char *argv[])
 	{ printf("\nERROR - reading geometry file\n\n"); return ERROR; }
 
 	//--------------------------------------------------------------------//
+	
+	read_zones(input_filename, NULL, NULL);
+	
+	if(generate_connectivity(n_faces, face, n_cells, cell) != SUCCESS)
+	{ printf("\nERROR - generating connectivity\n\n"); return ERROR; }
+
+	//--------------------------------------------------------------------//
 
 	//clean up
 	free_vector(geometry_filename);
@@ -83,6 +90,10 @@ void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FA
 
 	free(node);
 
+	for(i = 0; i < n_faces; i ++)
+	{
+		free(face[i].border);
+	}
 	free(face);
 
 	for(i = 0; i < n_cells; i ++)

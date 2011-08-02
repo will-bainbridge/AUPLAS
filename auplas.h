@@ -30,11 +30,14 @@ struct NODE
 struct FACE
 {
 	struct NODE *node[2];
+	struct CELL **border;
+	int n_borders;
 };
 
 struct CELL
 {
 	struct FACE **face;
+	struct CELL **border;
 	int n_faces;
 };
 
@@ -50,6 +53,11 @@ struct ZONE
 
 int read_labelled_values(char *filename, char *label, char *type, void *value);
 int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
+int read_zones(char *filename, int *n_zones, struct ZONE **zone);
+
+int generate_connectivity(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
+
+int generate_face_borders(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 
 void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 

@@ -24,9 +24,6 @@ int read_labelled_values(char *filename, char *label, char *type, void *value)
         if(allocate_character_vector(&line_label, MAX_STRING_LENGTH) != ALLOCATE_SUCCESS) return ERROR;
         if(allocate_character_vector(&line_data, MAX_STRING_LENGTH) != ALLOCATE_SUCCESS) return ERROR;
 
-        //start at the beginning of the file
-        rewind(file);
-
         //read each line in turn
         while(fgets(line, MAX_STRING_LENGTH, file) != NULL)
         {
@@ -68,6 +65,7 @@ int read_labelled_values(char *filename, char *label, char *type, void *value)
 
                                                 //offset to the start of the next piece of data
                                                 offset += strlen(line_data) + 1;
+						while(line[offset] == ' ') offset ++;
                                         }
                                 }
 
@@ -184,6 +182,7 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 					sscanf(temp,"%i",&index[count]);
 					count ++;
 					offset += strlen(temp) + 1;
+					while(line[offset] == ' ') offset ++;
 				}
 
 				//number of faces
@@ -212,6 +211,40 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 	free(line);
 	free(temp);
 	return SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int read_zones(char *filename, int *n_zones, struct ZONE **zone)
+{
+	void *value, *v;
+
+	value = (void *)malloc(sizeof(int) + sizeof(char) + sizeof(char*) + sizeof(int) + sizeof(char*) + sizeof(double));
+
+	v = value;
+
+	v = (int*)v + 1;
+	v = (char*)v + 1;
+	allocate_character_vector((char**)v,MAX_STRING_LENGTH);
+	v = (char**)v + 1;
+	v = (int*)v + 1;
+	allocate_character_vector((char**)v,MAX_STRING_LENGTH);
+
+	printf("%i\n",read_labelled_values(filename,"zone","icsisd",value));
+
+	v = value;
+	printf("%i\n",*((int*)v));
+	v = (int*)v + 1;
+	printf("%c\n",*((char*)v));
+	v = (char*)v + 1;
+	printf("%s\n",*((char**)v));
+	v = (char**)v + 1;
+	printf("%i\n",*((int*)v));
+	v = (int*)v + 1;
+	printf("%s\n",*((char**)v));
+	v = (char**)v + 1;
+	printf("%lf\n",*((double*)v));
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
