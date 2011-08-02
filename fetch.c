@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 void **fetch_allocate_values(char *type, int max_n_lines);
-int fetch_read_values(char *filename, char *label, char *type, int max_n_lines, void **value);
+int fetch_read_values(FILE *file, char *label, char *type, int max_n_lines, void **value);
 void fetch_print_values(char *type, int n_lines, void **value);
 void fetch_free_values(char *type, int max_n_lines, void **value);
 
@@ -24,10 +24,15 @@ int main()
 	char type[6] = "icsisd";
 	int max_n_lines = 20, n_lines;
 
+	FILE *file;
+	file = fopen("cavity/cavity.input","r");
+
 	value = fetch_allocate_values(type,max_n_lines);
-	n_lines = fetch_read_values("cavity/cavity.input", "zone", type, max_n_lines, value);
+	n_lines = fetch_read_values(file, "zone", type, max_n_lines, value);
 	fetch_print_values(type, n_lines, value);
 	fetch_free_values(type, max_n_lines, value);
+
+	fclose(file);
 
 	return 0;
 }
@@ -104,18 +109,17 @@ void **fetch_allocate_values(char *type, int max_n_lines)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int fetch_read_values(char *filename, char *label, char *type, int max_n_lines, void **value)
+int fetch_read_values(FILE *file, char *label, char *type, int max_n_lines, void **value)
 {
-	//open the file
-	FILE *file;
-	file = fopen(filename,"r");
-	if(file == NULL) { printf("\nERROR - read_labelled_values - opening the file\n\n"); return FETCH_FILE_ERROR; }
+	//check the file
+	if(file == NULL) { return FETCH_FILE_ERROR; }
+	rewind(file);
 
 	//counters
 	int i, offset, n = strlen(type), n_lines = 0;
 
 	//pointer to the current value
-	void *v = value[0];
+	void *v;
 
 	//allocate temporary storage
 	char *line, *line_label, *line_data;
@@ -178,7 +182,6 @@ int fetch_read_values(char *filename, char *label, char *type, int max_n_lines, 
 	}
 
 	//clean up and return the number of lines read
-	fclose(file);
 	free(line);
 	free(line_label);
 	free(line_data);
