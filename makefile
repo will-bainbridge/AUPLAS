@@ -4,8 +4,8 @@ INCLS		= -I ~/include/
 LIBS		= -L -lm
 
 MAINSRCS	= preprocess.c
-COMMONSRCS 	= allocate.c io.c connectivity.c
-HEADS		= auplas.h allocate.h
+COMMONSRCS 	= allocate.c io.c connectivity.c fetch.c
+HEADS		= auplas.h allocate.h fetch.h
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)
 

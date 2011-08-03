@@ -14,6 +14,9 @@
 //maximum number of faces to a cell
 #define MAX_CELL_FACES 5
 
+//maximum number of zones
+#define MAX_N_ZONES 100
+
 //string length
 #define MAX_STRING_LENGTH 128
 
@@ -51,7 +54,6 @@ struct ZONE
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_labelled_values(char *filename, char *label, char *type, void *value);
 int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 int read_zones(char *filename, int *n_zones, struct ZONE **zone);
 

@@ -4,128 +4,113 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_STRING_LENGTH 128
-
-#define FETCH_FILE_ERROR -1
-#define FETCH_MEMORY_ERROR -1
+#include "fetch.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void **fetch_allocate_values(char *type, int max_n_lines);
-int fetch_read_values(FILE *file, char *label, char *type, int max_n_lines, void **value);
-void fetch_print_values(char *type, int n_lines, void **value);
-void fetch_free_values(char *type, int max_n_lines, void **value);
-
-////////////////////////////////////////////////////////////////////////////////
-
-int main()
+/*int main()
 {
-	void **value;
-	char type[6] = "icsisd";
-	int max_n_lines = 20, n_lines;
+	void **data;
+	char format[6] = "icsisd";
+	int max_n_lines = 5, n_lines;
 
 	FILE *file;
 	file = fopen("cavity/cavity.input","r");
 
-	value = fetch_allocate_values(type,max_n_lines);
-	n_lines = fetch_read_values(file, "zone", type, max_n_lines, value);
-	fetch_print_values(type, n_lines, value);
-	fetch_free_values(type, max_n_lines, value);
+	data = fetch_allocate(format, max_n_lines);
+	n_lines = fetch_read(file, "zone", format, max_n_lines, data);
+
+	fetch_print(format, n_lines, data);
+
+	printf("\n");
+
+	char *value;
+	value = (char *)malloc(128 * sizeof(char));
+	fetch_get(format, data, 3, 2, &value);
+	printf("* %s *\n", value);
+
+	fetch_free(format, max_n_lines, data);
 
 	fclose(file);
 
 	return 0;
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void **fetch_allocate_values(char *type, int max_n_lines)
+void **fetch_allocate(char *format, int max_n_lines)
 {
         //counters
-        int i, j, n = strlen(type);
+        int i, j, n_values = strlen(format);
 
-	//size is the sum of all the types
+	//size is the sum of all the data types
 	int size = 0;
-	for(i = 0; i < n; i ++)
+	for(i = 0; i < n_values; i ++)
 	{
-		switch(type[i])
+		switch(format[i])
 		{
-			case 'i':
-				size += sizeof(int);
-				break;
-			case 'f':
-				size += sizeof(float);
-				break;
-			case 'd':
-				size += sizeof(double);
-				break;
-			case 'c':
-				size += sizeof(char);
-				break;
-			case 's':
-				size += sizeof(char*);
-				break;
+			case 'i': size += sizeof(int); break;
+			case 'f': size += sizeof(float); break;
+			case 'd': size += sizeof(double); break;
+			case 'c': size += sizeof(char); break;
+			case 's': size += sizeof(char*); break;
 		}
 	}
 
-        //pointer to the values
-        void **value, *v;
-	value = (void **)malloc(max_n_lines * sizeof(void *));
-	value[0] = (void *)malloc(max_n_lines * size);
+        //pointer to the data
+        void **data, *d;
+	data = (void **)malloc(max_n_lines * sizeof(void *));
+	if(data == NULL) return NULL;
+	data[0] = (void *)malloc(max_n_lines * size);
+	if(data[0] == NULL) return NULL;
 
-	v = value[0];
+	d = data[0];
 
 	for(i = 0; i < max_n_lines; i ++)
 	{
-		value[i] = v;
+		data[i] = d;
 
-		for(j = 0; j < n; j ++)
+		for(j = 0; j < n_values; j ++)
 		{
-			switch(type[j])
+			switch(format[j])
 			{
-				case 'i':
-					v = (int*)v + 1;
-					break;
-				case 'f':
-					v = (float*)v + 1;
-					break;
-				case 'd':
-					v = (double*)v + 1;
-					break;
-				case 'c':
-					v = (char*)v + 1;
-					break;
-				case 's':
-					*((char**)v) = (char*)malloc(MAX_STRING_LENGTH * sizeof(char));
-					v = (char**)v + 1;
-					break;
+				case 'i': d = (int*)d + 1; break;
+				case 'f': d = (float*)d + 1; break;
+				case 'd': d = (double*)d + 1; break;
+				case 'c': d = (char*)d + 1; break;
+				case 's': *((char**)d) = (char*)malloc(MAX_STRING_LENGTH * sizeof(char));
+					  if(*((char**)d) == NULL) { free(data[0]); free(data); return NULL; }
+					  d = (char**)d + 1; break;
 			}
 		}
 	}
 
 	//return array
-	return value;
+	return data;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int fetch_read_values(FILE *file, char *label, char *type, int max_n_lines, void **value)
+int fetch_read(FILE *file, char *label, char *format, int max_n_lines, void **data)
 {
 	//check the file
 	if(file == NULL) { return FETCH_FILE_ERROR; }
 	rewind(file);
 
 	//counters
-	int i, offset, n = strlen(type), n_lines = 0;
+	int i, offset, n_values = strlen(format), n_lines = 0;
 
 	//pointer to the current value
-	void *v;
+	void *d;
 
 	//allocate temporary storage
 	char *line, *line_label, *line_data;
 	line = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	if(line == NULL) { return FETCH_MEMORY_ERROR; }
 	line_label = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	if(line_label == NULL) { free(line); return FETCH_MEMORY_ERROR; }
 	line_data = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	if(line_data == NULL) { free(line); free(line_label); return FETCH_MEMORY_ERROR; }
 
 	//read each line in turn
 	while(fgets(line, MAX_STRING_LENGTH, file) != NULL)
@@ -140,30 +125,30 @@ int fetch_read_values(FILE *file, char *label, char *type, int max_n_lines, void
 				offset = strlen(label) + 1;
 
 				//point to the first value
-				v = value[n_lines];
+				d = data[n_lines];
 
 				//loop over the desired bits of data
-				for(i = 0; i < n; i ++)
+				for(i = 0; i < n_values; i ++)
 				{
 					//read the data as a string
 					if(sscanf(&line[offset], "%s", line_data) == 1)
 					{
 						//convert the string data to the desired type and increment the value pointer
-						if(type[i] == 'i') {
-							if(sscanf(line_data, "%i", (int*)v) != 1) break;
-							v = (int*)v + 1;
-						} else if(type[i] == 'f') {
-							if(sscanf(line_data, "%f", (float*)v) != 1) break;
-							v = (float*)v + 1;
-						} else if(type[i] == 'd') {
-							if(sscanf(line_data, "%lf", (double*)v) != 1) break;
-							v = (double*)v + 1;
-						} else if(type[i] == 'c') {
-							if(sscanf(line_data, "%c", (char*)v) != 1) break;
-							v = (char*)v + 1;
-						} else if(type[i] == 's') {
-							if(sscanf(line_data, "%s", *((char**)v)) != 1) break;
-							v = (char**)v + 1;
+						if(format[i] == 'i') {
+							if(sscanf(line_data, "%i", (int*)d) != 1) break;
+							d = (int*)d + 1;
+						} else if(format[i] == 'f') {
+							if(sscanf(line_data, "%f", (float*)d) != 1) break;
+							d = (float*)d + 1;
+						} else if(format[i] == 'd') {
+							if(sscanf(line_data, "%lf", (double*)d) != 1) break;
+							d = (double*)d + 1;
+						} else if(format[i] == 'c') {
+							if(sscanf(line_data, "%c", (char*)d) != 1) break;
+							d = (char*)d + 1;
+						} else if(format[i] == 's') {
+							if(sscanf(line_data, "%s", *((char**)d)) != 1) break;
+							d = (char**)d + 1;
 						}
 
 						//offset to the start of the next piece of data
@@ -173,7 +158,7 @@ int fetch_read_values(FILE *file, char *label, char *type, int max_n_lines, void
 				}
 
 				//increment the number of lines if all values succesfully read
-				if(i == n) n_lines ++;
+				if(i == n_values) n_lines ++;
 
 				//quit if the maximum number of lines has been reached
 				if(n_lines == max_n_lines) break;
@@ -190,33 +175,52 @@ int fetch_read_values(FILE *file, char *label, char *type, int max_n_lines, void
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void fetch_print_values(char *type, int n_lines, void **value)
+void fetch_get(char *format, void **data, int line_index, int value_index, void *value)
 {
-	int i, j, n = strlen(type);
-	void *v;
+	int i;
+	void *d = data[line_index];
+
+	for(i = 0; i < value_index; i ++)
+	{
+		switch(format[i])
+		{
+			case 'i': d = (int*)d + 1; break;
+			case 'f': d = (float*)d + 1; break;
+			case 'd': d = (double*)d + 1; break;
+			case 'c': d = (char*)d + 1; break;
+			case 's': d = (char**)d + 1; break;
+		}
+	}
+
+	switch(format[value_index])
+	{
+		case 'i': *((int*)value) = *((int*)d); return;
+		case 'f': *((float*)value) = *((float*)d); return;
+		case 'd': *((double*)value) = *((double*)d); return;
+		case 'c': *((char*)value) = *((char*)d); return;
+		case 's': *((char**)value) = *((char**)d); return;
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void fetch_print(char *format, int n_lines, void **data)
+{
+	int i, j, n_values = strlen(format);
+	void *d;
 
 	for(i = 0; i < n_lines; i ++)
 	{
-		v = value[i];
-		for(j = 0; j < n; j ++)
+		d = data[i];
+		for(j = 0; j < n_values; j ++)
 		{
-			switch(type[j])
+			switch(format[j])
 			{
-				case 'i':
-					printf("%i ",*((int*)v));
-					v = (int*)v + 1; break;
-				case 'f':
-					printf("%f ",*((float*)v));
-					v = (float*)v + 1; break;
-				case 'd':
-					printf("%lf ",*((double*)v));
-					v = (double*)v + 1; break;
-				case 'c':
-					printf("%c ",*((char*)v));
-					v = (char*)v + 1; break;
-				case 's':
-					printf("%s ",*((char**)v));
-					v = (char**)v + 1; break;
+				case 'i': printf("%i ",*((int*)d)); d = (int*)d + 1; break;
+				case 'f': printf("%f ",*((float*)d)); d = (float*)d + 1; break;
+				case 'd': printf("%lf ",*((double*)d)); d = (double*)d + 1; break;
+				case 'c': printf("%c ",*((char*)d)); d = (char*)d + 1; break;
+				case 's': printf("%s ",*((char**)d)); d = (char**)d + 1; break;
 			}
 		}
 		printf("\n");
@@ -225,39 +229,29 @@ void fetch_print_values(char *type, int n_lines, void **value)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void fetch_free_values(char *type, int max_n_lines, void **value)
+void fetch_free(char *format, int max_n_lines, void **data)
 {
-	int i, j, n = strlen(type);
-	void *v;
+	int i, j, n_values = strlen(format);
+	void *d;
 
 	for(i = 0; i < max_n_lines; i ++)
 	{
-		v = value[i];
-		for(j = 0; j < n; j ++)
+		d = data[i];
+		for(j = 0; j < n_values; j ++)
 		{
-			switch(type[j])
+			switch(format[j])
 			{
-				case 'i':
-					v = (int*)v + 1;
-					break;
-				case 'f':
-					v = (float*)v + 1;
-					break;
-				case 'd':
-					v = (double*)v + 1;
-					break;
-				case 'c':
-					v = (char*)v + 1;
-					break;
-				case 's':
-					free(*((char**)v));
-					v = (char**)v + 1;
-					break;
+				case 'i': d = (int*)d + 1; break;
+				case 'f': d = (float*)d + 1; break;
+				case 'd': d = (double*)d + 1; break;
+				case 'c': d = (char*)d + 1; break;
+				case 's': free(*((char**)d)); 
+					  d = (char**)d + 1; break;
 			}
 		}
 	}
 
-	free(value);
+	free(data);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

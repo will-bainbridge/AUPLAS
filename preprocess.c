@@ -12,46 +12,52 @@ int main(int argc, char *argv[])
 	char *input_filename = argv[1];
 
 	//--------------------------------------------------------------------//
-
-	//get the number of variables
+	
+	FILE *file = fopen(input_filename,"r");
+	void *ptr;
+	
 	int n_variables;
-	if(read_labelled_values(input_filename,"number_of_variables","i",&n_variables) != SUCCESS)
-	{ printf("\nERROR - number_of_variables not found in input file\n\n"); return ERROR; }
+	ptr = &n_variables;
+	if(fetch_read(file, "number_of_variables", "i", 1, &ptr) != 1)
+	{ printf("\nERROR - reading number_of_variables\n\n"); return ERROR; }
 
-	//get the geometry filename
 	char *geometry_filename;
 	if(allocate_character_vector(&geometry_filename,MAX_STRING_LENGTH) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - allocating geometry_filename memory\n\n"); return ERROR; }
-	if(read_labelled_values(input_filename,"geometry_filename","s",&geometry_filename) != SUCCESS)
-	{ printf("\nERROR - geometry_filename not found in input file\n\n"); return ERROR; }
+	ptr = &geometry_filename;
+	if(fetch_read(file, "geometry_filename", "s", 1, &ptr) != 1)
+	{ printf("\nERROR - reading geometry_filename\n\n"); return ERROR; }
 
-        //get variable interpolation parameters
         char *format;
         if(allocate_character_vector(&format,n_variables+1) != ALLOCATE_SUCCESS)
         { printf("\nERROR - allocating format memory\n\n"); return ERROR; }
         format[n_variables] = '\0';
 
         memset(format,'i',n_variables);
-        int *maximum_order;
-        if(allocate_integer_vector(&maximum_order,n_variables) != ALLOCATE_SUCCESS)
-        { printf("\nERROR - allocating maximum_order memory\n\n"); return ERROR; }
-        if(read_labelled_values(input_filename,"maximum_order",format,maximum_order) != SUCCESS)
-        { printf("\nERROR - maximum_order not found in input file\n\n"); return ERROR; }
+	
+	int *maximum_order;
+	if(allocate_integer_vector(&maximum_order,n_variables) != ALLOCATE_SUCCESS)
+	{ printf("\nERROR - allocating maximum_order memory\n\n"); return ERROR; }
+	if(fetch_read(file, "maximum_order", format, 1, &maximum_order) != 1)
+	{ printf("\nERROR - reading maximum_order\n\n"); return ERROR; }
 
         memset(format,'d',n_variables);
+
         double *weight_exponent;
         if(allocate_double_vector(&weight_exponent,n_variables) != ALLOCATE_SUCCESS)
         { printf("\nERROR - allocating weight_exponent memory\n\n"); return ERROR; }
-        if(read_labelled_values(input_filename,"weight_exponent",format,weight_exponent) != SUCCESS)
-        { printf("\nERROR - weight_exponent not found in input file\n\n"); return ERROR; }
+	if(fetch_read(file, "weight_exponent", format, 1, &weight_exponent) != 1)
+	{ printf("\nERROR - reading weight_exponent\n\n"); return ERROR; }
 
         memset(format,'s',n_variables);
+
         char **connectivity;
         if(allocate_character_matrix(&connectivity,n_variables,MAX_STRING_LENGTH) != ALLOCATE_SUCCESS)
         { printf("\nERROR - allocating connectivity memory\n\n"); return ERROR; }
-        if(read_labelled_values(input_filename,"connectivity",format,connectivity) != SUCCESS)
-        { printf("\nERROR - connectivity not found in input file\n\n"); return ERROR; }
+	if(fetch_read(file, "connectivity", format, 1, &connectivity) != 1)
+	{ printf("\nERROR - reading connectivity\n\n"); return ERROR; }
 
+	fclose(file);
 	free_vector(format);
 
 	//--------------------------------------------------------------------//
@@ -65,8 +71,11 @@ int main(int argc, char *argv[])
 
 	//--------------------------------------------------------------------//
 	
-	read_zones(input_filename, NULL, NULL);
-	
+	int n_zones;
+	struct ZONE *zone;
+	if(read_zones(input_filename, &n_zones, &zone) != SUCCESS)
+	{ printf("\nERROR - reading zones\n\n"); return ERROR; }
+
 	if(generate_connectivity(n_faces, face, n_cells, cell) != SUCCESS)
 	{ printf("\nERROR - generating connectivity\n\n"); return ERROR; }
 

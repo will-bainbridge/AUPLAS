@@ -2,10 +2,11 @@
 
 #include "auplas.h"
 #include "allocate.h"
+#include "fetch.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_labelled_values(char *filename, char *label, char *type, void *value)
+/*int read_labelled_values(char *filename, char *label, char *type, void *value)
 {
         //open the file
 	FILE *file;
@@ -88,7 +89,7 @@ int read_labelled_values(char *filename, char *label, char *type, void *value)
 	free_vector(line_label);
 	free_vector(line_data);
         return ERROR;
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -217,34 +218,24 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 
 int read_zones(char *filename, int *n_zones, struct ZONE **zone)
 {
-	void *value, *v;
+	FILE *file = fopen(filename,"r");
+	if(file == NULL) return ERROR;
 
-	value = (void *)malloc(sizeof(int) + sizeof(char) + sizeof(char*) + sizeof(int) + sizeof(char*) + sizeof(double));
+	void **data;
+	data = fetch_allocate("icsisd", MAX_N_ZONES);
 
-	v = value;
+	if(data == NULL) { printf("\nERROR - read_zones - allocating data memory"); return ERROR; }
 
-	v = (int*)v + 1;
-	v = (char*)v + 1;
-	allocate_character_vector((char**)v,MAX_STRING_LENGTH);
-	v = (char**)v + 1;
-	v = (int*)v + 1;
-	allocate_character_vector((char**)v,MAX_STRING_LENGTH);
+	*n_zones = fetch_read(file, "zone", "icsisd", MAX_N_ZONES, data);
 
-	printf("%i\n",read_labelled_values(filename,"zone","icsisd",value));
+	if(*n_zones == FETCH_FILE_ERROR || *n_zones == FETCH_MEMORY_ERROR || *n_zones < 1)
+	{ printf("\nERROR - read_zones - reading zones"); return ERROR; }
 
-	v = value;
-	printf("%i\n",*((int*)v));
-	v = (int*)v + 1;
-	printf("%c\n",*((char*)v));
-	v = (char*)v + 1;
-	printf("%s\n",*((char**)v));
-	v = (char**)v + 1;
-	printf("%i\n",*((int*)v));
-	v = (int*)v + 1;
-	printf("%s\n",*((char**)v));
-	v = (char**)v + 1;
-	printf("%lf\n",*((double*)v));
+	//fetch_print("icsisd", *n_zones, data);
 
+	fetch_free("icsisd", MAX_N_ZONES, data);
+
+	return SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
