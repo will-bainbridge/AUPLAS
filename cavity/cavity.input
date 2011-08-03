@@ -46,17 +46,17 @@ geometry_filename cavity.geometry
 
 # lid driven
 #    id location indices variable condition value
-zone  1        f   1:712        1         u   0.0
-zone  2        v   1:456        2         u   0.0
-zone  3        v   1:456        3         u   0.0
-zone  4        f 605:618        2         d   1.0
-zone  5        f 605:618        3         d   0.0
-zone  6        f 619:632        2         d   0.0
-zone  7        f 619:632        3         d   0.0
-zone  8        f 633:646        2         d   0.0
-zone  9        f 633:646        3         d   0.0
-zone 10        f 647:660        2         d   0.0
-zone 11        f 647:660        3         d   0.0
+zone  0        f   1:712        1         u   0.0
+zone  1        v   1:456        2         u   0.0
+zone  2        v   1:456        3         u   0.0
+zone  3        f 605:618        2         d   1.0
+zone  4        f 605:618        3         d   0.0
+zone  5        f 619:632        2         d   0.0
+zone  6        f 619:632        3         d   0.0
+zone  7        f 633:646        2         d   0.0
+zone  8        f 633:646        3         d   0.0
+zone  9        f 647:660        2         d   0.0
+zone 10        f 647:660        3         d   0.0
 
 #-------------------------------------------------------------------------#
 

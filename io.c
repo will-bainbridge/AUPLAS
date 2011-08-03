@@ -131,22 +131,80 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 
 int read_zones(char *filename, int *n_zones, struct ZONE **zone)
 {
+	//counters
+	int i, j;
+
+	//open the file
 	FILE *file = fopen(filename,"r");
 	if(file == NULL) return ERROR;
 
+	//allocate the zone data
 	void **data;
 	data = fetch_allocate("icsisd", MAX_N_ZONES);
-
 	if(data == NULL) { printf("\nERROR - read_zones - allocating data memory"); return ERROR; }
 
+	//fetch the data from the file
 	*n_zones = fetch_read(file, "zone", "icsisd", MAX_N_ZONES, data);
-
 	if(*n_zones == FETCH_FILE_ERROR || *n_zones == FETCH_MEMORY_ERROR || *n_zones < 1)
 	{ printf("\nERROR - read_zones - reading zones"); return ERROR; }
 
-	//fetch_print("icsisd", *n_zones, data);
+	fetch_print("icsisd",*n_zones,data);
 
+	//allocate the zone structures
+	*zone = (struct ZONE *)malloc(*n_zones * sizeof(struct ZONE));
+	if(data == NULL) { printf("\nERROR - read_zones - allocating data memory"); return ERROR; }
+
+	//get the zone parameters
+	char *condition;
+	for(i = 0; i < *n_zones; i ++)
+	{
+		fetch_get("icsisd", data, i, 0, &(*zone)[i].id);
+		fetch_get("icsisd", data, i, 1, &(*zone)[i].location);
+		fetch_get("icsisd", data, i, 3, &(*zone)[i].variable);
+		fetch_get("icsisd", data, i, 4, &condition);
+		strcpy((*zone)[i].condition,condition);
+		fetch_get("icsisd", data, i, 5, &(*zone)[i].value);
+	}
+
+	//debug...
+	for(i = 0; i < *n_zones; i ++)
+	{
+		printf("%i %c ??? %i %s %lf\n",(*zone)[i].id,(*zone)[i].location,(*zone)[i].variable,(*zone)[i].condition,(*zone)[i].value);
+	}
+
+	//decode the index ranges
+	char *range, *temp;
+	int offset, index[2];
+	if(allocate_character_vector(&temp,MAX_STRING_LENGTH) != ALLOCATE_SUCCESS)
+	{ printf("\nERROR - read_zones - allocating temp memory"); return ERROR; }
+
+	for(i = 0; i < *n_zones; i ++)
+	{
+		//get the range string
+		fetch_get("icsisd", data, i, 2, &range);
+
+		//convert comma delimiters to whitespace
+		for(j = 0; j < strlen(range); j ++) if(range[j] == ',') range[j] = ' ';
+
+		//sequentially read ranges
+		offset = 0;
+		while(offset < strlen(range))
+		{
+			if(sscanf(&range[offset],"%s",temp) != 1)
+			{ printf("\nERROR - read_zones - reading range"); return ERROR; }
+
+			if(sscanf(temp,"%i:%i",&index[0],&index[1]) != 2)
+			{ printf("\nERROR - read_zones - unrecognised range"); return ERROR; }
+
+			//printf("%i -> %i\n",index[0],index[1]);
+
+			offset += strlen(temp) + 1;
+		}
+	}
+
+	//clean up
 	fetch_free("icsisd", MAX_N_ZONES, data);
+	free_vector(temp);
 
 	return SUCCESS;
 }

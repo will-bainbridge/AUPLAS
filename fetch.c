@@ -26,7 +26,7 @@
 
 	char *value;
 	value = (char *)malloc(128 * sizeof(char));
-	fetch_get(format, data, 3, 2, &value);
+	fetch_get(format, data, 3, 4, &value);
 	printf("* %s *\n", value);
 
 	fetch_free(format, max_n_lines, data);

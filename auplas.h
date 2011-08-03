@@ -46,10 +46,12 @@ struct CELL
 
 struct ZONE
 {
-	struct CELL *cell;
-	int n_cells;
-	struct FACE *face;
-	int n_faces;
+	int id;
+	char location;
+	int *index;
+	int variable;
+	char condition[MAX_STRING_LENGTH];
+	double value;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
