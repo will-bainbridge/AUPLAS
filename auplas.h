@@ -11,17 +11,20 @@
 #define SUCCESS 1
 #define ERROR -1
 
-//maximum number of faces to a cell
+//maximum extents for memory allocation
 #define MAX_CELL_FACES 5
-
-//maximum number of zones
-#define MAX_N_ZONES 100
-
-//string length
-#define MAX_STRING_LENGTH 128
+#define MAX_NEIGHBOURS 10
+#define MAX_STENCIL 100
+#define MAX_ZONES 100
+#define MAX_STRING_CHARACTERS 128
 
 //accuracy
 #define EPS 1e-15
+
+//id macros
+#define ID_TO_ZONE(id) (id % MAX_N_ZONES)
+#define ID_TO_INDEX(id) (id / MAX_N_ZONES)
+#define INDEX_AND_ZONE_TO_ID(i,z) (i*MAX_N_ZONES + z)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -46,11 +49,11 @@ struct CELL
 
 struct ZONE
 {
-	int id;
 	char location;
 	int *index;
+	int n_indices;
 	int variable;
-	char condition[MAX_STRING_LENGTH];
+	char condition[MAX_STRING_CHARACTERS];
 	double value;
 };
 
@@ -59,10 +62,8 @@ struct ZONE
 int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 int read_zones(char *filename, int *n_zones, struct ZONE **zone);
 
-int generate_connectivity(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
+int generate_connectivity(int n_variables, char **connectivity, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
-int generate_face_borders(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
-
-void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
+void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 ////////////////////////////////////////////////////////////////////////////////

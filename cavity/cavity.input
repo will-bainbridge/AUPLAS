@@ -4,7 +4,7 @@ number_of_variables 3
 
 variable_names pressure x-velocity y-velocity
 
-connectivity f ff ff
+connectivity f n ff
 
 maximum_order 3 3 3
 
@@ -22,41 +22,27 @@ geometry_filename cavity.geometry
 #-------------------------------------------------------------------------#
 
 # total 712 faces and 456 volumes
-# north boundary faces 605 -> 618
-#  east boundary faces 619 -> 632
-# south boundary faces 633 -> 646
-#  west boundary faces 647 -> 660
+# north boundary faces 604 -> 617
+#  east boundary faces 618 -> 631
+# south boundary faces 632 -> 645
+#  west boundary faces 646 -> 659
 
 # zones / unknowns and boundary conditions
 # label id location indices variable condition value
 
-## velocity inlet to pressure outlet
-##    id location indices variable condition value
-#zone  1        f   1:618        1         u   0.0
-#zone  2        f 633:712        1         u   0.0
-#zone  3        v   1:456        2         u   0.0
-#zone  4        v   1:456        3         u   0.0
-#zone  5        f 605:618        2         d   0.0
-#zone  6        f 605:618        3         d   0.0
-#zone  7        f 619:632        1         d 100.0
-#zone  8        f 633:646        2         d   0.0
-#zone  9        f 633:646        3         d   0.0
-#zone 10        f 647:660        2         d   1.0
-#zone 11        f 647:660        3         d   0.0
-
 # lid driven
-#    id location indices variable condition value
-zone  0        f   1:712        1         u   0.0
-zone  1        v   1:456        2         u   0.0
-zone  2        v   1:456        3         u   0.0
-zone  3        f 605:618        2         d   1.0
-zone  4        f 605:618        3         d   0.0
-zone  5        f 619:632        2         d   0.0
-zone  6        f 619:632        3         d   0.0
-zone  7        f 633:646        2         d   0.0
-zone  8        f 633:646        3         d   0.0
-zone  9        f 647:660        2         d   0.0
-zone 10        f 647:660        3         d   0.0
+#    location indices variable condition value
+zone        f   0:711        0         u   0.0
+zone        v   0:455        1         u   0.0
+zone        v   0:455        2         u   0.0
+zone        f 604:617        1         d   1.0
+zone        f 604:617        2         d   0.0
+zone        f 618:631        1         d   0.0
+zone        f 618:631        2         d   0.0
+zone        f 632:645        1         d   0.0
+zone        f 632:645        2         d   0.0
+zone        f 646:659        1         d   0.0
+zone        f 646:659        2         d   0.0
 
 #-------------------------------------------------------------------------#
 

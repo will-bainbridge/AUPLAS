@@ -6,12 +6,14 @@
 
 #include "fetch.h"
 
+#define MAX_STRING_CHARACTERS 128
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /*int main()
 {
 	void **data;
-	char format[6] = "icsisd";
+	char format[6] = "csisd";
 	int max_n_lines = 5, n_lines;
 
 	FILE *file;
@@ -26,7 +28,7 @@
 
 	char *value;
 	value = (char *)malloc(128 * sizeof(char));
-	fetch_get(format, data, 3, 4, &value);
+	fetch_get(format, data, 3, 1, &value);
 	printf("* %s *\n", value);
 
 	fetch_free(format, max_n_lines, data);
@@ -78,7 +80,7 @@ void **fetch_allocate(char *format, int max_n_lines)
 				case 'f': d = (float*)d + 1; break;
 				case 'd': d = (double*)d + 1; break;
 				case 'c': d = (char*)d + 1; break;
-				case 's': *((char**)d) = (char*)malloc(MAX_STRING_LENGTH * sizeof(char));
+				case 's': *((char**)d) = (char*)malloc(MAX_STRING_CHARACTERS * sizeof(char));
 					  if(*((char**)d) == NULL) { free(data[0]); free(data); return NULL; }
 					  d = (char**)d + 1; break;
 			}
@@ -105,15 +107,15 @@ int fetch_read(FILE *file, char *label, char *format, int max_n_lines, void **da
 
 	//allocate temporary storage
 	char *line, *line_label, *line_data;
-	line = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	line = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
 	if(line == NULL) { return FETCH_MEMORY_ERROR; }
-	line_label = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	line_label = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
 	if(line_label == NULL) { free(line); return FETCH_MEMORY_ERROR; }
-	line_data = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	line_data = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
 	if(line_data == NULL) { free(line); free(line_label); return FETCH_MEMORY_ERROR; }
 
 	//read each line in turn
-	while(fgets(line, MAX_STRING_LENGTH, file) != NULL)
+	while(fgets(line, MAX_STRING_CHARACTERS, file) != NULL)
 	{
 		// get the first string on the line
 		if(sscanf(line, "%s", line_label) == 1)
@@ -130,6 +132,9 @@ int fetch_read(FILE *file, char *label, char *format, int max_n_lines, void **da
 				//loop over the desired bits of data
 				for(i = 0; i < n_values; i ++)
 				{
+					//eat up whitespace
+					while(line[offset] == ' ') offset ++;
+
 					//read the data as a string
 					if(sscanf(&line[offset], "%s", line_data) == 1)
 					{
@@ -153,7 +158,6 @@ int fetch_read(FILE *file, char *label, char *format, int max_n_lines, void **da
 
 						//offset to the start of the next piece of data
 						offset += strlen(line_data) + 1;
-						while(line[offset] == ' ') offset ++;
 					}
 				}
 

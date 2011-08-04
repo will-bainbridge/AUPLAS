@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 	{ printf("\nERROR - reading number_of_variables\n\n"); return ERROR; }
 
 	char *geometry_filename;
-	if(allocate_character_vector(&geometry_filename,MAX_STRING_LENGTH) != ALLOCATE_SUCCESS)
+	if(allocate_character_vector(&geometry_filename,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - allocating geometry_filename memory\n\n"); return ERROR; }
 	ptr = &geometry_filename;
 	if(fetch_read(file, "geometry_filename", "s", 1, &ptr) != 1)
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
         memset(format,'s',n_variables);
 
         char **connectivity;
-        if(allocate_character_matrix(&connectivity,n_variables,MAX_STRING_LENGTH) != ALLOCATE_SUCCESS)
+        if(allocate_character_matrix(&connectivity,n_variables,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
         { printf("\nERROR - allocating connectivity memory\n\n"); return ERROR; }
 	if(fetch_read(file, "connectivity", format, 1, &connectivity) != 1)
 	{ printf("\nERROR - reading connectivity\n\n"); return ERROR; }
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	if(read_zones(input_filename, &n_zones, &zone) != SUCCESS)
 	{ printf("\nERROR - reading zones\n\n"); return ERROR; }
 
-	if(generate_connectivity(n_faces, face, n_cells, cell) != SUCCESS)
+	if(generate_connectivity(n_variables, connectivity, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone) != SUCCESS)
 	{ printf("\nERROR - generating connectivity\n\n"); return ERROR; }
 
 	//--------------------------------------------------------------------//
@@ -86,14 +86,14 @@ int main(int argc, char *argv[])
 	free_vector(maximum_order);
 	free_vector(weight_exponent);
 	free_matrix((void*)connectivity);
-	free_mesh_structures(n_nodes, node, n_faces, face, n_cells, cell);
+	free_mesh_structures(n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
 	return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell)
+void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
 	int i;
 
@@ -110,6 +110,12 @@ void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FA
 		free(cell[i].face);
 	}
 	free(cell);
+
+	for(i = 0; i < n_zones; i ++)
+	{
+		free(zone[i].index);
+	}
+	free(zone);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
