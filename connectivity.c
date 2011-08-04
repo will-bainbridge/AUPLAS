@@ -7,7 +7,7 @@
 
 int generate_connectivity(int n_variables, char **connectivity, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
-	int c, u;
+	int c, u, z;
 	int i, j, k, l;
 
 	//generate list of cells surrounding each face
@@ -22,7 +22,6 @@ int generate_connectivity(int n_variables, char **connectivity, int n_nodes, str
 			cell[i].face[j]->border[cell[i].face[j]->n_borders-1] = &cell[i];
 		}
 	}
-
 
 	//generate list of cells surrounding each node
 	int index;
@@ -48,7 +47,6 @@ int generate_connectivity(int n_variables, char **connectivity, int n_nodes, str
 			}
 		}
 	}
-
 
 	//generate lists of cells surrounding each cell
 	int *n_cell_face_neighbours, **cell_face_neighbours, *n_cell_node_neighbours, **cell_node_neighbours;
@@ -91,12 +89,15 @@ int generate_connectivity(int n_variables, char **connectivity, int n_nodes, str
 
 	//generate the stencils
 	int *n_cell_neighbours, **cell_neighbours;
-	int old_cell, new_cell, n_stencil_cells, n_old_stencil_cells, n_stencil_faces;
-	int *stencil_cells, *stencil_faces;
+	int old_cell, new_cell, n_stencil_cells, n_old_stencil_cells, n_stencil_faces, n_stencil;
+	int is_variable, is_unknown, is_in_cell;
+	int *stencil_cells, *stencil_faces, *stencil;
 	if(allocate_integer_vector(&stencil_cells,MAX_STENCIL) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - generate_connectivity - allocating stencil cells"); return ERROR; }
 	if(allocate_integer_vector(&stencil_faces,MAX_STENCIL) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - generate_connectivity - allocating stencil faces"); return ERROR; }
+	if(allocate_integer_vector(&stencil,MAX_STENCIL) != ALLOCATE_SUCCESS)
+	{ printf("\nERROR - generate_connectivity - allocating stencil"); return ERROR; }
 
 	for(c = 0; c < n_cells; c ++)
 	{
@@ -151,19 +152,48 @@ int generate_connectivity(int n_variables, char **connectivity, int n_nodes, str
 
 					if(k == n_stencil_faces)
 						stencil_faces[n_stencil_faces++] = index;
-
 				}
 			}
 
-			printf("cell %i - variable %i - connectivity %2s\n",c,u,connectivity[u]);
-			printf("stencil cells:");
-			for(i = 0; i < n_stencil_cells; i ++) printf(" %i",stencil_cells[i]);
-			printf("\nstencil faces:");
-			for(i = 0; i < n_stencil_faces; i ++) printf(" %i",stencil_faces[i]);
+			//generate the stencil identifiers
+			n_stencil = 0;
+			for(i = 0; i < n_stencil_cells; i ++)
+			{
+				for(j = 0; j < cell[stencil_cells[i]].n_zones; j ++)
+				{
+					is_variable = cell[stencil_cells[i]].zone[j]->variable == u;
+					is_unknown = cell[stencil_cells[i]].zone[j]->condition[0] == 'u';
+					is_in_cell = c == stencil_cells[i];
+					z = (int)(cell[stencil_cells[i]].zone[j] - &zone[0]);
+
+					if(is_variable && (is_unknown || is_in_cell))
+						stencil[n_stencil++] = INDEX_AND_ZONE_TO_ID(stencil_cells[i],z);
+				}
+			}
+			for(i = 0; i < n_stencil_faces; i ++)
+			{
+				for(j = 0; j < face[stencil_faces[i]].n_zones; j ++)
+				{
+					is_variable = face[stencil_faces[i]].zone[j]->variable == u;
+					is_unknown = face[stencil_faces[i]].zone[j]->condition[0] == 'u';
+
+					is_in_cell = 0;
+					for(k = 0; k < cell[c].n_faces; k ++)
+						is_in_cell = is_in_cell || (int)(cell[c].face[k] - &face[0]) == stencil_faces[i];
+
+					z = (int)(face[stencil_faces[i]].zone[j] - &zone[0]);
+
+					if(is_variable && (is_unknown || is_in_cell))
+						stencil[n_stencil++] = INDEX_AND_ZONE_TO_ID(stencil_faces[i],z);
+				}
+			}
+
+			//debug
+			printf("c#%i v#%i c#%-3s ->",c,u,connectivity[u]);
+			for(i = 0; i < n_stencil; i ++) printf(" %i",stencil[i]);
 			printf("\n");
 		}
 	}
-
 
 	//clean up
 	free_vector(n_node_surround);
@@ -174,6 +204,7 @@ int generate_connectivity(int n_variables, char **connectivity, int n_nodes, str
 	free_matrix((void*)cell_node_neighbours);
 	free_vector(stencil_cells);
 	free_vector(stencil_faces);
+	free_vector(stencil);
 
 	return SUCCESS;
 }

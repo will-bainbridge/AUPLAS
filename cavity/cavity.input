@@ -4,7 +4,7 @@ number_of_variables 3
 
 variable_names pressure x-velocity y-velocity
 
-connectivity f n ff
+connectivity f ff ff
 
 maximum_order 3 3 3
 
@@ -33,8 +33,8 @@ geometry_filename cavity.geometry
 # lid driven
 #    location indices variable condition value
 zone        f   0:711        0         u   0.0
-zone        v   0:455        1         u   0.0
-zone        v   0:455        2         u   0.0
+zone        c   0:455        1         u   0.0
+zone        c   0:455        2         u   0.0
 zone        f 604:617        1         d   1.0
 zone        f 604:617        2         d   0.0
 zone        f 618:631        1         d   0.0

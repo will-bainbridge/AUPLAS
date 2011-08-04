@@ -1,5 +1,5 @@
 CC		= gcc
-CFLAGS		= -g
+CFLAGS		= -g -Wall
 INCLS		= -I ~/include/
 LIBS		= -L -lm
 

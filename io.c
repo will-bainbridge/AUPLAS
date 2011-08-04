@@ -129,7 +129,7 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_zones(char *filename, int *n_zones, struct ZONE **zone)
+int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zones, struct ZONE **zone)
 {
 	//counters
 	int i, j;
@@ -155,31 +155,26 @@ int read_zones(char *filename, int *n_zones, struct ZONE **zone)
 	if(data == NULL) { printf("\nERROR - read_zones - allocating data memory"); return ERROR; }
 
 	//get the zone parameters
-	char *condition;
+	char *condition, *location;
+	if(allocate_character_vector(&location,*n_zones) != ALLOCATE_SUCCESS)
+	{ printf("\nERROR - read_zones - allocating location memory"); return ERROR; }
 	for(i = 0; i < *n_zones; i ++)
 	{
-		fetch_get("csisd", data, i, 0, &(*zone)[i].location);
+		fetch_get("csisd", data, i, 0, &location[i]);
 		fetch_get("csisd", data, i, 2, &(*zone)[i].variable);
 		fetch_get("csisd", data, i, 3, &condition);
 		strcpy((*zone)[i].condition,condition);
 		fetch_get("csisd", data, i, 4, &(*zone)[i].value);
 	}
 
-	//debug...
-	//for(i = 0; i < *n_zones; i ++) printf("%c ??? %i %s %lf\n",(*zone)[i].location,(*zone)[i].variable,(*zone)[i].condition,(*zone)[i].value);
-
 	//decode the index ranges
 	char *range, *temp;
-	int offset, index[2], n_range;
+	int offset, index[2];
 	if(allocate_character_vector(&temp,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - read_zones - allocating temp memory"); return ERROR; }
 
 	for(i = 0; i < *n_zones; i ++)
 	{
-		//initialise the indices
-		(*zone)[i].index = NULL;
-		(*zone)[i].n_indices = 0;
-
 		//get the range string
 		fetch_get("csisd", data, i, 1, &range);
 
@@ -196,38 +191,33 @@ int read_zones(char *filename, int *n_zones, struct ZONE **zone)
 			if(sscanf(temp,"%i:%i",&index[0],&index[1]) != 2)
 			{ printf("\nERROR - read_zones - unrecognised range"); return ERROR; }
 
-			//size of the range
-			n_range = index[1] - index[0] + 1;
-
-			//reallocate the zone index array
-			(*zone)[i].index = (int *)realloc((*zone)[i].index,((*zone)[i].n_indices + n_range)*sizeof(int));
-			if((*zone)[i].index == NULL) { printf("\nERROR - read_zones - allocating index memory"); return ERROR; }
-
-			//fill with the new indices
-			for(j = 0; j < n_range; j ++) (*zone)[i].index[(*zone)[i].n_indices + j] = index[0] + j;
-			(*zone)[i].n_indices += n_range;
+			//put pointer to the zone in the relevent elements
+			if(location[i] == 'f')
+			{
+				for(j = index[0]; j <= index[1]; j ++)
+				{
+					face[j].zone = realloc(face[j].zone,(face[j].n_zones+1)*sizeof(struct ZONE *));
+					face[j].zone[face[j].n_zones++] = &(*zone)[i];
+				}
+			}
+			if(location[i] == 'c')
+			{
+				for(j = index[0]; j <= index[1]; j ++)
+				{
+					cell[j].zone = realloc(cell[j].zone,(cell[j].n_zones+1)*sizeof(struct ZONE *));
+					cell[j].zone[cell[j].n_zones++] = &(*zone)[i];
+				}
+			}
 
 			//move to the next range in the string
 			offset += strlen(temp) + 1;
 		}
 	}
 
-	/*//debug...
-	int z, id;
-	for(z = 0; z < *n_zones; z ++)
-	{
-		for(j = 0; j < (*zone)[z].n_indices; j ++)
-		{
-			i = (*zone)[z].index[j];
-			id = INDEX_AND_ZONE_TO_ID(i,z);
-			printf("%i ",id);
-		}
-		printf("\n");
-	}*/
-
 	//clean up
 	fetch_free("csisd", MAX_ZONES, data);
 	free_vector(temp);
+	free_vector(location);
 
 	return SUCCESS;
 }

@@ -3,6 +3,8 @@
 #include "auplas.h"
 #include "allocate.h"
 
+#include "fetch.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
@@ -16,15 +18,13 @@ int main(int argc, char *argv[])
 	FILE *file = fopen(input_filename,"r");
 	void *ptr;
 	
-	int n_variables;
-	ptr = &n_variables;
+	int n_variables; ptr = &n_variables;
 	if(fetch_read(file, "number_of_variables", "i", 1, &ptr) != 1)
 	{ printf("\nERROR - reading number_of_variables\n\n"); return ERROR; }
 
-	char *geometry_filename;
+	char *geometry_filename; ptr = &geometry_filename;
 	if(allocate_character_vector(&geometry_filename,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - allocating geometry_filename memory\n\n"); return ERROR; }
-	ptr = &geometry_filename;
 	if(fetch_read(file, "geometry_filename", "s", 1, &ptr) != 1)
 	{ printf("\nERROR - reading geometry_filename\n\n"); return ERROR; }
 
@@ -35,26 +35,26 @@ int main(int argc, char *argv[])
 
         memset(format,'i',n_variables);
 	
-	int *maximum_order;
+	int *maximum_order; ptr = &maximum_order;
 	if(allocate_integer_vector(&maximum_order,n_variables) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - allocating maximum_order memory\n\n"); return ERROR; }
-	if(fetch_read(file, "maximum_order", format, 1, &maximum_order) != 1)
+	if(fetch_read(file, "maximum_order", format, 1, ptr) != 1)
 	{ printf("\nERROR - reading maximum_order\n\n"); return ERROR; }
 
         memset(format,'d',n_variables);
 
-        double *weight_exponent;
+        double *weight_exponent; ptr = &weight_exponent;
         if(allocate_double_vector(&weight_exponent,n_variables) != ALLOCATE_SUCCESS)
         { printf("\nERROR - allocating weight_exponent memory\n\n"); return ERROR; }
-	if(fetch_read(file, "weight_exponent", format, 1, &weight_exponent) != 1)
+	if(fetch_read(file, "weight_exponent", format, 1, ptr) != 1)
 	{ printf("\nERROR - reading weight_exponent\n\n"); return ERROR; }
 
         memset(format,'s',n_variables);
 
-        char **connectivity;
+        char **connectivity; ptr = &connectivity;
         if(allocate_character_matrix(&connectivity,n_variables,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
         { printf("\nERROR - allocating connectivity memory\n\n"); return ERROR; }
-	if(fetch_read(file, "connectivity", format, 1, &connectivity) != 1)
+	if(fetch_read(file, "connectivity", format, 1, ptr) != 1)
 	{ printf("\nERROR - reading connectivity\n\n"); return ERROR; }
 
 	fclose(file);
@@ -73,8 +73,25 @@ int main(int argc, char *argv[])
 	
 	int n_zones;
 	struct ZONE *zone;
-	if(read_zones(input_filename, &n_zones, &zone) != SUCCESS)
+	if(read_zones(input_filename, face, cell, &n_zones, &zone) != SUCCESS)
 	{ printf("\nERROR - reading zones\n\n"); return ERROR; }
+
+	/*int i, j;
+	printf("faces");
+	for(i = 0; i < n_faces; i ++) {
+		printf("\n[%i]",i);
+		for(j = 0; j < face[i].n_zones; j ++) {
+			printf(" %i",face[i].zone[j] - &zone[0]);
+		}
+	}
+	printf("\ncells");
+	for(i = 0; i < n_cells; i ++) {
+		printf("\n[%i]",i);
+		for(j = 0; j < cell[i].n_zones; j ++) {
+			printf(" %i",cell[i].zone[j] - &zone[0]);
+		}
+	}
+	printf("\n");*/
 
 	if(generate_connectivity(n_variables, connectivity, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone) != SUCCESS)
 	{ printf("\nERROR - generating connectivity\n\n"); return ERROR; }
@@ -102,19 +119,17 @@ void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FA
 	for(i = 0; i < n_faces; i ++)
 	{
 		free(face[i].border);
+		free(face[i].zone);
 	}
 	free(face);
 
 	for(i = 0; i < n_cells; i ++)
 	{
 		free(cell[i].face);
+		free(cell[i].zone);
 	}
 	free(cell);
 
-	for(i = 0; i < n_zones; i ++)
-	{
-		free(zone[i].index);
-	}
 	free(zone);
 }
 

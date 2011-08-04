@@ -22,9 +22,9 @@
 #define EPS 1e-15
 
 //id macros
-#define ID_TO_ZONE(id) (id % MAX_N_ZONES)
-#define ID_TO_INDEX(id) (id / MAX_N_ZONES)
-#define INDEX_AND_ZONE_TO_ID(i,z) (i*MAX_N_ZONES + z)
+#define ID_TO_ZONE(id) ((id) % MAX_ZONES)
+#define ID_TO_INDEX(id) ((id) / MAX_ZONES)
+#define INDEX_AND_ZONE_TO_ID(i,z) ((i)*MAX_ZONES + (z))
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -38,6 +38,8 @@ struct FACE
 	struct NODE *node[2];
 	struct CELL **border;
 	int n_borders;
+	struct ZONE **zone;
+	int n_zones;
 };
 
 struct CELL
@@ -45,13 +47,12 @@ struct CELL
 	struct FACE **face;
 	struct CELL **border;
 	int n_faces;
+	struct ZONE **zone;
+	int n_zones;
 };
 
 struct ZONE
 {
-	char location;
-	int *index;
-	int n_indices;
 	int variable;
 	char condition[MAX_STRING_CHARACTERS];
 	double value;
@@ -60,7 +61,7 @@ struct ZONE
 ////////////////////////////////////////////////////////////////////////////////
 
 int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
-int read_zones(char *filename, int *n_zones, struct ZONE **zone);
+int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zones, struct ZONE **zone);
 
 int generate_connectivity(int n_variables, char **connectivity, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
