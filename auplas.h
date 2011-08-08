@@ -60,6 +60,7 @@ struct ZONE
 
 ////////////////////////////////////////////////////////////////////////////////
 
+int read_instructions(char *filename, int *n_variables, char **geometry_filename, int **maximum_order, double **weight_exponent, char ***connectivity);
 int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zones, struct ZONE **zone);
 

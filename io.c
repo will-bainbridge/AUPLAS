@@ -6,6 +6,52 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+int read_instructions(char *filename, int *n_variables, char **geometry_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
+{
+	FILE *file = fopen(filename,"r");
+
+        if(fetch_read(file, "number_of_variables", "i", 1, (void*)&n_variables) != 1)
+        { printf("\nERROR - read_instructions - reading number_of_variables"); return ERROR; }
+
+        if(allocate_character_vector(geometry_filename,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
+        { printf("\nERROR - read_instructions - allocating geometry_filename memory"); return ERROR; }
+        if(fetch_read(file, "geometry_filename", "s", 1, (void*)&geometry_filename) != 1)
+        { printf("\nERROR - read_instructions - reading geometry_filename"); return ERROR; }
+
+        char *format;
+        if(allocate_character_vector(&format,*n_variables+1) != ALLOCATE_SUCCESS)
+        { printf("\nERROR - read_instructions - allocating format memory"); return ERROR; }
+        format[*n_variables] = '\0';
+
+        memset(format,'i',*n_variables);
+
+        if(allocate_integer_vector(maximum_order,*n_variables) != ALLOCATE_SUCCESS)
+        { printf("\nERROR - read_instructions - allocating maximum_order memory"); return ERROR; }
+        if(fetch_read(file, "maximum_order", format, 1, (void*)maximum_order) != 1)
+        { printf("\nERROR - read_instructions - reading maximum_order"); return ERROR; }
+
+        memset(format,'d',*n_variables);
+
+        if(allocate_double_vector(weight_exponent,*n_variables) != ALLOCATE_SUCCESS)
+        { printf("\nERROR - read_instructions - allocating weight_exponent memory"); return ERROR; }
+        if(fetch_read(file, "weight_exponent", format, 1, (void*)weight_exponent) != 1)
+        { printf("\nERROR - read_instructions - reading weight_exponent"); return ERROR; }
+
+        memset(format,'s',*n_variables);
+
+        if(allocate_character_matrix(connectivity,*n_variables,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
+        { printf("\nERROR - read_instructions - allocating connectivity memory"); return ERROR; }
+        if(fetch_read(file, "connectivity", format, 1, (void*)connectivity) != 1)
+        { printf("\nERROR - read_instructions - reading connectivity"); return ERROR; }
+
+        fclose(file);
+        free_vector(format);
+
+	return SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell)
 {
 	//open file
