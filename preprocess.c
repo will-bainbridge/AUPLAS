@@ -34,26 +34,17 @@ int main(int argc, char *argv[])
 	if(read_zones(input_filename, face, cell, &n_zones, &zone) != SUCCESS)
 	{ printf("\nERROR - reading zones\n\n"); return ERROR; }
 
-	/*int i, j;
-	printf("faces");
-	for(i = 0; i < n_faces; i ++) {
-		printf("\n[%i]",i);
-		for(j = 0; j < face[i].n_zones; j ++) {
-			printf(" %i",face[i].zone[j] - &zone[0]);
-		}
-	}
-	printf("\ncells");
-	for(i = 0; i < n_cells; i ++) {
-		printf("\n[%i]",i);
-		for(j = 0; j < cell[i].n_zones; j ++) {
-			printf(" %i",cell[i].zone[j] - &zone[0]);
-		}
-	}
-	printf("\n");*/
-
 	//generate connectivity between the mesh structures
 	if(generate_connectivity(n_variables, connectivity, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone) != SUCCESS)
 	{ printf("\nERROR - generating connectivity\n\n"); return ERROR; }
+
+	//generate cell face orientations
+	if(generate_face_orientations(n_faces, face, n_cells, cell) != SUCCESS)
+	{ printf("\nERROR - generating orientations\n\n"); return ERROR; }
+	
+	//calculate CV centroids
+	if(calculate_control_volume_geometry(n_faces, face, n_cells, cell) != SUCCESS)
+	{ printf("\nERROR - calculating control volume geometry\n\n"); return ERROR; }
 
 	//--------------------------------------------------------------------//
 
@@ -78,6 +69,7 @@ void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FA
 	for(i = 0; i < n_faces; i ++)
 	{
 		free(face[i].border);
+		free(face[i].oriented);
 		free(face[i].zone);
 	}
 	free(face);
@@ -85,6 +77,7 @@ void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FA
 	for(i = 0; i < n_cells; i ++)
 	{
 		free(cell[i].face);
+		free(cell[i].oriented);
 		free(cell[i].zone);
 	}
 	free(cell);

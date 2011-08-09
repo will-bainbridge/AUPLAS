@@ -4,8 +4,7 @@ INCLS		= -I ~/include/
 LIBS		= -L -lm
 
 MAINSRCS	= preprocess.c
-COMMONSRCS 	= allocate.c io.c connectivity.c fetch.c
-HEADS		= auplas.h allocate.h fetch.h
+COMMONSRCS 	= allocate.c io.c connectivity.c fetch.c geometry.c
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)
 
@@ -23,7 +22,7 @@ all: $(EFILE)
 $(EFILE): $$@.o $(COMMONOBJS)
 	$(CC) -o $@ $@.o $(COMMONOBJS) $(LIBS)
 
-$(OBJS): $(HEADS) makefile
+$(OBJS): makefile
 	$(CC) $(CFLAGS) $(INCLS) -c $*.c
 
 -include depend

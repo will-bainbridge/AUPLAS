@@ -189,9 +189,9 @@ int generate_connectivity(int n_variables, char **connectivity, int n_nodes, str
 			}
 
 			//debug
-			printf("c#%i v#%i c#%-3s ->",c,u,connectivity[u]);
-			for(i = 0; i < n_stencil; i ++) printf(" %i",stencil[i]);
-			printf("\n");
+			//printf("c#%i v#%i c#%-3s ->",c,u,connectivity[u]);
+			//for(i = 0; i < n_stencil; i ++) printf(" %i",stencil[i]);
+			//printf("\n");
 		}
 	}
 

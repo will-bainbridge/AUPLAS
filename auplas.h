@@ -18,6 +18,10 @@
 #define MAX_ZONES 100
 #define MAX_STRING_CHARACTERS 128
 
+//min and max macros
+#define MAX(a,b) ((a > b) ? a : b)
+#define MIN(a,b) ((a < b) ? a : b)
+
 //accuracy
 #define EPS 1e-15
 
@@ -36,19 +40,27 @@ struct NODE
 struct FACE
 {
 	struct NODE *node[2];
+
 	struct CELL **border;
+	int *oriented;
 	int n_borders;
+
 	struct ZONE **zone;
 	int n_zones;
+
+	double centroid[2];
 };
 
 struct CELL
 {
 	struct FACE **face;
-	struct CELL **border;
+	int *oriented;
 	int n_faces;
+
 	struct ZONE **zone;
 	int n_zones;
+
+	double centroid[2];
 };
 
 struct ZONE
@@ -67,5 +79,10 @@ int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zone
 int generate_connectivity(int n_variables, char **connectivity, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+
+int generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
+int calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
+void generate_control_volume_polygon(double **polygon, int index, int location, struct FACE *face, struct CELL *cell);
+void calculate_polygon_centroid(int n, double **polygon, double *centroid);
 
 ////////////////////////////////////////////////////////////////////////////////
