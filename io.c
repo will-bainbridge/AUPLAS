@@ -30,6 +30,9 @@ int read_instructions(char *filename, int *n_variables, char **geometry_filename
         if(fetch_read(file, "maximum_order", format, 1, (void*)maximum_order) != 1)
         { printf("\nERROR - read_instructions - reading maximum_order"); return ERROR; }
 
+	int i;
+	for(i = 0; i < *n_variables; i ++) (*maximum_order)[i] -= 1;
+
         memset(format,'d',*n_variables);
 
         if(allocate_double_vector(weight_exponent,*n_variables) != ALLOCATE_SUCCESS)
@@ -201,12 +204,11 @@ int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zone
 	if(data == NULL) { printf("\nERROR - read_zones - allocating data memory"); return ERROR; }
 
 	//get the zone parameters
-	char *condition, *location;
-	if(allocate_character_vector(&location,*n_zones) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - read_zones - allocating location memory"); return ERROR; }
+	char *condition;
 	for(i = 0; i < *n_zones; i ++)
 	{
-		fetch_get("csisd", data, i, 0, &location[i]);
+		//fetch_get("csisd", data, i, 0, &location[i]);
+		fetch_get("csisd", data, i, 0, &(*zone)[i].location);
 		fetch_get("csisd", data, i, 2, &(*zone)[i].variable);
 		fetch_get("csisd", data, i, 3, &condition);
 		strcpy((*zone)[i].condition,condition);
@@ -238,7 +240,7 @@ int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zone
 			{ printf("\nERROR - read_zones - unrecognised range"); return ERROR; }
 
 			//put pointer to the zone in the relevent elements
-			if(location[i] == 'f')
+			if((*zone)[i].location == 'f')
 			{
 				for(j = index[0]; j <= index[1]; j ++)
 				{
@@ -246,7 +248,7 @@ int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zone
 					face[j].zone[face[j].n_zones++] = &(*zone)[i];
 				}
 			}
-			if(location[i] == 'c')
+			if((*zone)[i].location == 'c')
 			{
 				for(j = index[0]; j <= index[1]; j ++)
 				{
@@ -263,7 +265,6 @@ int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zone
 	//clean up
 	fetch_free("csisd", MAX_ZONES, data);
 	free_vector(temp);
-	free_vector(location);
 
 	return SUCCESS;
 }

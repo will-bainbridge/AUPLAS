@@ -46,6 +46,20 @@ int main(int argc, char *argv[])
 	if(calculate_control_volume_geometry(n_faces, face, n_cells, cell) != SUCCESS)
 	{ printf("\nERROR - calculating control volume geometry\n\n"); return ERROR; }
 
+	//calculate cell reconstruction matrices
+	if(calculate_cell_reconstruction_matrices(n_variables, weight_exponent, maximum_order, face, n_cells, cell, zone) != SUCCESS)
+	{ printf("\nERROR - calculating reconstruction matrices\n\n"); return ERROR; }
+
+	int c = 5, u = 1, i, j;
+
+	for(i = 0; i < ORDER_TO_POWERS(cell[c].order[u]); i ++) {
+		for(j = 0; j < cell[c].n_stencil[u]; j ++) {
+			printf("%+10.4lf ",cell[c].matrix[u][i][j]);
+		}
+		printf("\n");
+	}
+
+
 	//--------------------------------------------------------------------//
 
 	//clean up
@@ -53,16 +67,16 @@ int main(int argc, char *argv[])
 	free_vector(maximum_order);
 	free_vector(weight_exponent);
 	free_matrix((void*)connectivity);
-	free_mesh_structures(n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+	free_mesh_structures(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
 	return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void free_mesh_structures(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
-	int i;
+	int i, j;
 
 	free(node);
 
@@ -80,8 +94,10 @@ void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FA
 		free(cell[i].oriented);
 		free(cell[i].zone);
 		free(cell[i].n_stencil);
-		free(cell[i].stencil[0]);
+		for(j = 0; j < n_variables; j ++) free_vector(cell[i].stencil[j]);
 		free(cell[i].stencil);
+		for(j = 0; j < n_variables; j ++) free_matrix((void**)cell[i].matrix[j]);
+		free(cell[i].matrix);
 		free(cell[i].order);
 	}
 	free(cell);

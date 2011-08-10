@@ -89,21 +89,23 @@ int generate_connectivity(int n_variables, char **connectivity, int *maximum_ord
 
 	//generate the stencils
 	int *n_cell_neighbours, **cell_neighbours;
-	int old_cell, new_cell, n_stencil_cells, n_old_stencil_cells, n_stencil_faces, n_stencil_total;
+	int old_cell, new_cell, n_stencil_cells, n_old_stencil_cells, n_stencil_faces;
 	int is_variable, is_unknown, is_in_cell;
-	int *stencil_cells, *stencil_faces, **stencil;
+	int *stencil_cells, *stencil_faces, *stencil;
 	if(allocate_integer_vector(&stencil_cells,MAX_STENCIL) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - generate_connectivity - allocating stencil cells"); return ERROR; }
 	if(allocate_integer_vector(&stencil_faces,MAX_STENCIL) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - generate_connectivity - allocating stencil faces"); return ERROR; }
-	if(allocate_integer_matrix(&stencil,3,MAX_STENCIL) != ALLOCATE_SUCCESS)
+	if(allocate_integer_vector(&stencil,MAX_STENCIL) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - generate_connectivity - allocating stencil"); return ERROR; }
 
 	for(c = 0; c < n_cells; c ++)
 	{
-		//allocate the stencil numbers
+		//allocate the stencil numbers and pointers
 		if(allocate_integer_vector(&(cell[c].n_stencil),n_variables) != ALLOCATE_SUCCESS)
 		{ printf("\nERROR - generate_connectivity - allocating cell stencil numbers"); return ERROR; }
+		cell[c].stencil = (int **)malloc(n_variables*sizeof(int*));
+		if(cell[c].stencil == NULL) { printf("\nERROR - generate_connectivity - allocating stencil pointers"); return ERROR; }
 
 		for(u = 0; u < n_variables; u ++)
 		{
@@ -171,7 +173,7 @@ int generate_connectivity(int n_variables, char **connectivity, int *maximum_ord
 					z = (int)(cell[stencil_cells[i]].zone[j] - &zone[0]);
 
 					if(is_variable && (is_unknown || is_in_cell))
-						stencil[u][cell[c].n_stencil[u]++] = INDEX_AND_ZONE_TO_ID(stencil_cells[i],z);
+						stencil[cell[c].n_stencil[u]++] = INDEX_AND_ZONE_TO_ID(stencil_cells[i],z);
 				}
 			}
 			for(i = 0; i < n_stencil_faces; i ++)
@@ -188,29 +190,20 @@ int generate_connectivity(int n_variables, char **connectivity, int *maximum_ord
 					z = (int)(face[stencil_faces[i]].zone[j] - &zone[0]);
 
 					if(is_variable && (is_unknown || is_in_cell))
-						stencil[u][cell[c].n_stencil[u]++] = INDEX_AND_ZONE_TO_ID(stencil_faces[i],z);
+						stencil[cell[c].n_stencil[u]++] = INDEX_AND_ZONE_TO_ID(stencil_faces[i],z);
 				}
 			}
 
-			//debug
-			printf("c#%i v#%i c#%-3s ->",c,u,connectivity[u]);
-			for(i = 0; i < cell[c].n_stencil[u]; i ++) printf(" %i",stencil[u][i]);
-			printf("\n");
-			
+			////debug
+			//printf("c#%i v#%i c#%-3s ->",c,u,connectivity[u]);
+			//for(i = 0; i < cell[c].n_stencil[u]; i ++) printf(" %i",stencil[i]);
+			//printf("\n");
+
+			//allocate and store the stencils in the cell structure
+			if(allocate_integer_vector(&(cell[c].stencil[u]),cell[c].n_stencil[u]) != ALLOCATE_SUCCESS)
+			{ printf("\nERROR - generate_connectivity - allocating stencil values"); return ERROR; }
+			for(i = 0; i < cell[c].n_stencil[u]; i ++) cell[c].stencil[u][i] = stencil[i];
 		}
-
-		//allocate and store the stencils in the cell structure
-		n_stencil_total = 0;
-		for(u = 0; u < n_variables; u ++) n_stencil_total += cell[c].n_stencil[u];
-
-		cell[c].stencil = (int **)malloc(n_variables*sizeof(int*));
-		if(cell[c].stencil == NULL) { printf("\nERROR - generate_connectivity - allocating stencil pointers"); return ERROR; }
-		cell[c].stencil[0] = (int *)malloc(n_stencil_total*sizeof(int));
-		if(cell[c].stencil[0] == NULL) { printf("\nERROR - generate_connectivity - allocating stencil values"); return ERROR; }
-
-		for(u = 1; u < n_variables; u ++) cell[c].stencil[u] = cell[c].stencil[u-1] + cell[c].n_stencil[u-1];
-
-		for(u = 0; u < n_variables; u ++) for(i = 0; i < cell[c].n_stencil[u]; i ++) cell[c].stencil[u][i] = stencil[u][i];
 	}
 
 	//generate the cell orders
@@ -234,7 +227,7 @@ int generate_connectivity(int n_variables, char **connectivity, int *maximum_ord
 	free_matrix((void**)cell_node_neighbours);
 	free_vector(stencil_cells);
 	free_vector(stencil_faces);
-	free_vector((void**)stencil);
+	free_vector(stencil);
 
 	return SUCCESS;
 }

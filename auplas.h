@@ -69,10 +69,13 @@ struct CELL
 	int *n_stencil;
 
 	int *order;
+
+	double ***matrix;
 };
 
 struct ZONE
 {
+	char location;
 	int variable;
 	char condition[MAX_STRING_CHARACTERS];
 	double value;
@@ -86,11 +89,16 @@ int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zone
 
 int generate_connectivity(int n_variables, char **connectivity, int *maximum_order, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
-void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void free_mesh_structures(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 int generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 int calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 void generate_control_volume_polygon(double **polygon, int index, int location, struct FACE *face, struct CELL *cell);
 void calculate_polygon_centroid(int n, double **polygon, double *centroid);
+
+int calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone);
+int least_squares(int m, int n, double **matrix);
+int constrained_least_squares(int m, int n, double **matrix, int c, int *constrained);
+double ipow(double base, int exp);
 
 ////////////////////////////////////////////////////////////////////////////////
