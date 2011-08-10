@@ -18,6 +18,9 @@
 #define MAX_ZONES 100
 #define MAX_STRING_CHARACTERS 128
 
+//cell order to number of powers
+#define ORDER_TO_POWERS(order) ((order+1.0)*(order+2.0)*0.5)
+
 //min and max macros
 #define MAX(a,b) ((a > b) ? a : b)
 #define MIN(a,b) ((a < b) ? a : b)
@@ -61,6 +64,11 @@ struct CELL
 	int n_zones;
 
 	double centroid[2];
+
+	int **stencil;
+	int *n_stencil;
+
+	int *order;
 };
 
 struct ZONE
@@ -76,7 +84,7 @@ int read_instructions(char *filename, int *n_variables, char **geometry_filename
 int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 int read_zones(char *filename, struct FACE *face, struct CELL *cell, int *n_zones, struct ZONE **zone);
 
-int generate_connectivity(int n_variables, char **connectivity, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+int generate_connectivity(int n_variables, char **connectivity, int *maximum_order, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 

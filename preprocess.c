@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	{ printf("\nERROR - reading zones\n\n"); return ERROR; }
 
 	//generate connectivity between the mesh structures
-	if(generate_connectivity(n_variables, connectivity, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone) != SUCCESS)
+	if(generate_connectivity(n_variables, connectivity, maximum_order, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone) != SUCCESS)
 	{ printf("\nERROR - generating connectivity\n\n"); return ERROR; }
 
 	//generate cell face orientations
@@ -79,6 +79,10 @@ void free_mesh_structures(int n_nodes, struct NODE *node, int n_faces, struct FA
 		free(cell[i].face);
 		free(cell[i].oriented);
 		free(cell[i].zone);
+		free(cell[i].n_stencil);
+		free(cell[i].stencil[0]);
+		free(cell[i].stencil);
+		free(cell[i].order);
 	}
 	free(cell);
 

@@ -1,7 +1,7 @@
 CC		= gcc
 CFLAGS		= -g -Wall
 INCLS		= -I ~/include/
-LIBS		= -L -lm
+LIBS		= -lm
 
 MAINSRCS	= preprocess.c
 COMMONSRCS 	= allocate.c io.c connectivity.c fetch.c geometry.c
