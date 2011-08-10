@@ -99,6 +99,6 @@ void calculate_polygon_centroid(int n, double **polygon, double *centroid);
 int calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone);
 int least_squares(int m, int n, double **matrix);
 int constrained_least_squares(int m, int n, double **matrix, int c, int *constrained);
-double ipow(double base, int exp);
+double integer_power(double base, int exp);
 
 ////////////////////////////////////////////////////////////////////////////////

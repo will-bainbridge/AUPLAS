@@ -112,8 +112,8 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 					for(j = 0; j < n_powers; j ++)
 					{
 						matrix[j][i] = polynomial_coefficient[d][j]*
-							ipow(x[0],polynomial_power_x[d][j])*
-							ipow(x[1],polynomial_power_y[d][j])*
+							integer_power(x[0],polynomial_power_x[d][j])*
+							integer_power(x[1],polynomial_power_y[d][j])*
 							s_weight;
 					}
 				}
@@ -137,8 +137,8 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 							for(k = 0; k < n_powers; k ++)
 							{
 								matrix[k][i] += polynomial_coefficient[d][k]*
-									ipow(x[0],polynomial_power_x[d][k])*
-									ipow(x[1],polynomial_power_y[d][k])*
+									integer_power(x[0],polynomial_power_x[d][k])*
+									integer_power(x[1],polynomial_power_y[d][k])*
 									s_weight*gauss_w[order-1][j]*0.5;
 							}
 						}
@@ -314,7 +314,7 @@ int constrained_least_squares(int m, int n, double **matrix, int c, int *constra
 
 ///////////////////////////////////////////////////////////////////////////////
 
-double ipow(double base, int exp)
+double integer_power(double base, int exp)
 {
 	int i;
 	double result = 1.0;
