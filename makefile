@@ -1,10 +1,10 @@
 CC		= gcc
-CFLAGS		= -g -Wall
+CFLAGS		= -O2 -Wall
 INCLS		= -I ~/include/
 LIBS		= -lm -llapack
 
 MAINSRCS	= preprocess.c
-COMMONSRCS 	= allocate.c io.c connectivity.c fetch.c geometry.c numerics.c
+COMMONSRCS 	= allocate.c io.c connectivity.c fetch.c geometry.c numerics.c memory.c
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)
 

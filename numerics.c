@@ -30,6 +30,8 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 	for(u = 0; u < n_variables; u ++) if(maximum_order[u] > maximum_maximum_order) maximum_maximum_order = maximum_order[u];
 
 	//memory allocation
+	if(allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) != SUCCESS)
+	{ printf("\nERROR - calculate_cell_reconstruction_matrices - allocating cell matrices"); return ERROR; }
 	double **matrix;
 	if(allocate_double_matrix(&matrix,ORDER_TO_POWERS(maximum_maximum_order),MAX_STENCIL) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - calculate_cell_reconstruction_matrices - allocating matrix memory"); return ERROR; }
@@ -52,10 +54,6 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 
 	for(c = 0; c < n_cells; c ++)
 	{
-		//allocate the matrix pointers
-		cell[c].matrix = (double ***)malloc(n_variables*sizeof(double **));
-		if(cell[c].matrix == NULL) { printf("\nERROR - calculate_cell_reconstruction_matrices - allocating cell matrix pointers"); return ERROR; }
-
 		for(u = 0; u < n_variables; u ++)
 		{
 			//problem size
@@ -73,8 +71,11 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 				s_location = s_zone->location;
 				s_condition = s_zone->condition;
 
-				if(s_location == 'f') s_centroid = face[s_index].centroid;
-				if(s_location == 'c') s_centroid = cell[s_index].centroid;
+				if(s_location == 'f') {
+					s_centroid = face[s_index].centroid;
+				} else if(s_location == 'c') {
+					s_centroid = cell[s_index].centroid;
+				} else { printf("\nERROR - calculate_cell_reconstruction_matrices - recognising zone location"); return ERROR; }
 
 				s_weight  = (s_centroid[0] - cell[c].centroid[0])*(s_centroid[0] - cell[c].centroid[0]);
 				s_weight += (s_centroid[1] - cell[c].centroid[1])*(s_centroid[1] - cell[c].centroid[1]);
@@ -165,13 +166,12 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 			//multiply by the weights
 			for(i = 0; i < n_powers; i ++) for(j = 0; j < n_stencil; j ++) matrix[i][j] *= weight[j];
 
-			//allocate and store in the cell structure
-			if(allocate_double_matrix(&(cell[c].matrix[u]),n_powers,n_stencil) != ALLOCATE_SUCCESS)
-			{ printf("\nERROR - calculate_cell_reconstruction_matrices - allocating cell matrix"); return ERROR; }
+			//store in the cell structure
 			for(i = 0; i < n_powers; i ++) for(j = 0; j < n_stencil; j ++) cell[c].matrix[u][i][j] = matrix[i][j];
 		}
 	}
 
+	//clean up
 	free_matrix((void**)matrix);
 	free_vector(constraint);
 	free_vector(weight);

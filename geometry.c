@@ -16,9 +16,6 @@ int generate_face_orientations(int n_faces, struct FACE *face, int n_cells, stru
 
 	for(c = 0; c < n_cells; c ++)
 	{
-		if(allocate_integer_vector(&(cell[c].oriented),cell[c].n_faces) != ALLOCATE_SUCCESS)
-		{ printf("\nERROR - generate_orientations - allocating cell oriented memory"); return ERROR; }
-
 		for(i = 0; i < cell[c].n_faces; i ++)
 		{
 			i1 = i + 1 - cell[c].n_faces*(i == cell[c].n_faces - 1);
@@ -38,17 +35,12 @@ int generate_face_orientations(int n_faces, struct FACE *face, int n_cells, stru
 			cross = (v0->x[0] - vr->x[0])*(v1->x[1] - vr->x[1]) - (v1->x[0] - vr->x[0])*(v0->x[1] - vr->x[1]);
 
 			cell[c].oriented[i] = (cross > 0);
-
-
 		}
 	}
 
 	//copy the borders generated above into the face structures
 	for(i = 0; i < n_faces; i ++)
 	{
-		if(allocate_integer_vector(&(face[i].oriented),face[i].n_borders) != ALLOCATE_SUCCESS)
-		{ printf("\nERROR - generate_orientations - allocating face oriented memory"); return ERROR; }
-
 		for(j = 0; j < face[i].n_borders; j ++)
 		{
 			for(k = 0; k < face[i].border[j]->n_faces; k ++)

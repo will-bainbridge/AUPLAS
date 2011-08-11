@@ -13,25 +13,25 @@ int main(int argc, char *argv[])
 	if(argc != 2) { printf("\nERROR - need exactly one argument, the input fileame\n\n"); return ERROR; }
 	char *input_filename = argv[1];
 
-	//read the input file fo instructions
-	int n_variables, *maximum_order;
-	char *geometry_filename, **connectivity;
-	double *weight_exponent;
+	//instructions
+	int n_variables = 0, *maximum_order = NULL;
+	char *geometry_filename = NULL, **connectivity = NULL;
+	double *weight_exponent = NULL;
 	if(read_instructions(input_filename, &n_variables, &geometry_filename, &maximum_order, &weight_exponent, &connectivity) != SUCCESS)
 	{ printf("\nERROR - reading instructions\n\n"); return ERROR; }
 
-	//read the geometry file
-	int n_nodes, n_faces, n_cells;
-	struct NODE *node;
-	struct FACE *face;
-	struct CELL *cell;
+	//geometry
+	int n_nodes = 0, n_faces = 0, n_cells = 0;
+	struct NODE *node = NULL;
+	struct FACE *face = NULL;
+	struct CELL *cell = NULL;
 	if(read_geometry(geometry_filename, &n_nodes, &node, &n_faces, &face, &n_cells, &cell) != SUCCESS)
 	{ printf("\nERROR - reading geometry file\n\n"); return ERROR; }
 
 	//read the input file for the zones
-	int n_zones;
-	struct ZONE *zone;
-	if(read_zones(input_filename, face, cell, &n_zones, &zone) != SUCCESS)
+	int n_zones = 0;
+	struct ZONE *zone = NULL;
+	if(read_zones(input_filename, n_faces, face, n_cells, cell, &n_zones, &zone) != SUCCESS)
 	{ printf("\nERROR - reading zones\n\n"); return ERROR; }
 
 	//generate connectivity between the mesh structures
@@ -51,7 +51,6 @@ int main(int argc, char *argv[])
 	{ printf("\nERROR - calculating reconstruction matrices\n\n"); return ERROR; }
 
 	int c = 5, u = 1, i, j;
-
 	for(i = 0; i < ORDER_TO_POWERS(cell[c].order[u]); i ++) {
 		for(j = 0; j < cell[c].n_stencil[u]; j ++) {
 			printf("%+10.4lf ",cell[c].matrix[u][i][j]);
@@ -59,50 +58,13 @@ int main(int argc, char *argv[])
 		printf("\n");
 	}
 
-
 	//--------------------------------------------------------------------//
 
 	//clean up
-	free_vector(geometry_filename);
-	free_vector(maximum_order);
-	free_vector(weight_exponent);
-	free_matrix((void*)connectivity);
-	free_mesh_structures(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+	free_instructions(n_variables, geometry_filename, maximum_order, weight_exponent, connectivity);
+	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
 	return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void free_mesh_structures(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
-{
-	int i, j;
-
-	free(node);
-
-	for(i = 0; i < n_faces; i ++)
-	{
-		free(face[i].border);
-		free(face[i].oriented);
-		free(face[i].zone);
-	}
-	free(face);
-
-	for(i = 0; i < n_cells; i ++)
-	{
-		free(cell[i].face);
-		free(cell[i].oriented);
-		free(cell[i].zone);
-		free(cell[i].n_stencil);
-		for(j = 0; j < n_variables; j ++) free_vector(cell[i].stencil[j]);
-		free(cell[i].stencil);
-		for(j = 0; j < n_variables; j ++) free_matrix((void**)cell[i].matrix[j]);
-		free(cell[i].matrix);
-		free(cell[i].order);
-	}
-	free(cell);
-
-	free(zone);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
