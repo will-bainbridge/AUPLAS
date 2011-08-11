@@ -14,29 +14,13 @@ int generate_connectivity(int n_variables, char **connectivity, int *maximum_ord
 	int **face_borders;
 	if(allocate_integer_matrix(&face_borders,n_faces,MAX_NEIGHBOURS) != ALLOCATE_SUCCESS)
 	{ printf("\nERROR - generate_connectivity - allocating temporary face borders"); return ERROR; }
-
 	for(i = 0; i < n_faces; i ++) face[i].n_borders = 0;
-
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_faces; j ++) face_borders[(int)(cell[i].face[j] - &face[0])][cell[i].face[j]->n_borders ++] = i;
 
+	//allocate face borders and copy over the data
 	if(allocate_mesh(0, 0, NULL, n_faces, &face, 0, NULL, 0, NULL) != SUCCESS)
 	{ printf("\nERROR - read_geometry - allocating face borders"); return ERROR; }
-
 	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[j].n_borders; j ++) face[i].border[j] = &cell[face_borders[i][j]];
-
-
-
-	/*for(i = 0; i < n_faces; i ++) { face[i].border = NULL; face[i].n_borders = 0; }
-	for(i = 0; i < n_cells; i ++)
-	{
-		for(j = 0; j < cell[i].n_faces; j ++)
-		{
-			cell[i].face[j]->n_borders ++;
-			cell[i].face[j]->border = (struct CELL **)realloc(cell[i].face[j]->border, cell[i].face[j]->n_borders * sizeof(struct CELL *));
-			if(cell[i].face[j]->border == NULL) { printf("\nERROR - generate_connectivity - allocating face border"); return ERROR; }
-			cell[i].face[j]->border[cell[i].face[j]->n_borders-1] = &cell[i];
-		}
-	}*/
 
 	//generate list of cells surrounding each node
 	int index;
@@ -102,12 +86,7 @@ int generate_connectivity(int n_variables, char **connectivity, int *maximum_ord
 		}
 	}
 
-		/*//allocate the stencil numbers and pointers
-		if(allocate_integer_vector(&(cell[c].n_stencil),n_variables) != ALLOCATE_SUCCESS)
-		{ printf("\nERROR - generate_connectivity - allocating cell stencil numbers"); return ERROR; }
-		cell[c].stencil = (int **)malloc(n_variables*sizeof(int*));
-		if(cell[c].stencil == NULL) { printf("\nERROR - generate_connectivity - allocating stencil pointers"); return ERROR; }*/
-
+	//allocate the stencil numbers and pointers
 	if(allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) != SUCCESS)
 	{ printf("\nERROR - generate_connectivity - allocating cell stencil numbers and pointers"); return ERROR; }
 
@@ -212,11 +191,6 @@ int generate_connectivity(int n_variables, char **connectivity, int *maximum_ord
 				}
 			}
 
-			///debug
-			//printf("c#%i v#%i c#%-3s ->",c,u,connectivity[u]);
-			//for(i = 0; i < cell[c].n_stencil[u]; i ++) printf(" %i",stencil[i]);
-			//printf("\n");
-
 			//allocate and store the stencils in the cell structure
 			if(allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) != SUCCESS)
 			{ printf("\nERROR - generate_connectivity - allocating cell stencil"); return ERROR; }
@@ -228,6 +202,7 @@ int generate_connectivity(int n_variables, char **connectivity, int *maximum_ord
 	}
 
 	//clean up
+	free_matrix((void**)face_borders);
 	free_vector(n_node_surround);
 	free_matrix((void**)node_surround);
 	free_vector(n_cell_face_neighbours);
