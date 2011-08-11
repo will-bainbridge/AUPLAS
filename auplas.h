@@ -10,10 +10,6 @@
 //error handling macro
 #define handle(value,action); if(!(value)){ printf("\n[ERROR %s:%i] %s\n\n",__FILE__,__LINE__,action); exit(EXIT_FAILURE); }
 
-//return values
-#define SUCCESS 1
-#define ERROR -1
-
 //maximum extents for memory allocation
 #define MAX_CELL_FACES 5
 #define MAX_FACE_NODES 2
