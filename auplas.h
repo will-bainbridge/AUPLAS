@@ -82,16 +82,16 @@ struct ZONE
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_instructions(char *filename, int *n_variables, char **geometry_filename, int **maximum_order, double **weight_exponent, char ***connectivity);
+int read_instructions(char *filename, int *n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity);
 int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
 
 int generate_connectivity(int n_variables, char **connectivity, int *maximum_order, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone);
-int allocate_instructions(int n_variables, char **geometry_filename, int **maximum_order, double **weight_exponent, char ***connectivity);
+int allocate_instructions(int n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity);
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
-void free_instructions(int n_variables, char *geometry_filename, int *maximum_order, double *weight_exponent, char **connectivity);
+void free_instructions(int n_variables, char *geometry_filename, char *case_filename, int *maximum_order, double *weight_exponent, char **connectivity);
 
 int generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 int calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);

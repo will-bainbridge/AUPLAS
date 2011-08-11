@@ -6,18 +6,20 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_instructions(char *filename, int *n_variables, char **geometry_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
+int read_instructions(char *filename, int *n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
 {
 	FILE *file = fopen(filename,"r");
 
         if(fetch_read(file, "number_of_variables", "i", 1, (void*)&n_variables) != 1)
-        { printf("\nERROR - read_instructions - reading number_of_variables"); return ERROR; }
+        { printf("\nERROR - read_instructions - reading the number of variables"); return ERROR; }
 
-	if(allocate_instructions(*n_variables, geometry_filename, maximum_order, weight_exponent, connectivity) != SUCCESS)
+	if(allocate_instructions(*n_variables, geometry_filename, case_filename, maximum_order, weight_exponent, connectivity) != SUCCESS)
 	{ printf("\nERROR - read_instructions - allocating instructions"); return ERROR; }
 
         if(fetch_read(file, "geometry_filename", "s", 1, (void*)&geometry_filename) != 1)
-        { printf("\nERROR - read_instructions - reading geometry_filename"); return ERROR; }
+        { printf("\nERROR - read_instructions - reading the geometry filename"); return ERROR; }
+        if(fetch_read(file, "case_filename", "s", 1, (void*)&case_filename) != 1)
+        { printf("\nERROR - read_instructions - reading the case filename"); return ERROR; }
 
         char *format;
         if(allocate_character_vector(&format,*n_variables+1) != ALLOCATE_SUCCESS)
@@ -27,7 +29,7 @@ int read_instructions(char *filename, int *n_variables, char **geometry_filename
         memset(format,'i',*n_variables);
 
         if(fetch_read(file, "maximum_order", format, 1, (void*)maximum_order) != 1)
-        { printf("\nERROR - read_instructions - reading maximum_order"); return ERROR; }
+        { printf("\nERROR - read_instructions - reading maximum orders"); return ERROR; }
 
 	int i;
 	for(i = 0; i < *n_variables; i ++) (*maximum_order)[i] -= 1;
@@ -35,12 +37,12 @@ int read_instructions(char *filename, int *n_variables, char **geometry_filename
         memset(format,'d',*n_variables);
 
         if(fetch_read(file, "weight_exponent", format, 1, (void*)weight_exponent) != 1)
-        { printf("\nERROR - read_instructions - reading weight_exponent"); return ERROR; }
+        { printf("\nERROR - read_instructions - reading weight exponents"); return ERROR; }
 
         memset(format,'s',*n_variables);
 
         if(fetch_read(file, "connectivity", format, 1, (void*)connectivity) != 1)
-        { printf("\nERROR - read_instructions - reading connectivity"); return ERROR; }
+        { printf("\nERROR - read_instructions - reading connectivities"); return ERROR; }
 
         fclose(file);
         free_vector(format);
@@ -275,5 +277,11 @@ int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, stru
 
 	return SUCCESS;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+/*int write_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell)
+{
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////

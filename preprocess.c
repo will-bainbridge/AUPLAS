@@ -15,9 +15,9 @@ int main(int argc, char *argv[])
 
 	//instructions
 	int n_variables = 0, *maximum_order = NULL;
-	char *geometry_filename = NULL, **connectivity = NULL;
+	char *geometry_filename = NULL, *case_filename = NULL, **connectivity = NULL;
 	double *weight_exponent = NULL;
-	if(read_instructions(input_filename, &n_variables, &geometry_filename, &maximum_order, &weight_exponent, &connectivity) != SUCCESS)
+	if(read_instructions(input_filename, &n_variables, &geometry_filename, &case_filename, &maximum_order, &weight_exponent, &connectivity) != SUCCESS)
 	{ printf("\nERROR - reading instructions\n\n"); return ERROR; }
 
 	//geometry
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	//--------------------------------------------------------------------//
 
 	//clean up
-	free_instructions(n_variables, geometry_filename, maximum_order, weight_exponent, connectivity);
+	free_instructions(n_variables, geometry_filename, case_filename, maximum_order, weight_exponent, connectivity);
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
 	return 0;

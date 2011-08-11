@@ -122,13 +122,17 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int allocate_instructions(int n_variables, char **geometry_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
+int allocate_instructions(int n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
 {
 	int i;
 
 	if(*geometry_filename == NULL) {
 		*geometry_filename = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
 		if(*geometry_filename == NULL) { printf("\nERROR - allocate_instructions - allocating geometry filename"); return ERROR; }
+	}
+	if(*case_filename == NULL) {
+		*case_filename = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
+		if(*case_filename == NULL) { printf("\nERROR - allocate_instructions - allocating case filename"); return ERROR; }
 	}
 	if(n_variables > 0 && *maximum_order == NULL) {
 		*maximum_order = (int *)malloc(n_variables * sizeof(int));
@@ -184,9 +188,10 @@ void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, str
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void free_instructions(int n_variables, char *geometry_filename, int *maximum_order, double *weight_exponent, char **connectivity)
+void free_instructions(int n_variables, char *geometry_filename, char *case_filename, int *maximum_order, double *weight_exponent, char **connectivity)
 {
 	free(geometry_filename);
+	free(case_filename);
 	free(maximum_order);
 	free(weight_exponent);
 	free(connectivity[0]);
