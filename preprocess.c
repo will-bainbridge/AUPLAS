@@ -60,6 +60,10 @@ int main(int argc, char *argv[])
 
 	//--------------------------------------------------------------------//
 
+	//write the case file
+	if(write_case(case_filename, n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone) != SUCCESS)
+	{ printf("\nERROR - writing the case file\n\n"); return ERROR; }
+
 	//clean up
 	free_instructions(n_variables, geometry_filename, case_filename, maximum_order, weight_exponent, connectivity);
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);

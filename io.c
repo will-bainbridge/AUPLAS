@@ -280,8 +280,142 @@ int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, stru
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/*int write_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell)
+int write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
-}*/
+	int i, j, n;
+
+	//open the file
+	FILE *file = fopen(filename,"w");
+	if(file == NULL) { printf("\nERROR - write_case - opening the case file"); return ERROR; }
+
+	//temporary storage for element pointers cast to indices
+	int *index;
+	if(allocate_integer_vector(&index,MAX_INDICES) != ALLOCATE_SUCCESS)
+	{ printf("\nERROR - write_case - allocating indices"); return ERROR; }
+
+	//--------------------------------------------------------------------//
+
+	//number of variables
+	
+	if(fwrite(&n_variables, sizeof(int), 1, file) != 1)
+	{ printf("\nERROR - write_case - writing the number of variables"); return ERROR; }
+
+	//--------------------------------------------------------------------//
+
+	//nodes
+
+	if(fwrite(&n_nodes, sizeof(int), 1, file) != 1)
+	{ printf("\nERROR - write_case - writing the number of nodes"); return ERROR; }
+	if(fwrite(node, sizeof(struct NODE), n_nodes, file) != n_nodes)
+	{ printf("\nERROR - write_case - writing the nodes"); return ERROR; }
+
+	//--------------------------------------------------------------------//
+
+	//faces
+
+	//node indices
+	for(i = 0; i < n_faces; i ++) {
+		if(fwrite(&(face[i].n_nodes), sizeof(int), 1, file) != 1)
+		{ printf("\nERROR - write_case - writing the number of face nodes"); return ERROR; }
+	}
+	for(i = 0; i < n_faces; i ++) {
+		for(j = 0; j < face[i].n_nodes; j ++) index[j] = (int)(face[i].node[j] - &node[0]);
+		if(fwrite(index, sizeof(int), face[i].n_nodes, file) != face[i].n_nodes)
+		{ printf("\nERROR - write_case - writing the face nodes"); return ERROR; }
+	}
+	//border indices
+	for(i = 0; i < n_faces; i ++) {
+		if(fwrite(&(face[i].n_borders), sizeof(int), 1, file) != 1)
+		{ printf("\nERROR - write_case - writing the number of face borders"); return ERROR; }
+	}
+	for(i = 0; i < n_faces; i ++) {
+		for(j = 0; j < face[i].n_borders; j ++) index[j] = (int)(face[i].border[j] - &cell[0]);
+		if(fwrite(index, sizeof(int), face[i].n_borders, file) != face[i].n_borders)
+		{ printf("\nERROR - write_case - writing the face borders"); return ERROR; }
+		if(fwrite(face[i].oriented, sizeof(int), face[i].n_borders, file) != face[i].n_borders)
+		{ printf("\nERROR - write_case - writing the face orientations"); return ERROR; }
+	}
+	//zone indices
+	for(i = 0; i < n_faces; i ++) {
+		if(fwrite(&(face[i].n_zones), sizeof(int), 1, file) != 1)
+		{ printf("\nERROR - write_case - writing the number of face zones"); return ERROR; }
+	}
+	for(i = 0; i < n_faces; i ++) {
+		for(j = 0; j < face[i].n_zones; j ++) index[j] = (int)(face[i].zone[j] - &zone[0]);
+		if(fwrite(index, sizeof(int), face[i].n_zones, file) != face[i].n_zones)
+		{ printf("\nERROR - write_case - writing the face zones"); return ERROR; }
+	}
+	//centroids
+	for(i = 0; i < n_faces; i ++) {
+		if(fwrite(face[i].centroid, sizeof(double), 2, file) != 2)
+		{ printf("\nERROR - write_case - writing the face centroid"); return ERROR; } 
+	}
+
+	//--------------------------------------------------------------------//
+	
+	//cells
+
+	//node indices
+	for(i = 0; i < n_cells; i ++) {
+		if(fwrite(&(cell[i].n_faces), sizeof(int), 1, file) != 1)
+		{ printf("\nERROR - write_case - writing the number of cell faces"); return ERROR; }
+	}
+	for(i = 0; i < n_cells; i ++) {
+		for(j = 0; j < cell[i].n_faces; j ++) index[j] = (int)(cell[i].face[j] - &face[0]);
+		if(fwrite(index, sizeof(int), cell[i].n_faces, file) != cell[i].n_faces)
+		{ printf("\nERROR - write_case - writing the cell faces"); return ERROR; }
+		if(fwrite(cell[i].oriented, sizeof(int), cell[i].n_faces, file) != cell[i].n_faces)
+		{ printf("\nERROR - write_case - writing the cell orientations"); return ERROR; }
+	}
+	//zone indices
+	for(i = 0; i < n_cells; i ++) {
+		if(fwrite(&(cell[i].n_zones), sizeof(int), 1, file) != 1)
+		{ printf("\nERROR - write_case - writing the number of cell zones"); return ERROR; }
+	}
+	for(i = 0; i < n_cells; i ++) {
+		for(j = 0; j < cell[i].n_zones; j ++) index[j] = (int)(cell[i].zone[j] - &zone[0]);
+		if(fwrite(index, sizeof(int), cell[i].n_zones, file) != cell[i].n_zones)
+		{ printf("\nERROR - write_case - writing the cell zones"); return ERROR; }
+	}
+	//centroids
+	for(i = 0; i < n_cells; i ++) {
+		if(fwrite(cell[i].centroid, sizeof(double), 2, file) != 2)
+		{ printf("\nERROR - write_case - writing the cell centroid"); return ERROR; } 
+	}
+
+	//orders and stencil numbers
+	for(i = 0; i < n_cells; i ++) {
+		if(fwrite(cell[i].order, sizeof(int), n_variables, file) != n_variables)
+		{ printf("\nERROR - write_case - writing the cell order"); return ERROR; }
+		if(fwrite(cell[i].n_stencil, sizeof(int), n_variables, file) != n_variables)
+		{ printf("\nERROR - write_case - writing the cell stencil sizes"); return ERROR; }
+	}
+	//stencils and matrices
+	for(i = 0; i < n_cells; i ++) {
+		for(j = 0; j < n_variables; j ++) {
+			if(fwrite(cell[i].stencil[j], sizeof(int), cell[i].n_stencil[j], file) != cell[i].n_stencil[j])
+			{ printf("\nERROR - write_case - writing the cell stencil"); return ERROR; }
+			n = ORDER_TO_POWERS(cell[i].order[j]) * cell[i].n_stencil[j];
+			if(fwrite(cell[i].matrix[j], sizeof(double), n, file) != n)
+			{ printf("\nERROR - write_case - writing the cell matrix"); return ERROR; }
+		}
+	}
+
+	//--------------------------------------------------------------------//
+
+	//zones
+
+	if(fwrite(&n_zones, sizeof(int), 1, file) != 1)
+	{ printf("\nERROR - write_case - writing the number of zones"); return ERROR; }
+	if(fwrite(zone, sizeof(struct ZONE), n_zones, file) != n_zones)
+	{ printf("\nERROR - write_case - writing the zones"); return ERROR; }
+
+	//--------------------------------------------------------------------//
+
+	free_vector(index);
+	fclose(file);
+
+	return SUCCESS;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
