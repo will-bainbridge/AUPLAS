@@ -7,12 +7,16 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//error handling macro
+#define handle(value,action); if(!(value)){ printf("\n[ERROR %s:%i] %s\n\n",__FILE__,__LINE__,action); exit(EXIT_FAILURE); }
+
 //return values
 #define SUCCESS 1
 #define ERROR -1
 
 //maximum extents for memory allocation
 #define MAX_CELL_FACES 5
+#define MAX_FACE_NODES 2
 #define MAX_NEIGHBOURS 10
 #define MAX_STENCIL 100
 #define MAX_ZONES 100
@@ -83,25 +87,25 @@ struct ZONE
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_instructions(char *filename, int *n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity);
-int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
-int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
+void read_instructions(char *filename, int *n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity);
+void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
+void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
 
-int write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
-int generate_connectivity(int n_variables, char **connectivity, int *maximum_order, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void generate_connectivity(int n_variables, char **connectivity, int *maximum_order, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone);
 int allocate_instructions(int n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity);
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void free_instructions(int n_variables, char *geometry_filename, char *case_filename, int *maximum_order, double *weight_exponent, char **connectivity);
 
-int generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
-int calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
+void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
+void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 void generate_control_volume_polygon(double **polygon, int index, int location, struct FACE *face, struct CELL *cell);
 void calculate_polygon_centroid(int n, double **polygon, double *centroid);
 
-int calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone);
+void calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone);
 int least_squares(int m, int n, double **matrix);
 int constrained_least_squares(int m, int n, double **matrix, int c, int *constrained);
 double integer_power(double base, int exp);

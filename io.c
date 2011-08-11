@@ -6,67 +6,56 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_instructions(char *filename, int *n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
+void read_instructions(char *filename, int *n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
 {
 	FILE *file = fopen(filename,"r");
+	handle(file != NULL,"opening input file");
 
-        if(fetch_read(file, "number_of_variables", "i", 1, (void*)&n_variables) != 1)
-        { printf("\nERROR - read_instructions - reading the number of variables"); return ERROR; }
+	handle(fetch_read(file, "number_of_variables", "i", 1, (void*)&n_variables) == 1, "reading \"number_of_variables\" from the input file");
 
-	if(allocate_instructions(*n_variables, geometry_filename, case_filename, maximum_order, weight_exponent, connectivity) != SUCCESS)
-	{ printf("\nERROR - read_instructions - allocating instructions"); return ERROR; }
+	handle(allocate_instructions(*n_variables, geometry_filename, case_filename, maximum_order, weight_exponent, connectivity)
+			== ALLOCATE_SUCCESS, "allocating instructions");
 
-        if(fetch_read(file, "geometry_filename", "s", 1, (void*)&geometry_filename) != 1)
-        { printf("\nERROR - read_instructions - reading the geometry filename"); return ERROR; }
-        if(fetch_read(file, "case_filename", "s", 1, (void*)&case_filename) != 1)
-        { printf("\nERROR - read_instructions - reading the case filename"); return ERROR; }
+	handle(fetch_read(file, "geometry_filename", "s", 1, (void*)&geometry_filename) == 1,"reading \"geometry_filename\" from the input file");
+	handle(fetch_read(file, "case_filename", "s", 1, (void*)&case_filename) == 1,"reading \"case_filename\" from the input file");
 
         char *format;
-        if(allocate_character_vector(&format,*n_variables+1) != ALLOCATE_SUCCESS)
-        { printf("\nERROR - read_instructions - allocating format"); return ERROR; }
+	handle(allocate_character_vector(&format,*n_variables + 1) == ALLOCATE_SUCCESS,"allocating format string");
         format[*n_variables] = '\0';
 
         memset(format,'i',*n_variables);
-
-        if(fetch_read(file, "maximum_order", format, 1, (void*)maximum_order) != 1)
-        { printf("\nERROR - read_instructions - reading maximum orders"); return ERROR; }
+	handle(fetch_read(file, "maximum_order", format, 1, (void*)maximum_order) == 1 ,"reading \"maximum_order\" from the input file");
 
 	int i;
 	for(i = 0; i < *n_variables; i ++) (*maximum_order)[i] -= 1;
 
         memset(format,'d',*n_variables);
-
-        if(fetch_read(file, "weight_exponent", format, 1, (void*)weight_exponent) != 1)
-        { printf("\nERROR - read_instructions - reading weight exponents"); return ERROR; }
+	handle(fetch_read(file, "weight_exponent", format, 1, (void*)weight_exponent) == 1, "reading \"weight_exponent\" from the input file");
 
         memset(format,'s',*n_variables);
-
-        if(fetch_read(file, "connectivity", format, 1, (void*)connectivity) != 1)
-        { printf("\nERROR - read_instructions - reading connectivities"); return ERROR; }
+	handle(fetch_read(file, "connectivity", format, 1, (void*)connectivity) == 1, "reading \"connectivity\" from the input file");
 
         fclose(file);
         free_vector(format);
-
-	return SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell)
+void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell)
 {
 	//open file
 	FILE *file = fopen(filename,"r");
-	if(file == NULL) return ERROR;
+	handle(file != NULL,"opening geometry file");
 
 	//allocate temporary storage
 	int i, j, *index, count, offset;
 	char *line, *temp;
-	if(allocate_integer_vector(&index,MAX_CELL_FACES) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - read_geometry_file - allocating index"); return ERROR; }
-	if(allocate_character_vector(&line, MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - read_geometry_file - allocating line"); return ERROR; }
-	if(allocate_character_vector(&temp,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - read_geometry_file - allocating temp"); return ERROR; }
+	handle(allocate_integer_vector(&index,MAX(MAX_FACE_NODES,MAX_CELL_FACES)) == ALLOCATE_SUCCESS, "allocating indices");
+	handle(allocate_character_vector(&line, MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating line string");
+	handle(allocate_character_vector(&temp, MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating temporary string");
+
+	//initialise
+	*n_nodes = *n_faces = *n_cells = 0;
 
 	//read each line in turn
 	while(fgets(line, MAX_STRING_CHARACTERS, file) != NULL)
@@ -76,17 +65,15 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 		if(strncmp(line,"NODES",5) == 0)
 		{
 			//number of nodes
-			sscanf(&line[6],"%i",n_nodes);
+			handle(sscanf(&line[6],"%i",n_nodes) == 1, "reading the number of nodes");
 
 			//allocate the nodes
-			if(allocate_mesh(0, *n_nodes, node, 0, NULL, 0, NULL, 0, NULL) != SUCCESS)
-			{ printf("\nERROR - read_geometry - allocating node structures"); return ERROR; }
+			handle(allocate_mesh(0, *n_nodes, node, 0, NULL, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating node structures");
 
 			//read in the node locations
 			for(i = 0; i < *n_nodes; i ++)
 			{
-				if(fscanf(file,"%lf %lf\n",&((*node)[i].x[0]),&((*node)[i].x[1])) != 2)
-				{ printf("\nERROR - read_geometry_file - reading a node"); return ERROR; }
+				handle(fscanf(file,"%lf %lf\n",&((*node)[i].x[0]),&((*node)[i].x[1])) == 2, "reading a node's coordinates");
 			}
 		}
 
@@ -95,18 +82,16 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 		else if(strncmp(line,"FACES",5) == 0)
 		{
 			//number of faces
-			sscanf(&line[6],"%i",n_faces);
+			handle(sscanf(&line[6],"%i",n_faces) == 1, "reading the number of faces");
 
 			//allocate the faces
-			if(allocate_mesh(0, 0, NULL, *n_faces, face, 0, NULL, 0, NULL) != SUCCESS)
-			{ printf("\nERROR - read_geometry - allocating face structures"); return ERROR; }
+			handle(allocate_mesh(0, 0, NULL, *n_faces, face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating face structures");
 
 			//read in the face node indices and store pointers
 			for(i = 0; i < *n_faces; i ++)
 			{
 				//read a line
-				if(fgets(line, MAX_STRING_CHARACTERS, file) == NULL)
-				{ printf("\nERROR - read_geometry_file - reading a face line"); return ERROR; }
+				handle(fgets(line, MAX_STRING_CHARACTERS, file) != NULL, "reading a face line");
 
 				//strip newlines and whitespace off the end of the line
 				for(j = strlen(line)-1; j >= 0; j --) if(line[j] != ' ' && line[j] != '\n') break;
@@ -127,8 +112,7 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 				(*face)[i].n_nodes = count;
 
 				//allocate the faces
-				if(allocate_mesh(0, 0, NULL, *n_faces, face, 0, NULL, 0, NULL) != SUCCESS)
-				{ printf("\nERROR - read_geometry - allocating face nodes"); return ERROR; }
+				handle(allocate_mesh(0, 0, NULL, *n_faces, face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating face nodes");
 
 				//node pointers
 				for(j = 0; j < count; j ++) (*face)[i].node[j] = &((*node)[index[j]]);
@@ -140,18 +124,16 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 		else if(strncmp(line,"CELLS",5) == 0)
 		{
 			//number of cells
-			sscanf(&line[6],"%i",n_cells);
+			handle(sscanf(&line[6],"%i",n_cells) == 1, "reading the number of cells");
 
 			//allocate the cells
-			if(allocate_mesh(0, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL) != SUCCESS)
-			{ printf("\nERROR - read_geometry - allocating cell structures"); return ERROR; }
+			handle(allocate_mesh(0, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell structures");
 
 			//read in the cell faces and store pointers
 			for(i = 0; i < *n_cells; i ++)
 			{
 				//same as above but for cells
-				if(fgets(line, MAX_STRING_CHARACTERS, file) == NULL)
-				{ printf("\nERROR - read_geometry_file - reading a cell line"); return ERROR; }
+				handle(fgets(line, MAX_STRING_CHARACTERS, file) != NULL, "reading a cell line");
 				for(j = strlen(line)-1; j >= 0; j --) if(line[j] != ' ' && line[j] != '\n') break;
 				line[j+1] = '\0';
 				count = offset = 0;
@@ -164,8 +146,7 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 					while(line[offset] == ' ') offset ++;
 				}
 				(*cell)[i].n_faces = count;
-				if(allocate_mesh(0, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL) != SUCCESS)
-				{ printf("\nERROR - read_geometry - allocating cell faces"); return ERROR; }
+				handle(allocate_mesh(0, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL), "allocating cell faces");
 				for(j = 0; j < count; j ++) (*cell)[i].face[j] = &((*face)[index[j]]);
 			}
 		}
@@ -175,41 +156,38 @@ int read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces
 	}
 
 	//check
-	if(*node == NULL) { printf("\nERROR - read_geometry_file - nodes not found"); return ERROR; }
-	if(*face == NULL) { printf("\nERROR - read_geometry_file - faces not found"); return ERROR; }
-	if(*cell == NULL) { printf("\nERROR - read_geometry_file - cells not found"); return ERROR; }
+	handle(*node != NULL,"finding nodes in geometry file");
+	handle(*face != NULL,"finding faces in geometry file");
+	handle(*cell != NULL,"finding cells in geometry file");
 
 	//clean up
 	free(index);
 	free(line);
 	free(temp);
-	return SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone)
+void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone)
 {
 	//counters
 	int i, j;
 
 	//open the file
 	FILE *file = fopen(filename,"r");
-	if(file == NULL) return ERROR;
+	handle(file != NULL,"opening input file");
 
 	//allocate the zone data
 	void **data;
 	data = fetch_allocate("csisd", MAX_ZONES);
-	if(data == NULL) { printf("\nERROR - read_zones - allocating data"); return ERROR; }
+	handle(data != NULL, "allocating fetch data");
 
 	//fetch the data from the file
 	*n_zones = fetch_read(file, "zone", "csisd", MAX_ZONES, data);
-	if(*n_zones == FETCH_FILE_ERROR || *n_zones == FETCH_MEMORY_ERROR || *n_zones < 1)
-	{ printf("\nERROR - read_zones - reading zones"); return ERROR; }
+	handle(*n_zones != FETCH_FILE_ERROR && *n_zones != FETCH_MEMORY_ERROR && *n_zones > 0, "reading zones")
 
 	//allocate the zone structures
-	if(allocate_mesh(0, 0, NULL, 0, NULL, 0, NULL, *n_zones, zone) != SUCCESS)
-	{ printf("\nERROR - read_geometry - allocating zone structures"); return ERROR; }
+	handle(allocate_mesh(0, 0, NULL, 0, NULL, 0, NULL, *n_zones, zone) == ALLOCATE_SUCCESS, "allocating zone structures");
 
 	//get the zone parameters
 	char *condition;
@@ -225,16 +203,13 @@ int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, stru
 
 	//temporary storage for face and cell zones
 	int **face_zone, **cell_zone;
-	if(allocate_integer_matrix(&face_zone,n_faces,*n_zones) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - read_zones - allocating face zone"); return ERROR; }
-	if(allocate_integer_matrix(&cell_zone,n_cells,*n_zones) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - read_zones - allocating cell zone"); return ERROR; }
+	handle(allocate_integer_matrix(&face_zone,n_faces,*n_zones) == ALLOCATE_SUCCESS, "allocating list of face zones");
+	handle(allocate_integer_matrix(&cell_zone,n_cells,*n_zones) == ALLOCATE_SUCCESS, "allocating list of cell zones");
 
 	//decode the index ranges
 	char *range, *temp;
 	int offset, index[2];
-	if(allocate_character_vector(&temp,MAX_STRING_CHARACTERS) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - read_zones - allocating temp"); return ERROR; }
+	handle(allocate_character_vector(&temp,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating temporary string");
 
 	for(i = 0; i < *n_zones; i ++)
 	{
@@ -249,10 +224,8 @@ int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, stru
 		while(offset < strlen(range))
 		{
 			//read the range from the string
-			if(sscanf(&range[offset],"%s",temp) != 1)
-			{ printf("\nERROR - read_zones - reading range"); return ERROR; }
-			if(sscanf(temp,"%i:%i",&index[0],&index[1]) != 2)
-			{ printf("\nERROR - read_zones - unrecognised range"); return ERROR; }
+			handle(sscanf(&range[offset],"%s",temp) == 1, "reading range string");
+			handle(sscanf(temp,"%i:%i",&index[0],&index[1]) == 2, "getting indices from range string");
 
 			//note the elements in the range which are a part of this zone
 			if((*zone)[i].location == 'f') for(j = index[0]; j <= index[1]; j ++) face_zone[j][face[j].n_zones++] = i;
@@ -264,8 +237,7 @@ int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, stru
 	}
 
 	//copy face and cell zone data into the structures
-	if(allocate_mesh(0, 0, NULL, n_faces, &face, n_cells, &cell, 0, NULL) != SUCCESS)
-	{ printf("\nERROR - read_geometry - allocating cell and face zones"); return ERROR; }
+	handle(allocate_mesh(0, 0, NULL, n_faces, &face, n_cells, &cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell and face zones");
 	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[i].n_zones; j ++) face[i].zone[j] = &(*zone)[face_zone[i][j]];
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) cell[i].zone[j] = &(*zone)[cell_zone[i][j]];
 
@@ -274,148 +246,99 @@ int read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, stru
 	free_matrix((void **)face_zone);
 	free_matrix((void **)cell_zone);
 	free_vector(temp);
-
-	return SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
 	int i, j, n;
 
 	//open the file
 	FILE *file = fopen(filename,"w");
-	if(file == NULL) { printf("\nERROR - write_case - opening the case file"); return ERROR; }
+	handle(file != NULL, "opening the case file");
 
 	//temporary storage for element pointers cast to indices
 	int *index;
-	if(allocate_integer_vector(&index,MAX_INDICES) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - write_case - allocating indices"); return ERROR; }
-
-	//--------------------------------------------------------------------//
+	handle(allocate_integer_vector(&index,MAX_INDICES) == ALLOCATE_SUCCESS, "allocating indices");
 
 	//number of variables
-	
-	if(fwrite(&n_variables, sizeof(int), 1, file) != 1)
-	{ printf("\nERROR - write_case - writing the number of variables"); return ERROR; }
-
-	//--------------------------------------------------------------------//
+	handle(fwrite(&n_variables, sizeof(int), 1, file) == 1, "writing the number of variables");
 
 	//nodes
+	handle(fwrite(&n_nodes, sizeof(int), 1, file) == 1, "writing the number of nodes");
+	handle(fwrite(node, sizeof(struct NODE), n_nodes, file) == n_nodes, "writing the nodes");
 
-	if(fwrite(&n_nodes, sizeof(int), 1, file) != 1)
-	{ printf("\nERROR - write_case - writing the number of nodes"); return ERROR; }
-	if(fwrite(node, sizeof(struct NODE), n_nodes, file) != n_nodes)
-	{ printf("\nERROR - write_case - writing the nodes"); return ERROR; }
-
-	//--------------------------------------------------------------------//
-
-	//faces
-
-	//node indices
-	for(i = 0; i < n_faces; i ++) {
-		if(fwrite(&(face[i].n_nodes), sizeof(int), 1, file) != 1)
-		{ printf("\nERROR - write_case - writing the number of face nodes"); return ERROR; }
-	}
-	for(i = 0; i < n_faces; i ++) {
+	//face nodes
+	for(i = 0; i < n_faces; i ++) handle(fwrite(&(face[i].n_nodes), sizeof(int), 1, file) == 1, "writing the number of face nodes");
+	for(i = 0; i < n_faces; i ++)
+	{
 		for(j = 0; j < face[i].n_nodes; j ++) index[j] = (int)(face[i].node[j] - &node[0]);
-		if(fwrite(index, sizeof(int), face[i].n_nodes, file) != face[i].n_nodes)
-		{ printf("\nERROR - write_case - writing the face nodes"); return ERROR; }
+		handle(fwrite(index, sizeof(int), face[i].n_nodes, file) == face[i].n_nodes, "writing the face nodes");
 	}
-	//border indices
-	for(i = 0; i < n_faces; i ++) {
-		if(fwrite(&(face[i].n_borders), sizeof(int), 1, file) != 1)
-		{ printf("\nERROR - write_case - writing the number of face borders"); return ERROR; }
-	}
-	for(i = 0; i < n_faces; i ++) {
+
+	//face border indices
+	for(i = 0; i < n_faces; i ++) handle(fwrite(&(face[i].n_borders), sizeof(int), 1, file) == 1, "writing the number of face borders");
+	for(i = 0; i < n_faces; i ++)
+	{
 		for(j = 0; j < face[i].n_borders; j ++) index[j] = (int)(face[i].border[j] - &cell[0]);
-		if(fwrite(index, sizeof(int), face[i].n_borders, file) != face[i].n_borders)
-		{ printf("\nERROR - write_case - writing the face borders"); return ERROR; }
-		if(fwrite(face[i].oriented, sizeof(int), face[i].n_borders, file) != face[i].n_borders)
-		{ printf("\nERROR - write_case - writing the face orientations"); return ERROR; }
+		handle(fwrite(index, sizeof(int), face[i].n_borders, file) == face[i].n_borders, "writing the face borders");
+		handle(fwrite(face[i].oriented, sizeof(int), face[i].n_borders, file) == face[i].n_borders, "writing the face orientations");
 	}
-	//zone indices
-	for(i = 0; i < n_faces; i ++) {
-		if(fwrite(&(face[i].n_zones), sizeof(int), 1, file) != 1)
-		{ printf("\nERROR - write_case - writing the number of face zones"); return ERROR; }
-	}
-	for(i = 0; i < n_faces; i ++) {
+
+	//face zone indices
+	for(i = 0; i < n_faces; i ++) handle(fwrite(&(face[i].n_zones), sizeof(int), 1, file) == 1, "writing the number of face zones");
+	for(i = 0; i < n_faces; i ++)
+	{
 		for(j = 0; j < face[i].n_zones; j ++) index[j] = (int)(face[i].zone[j] - &zone[0]);
-		if(fwrite(index, sizeof(int), face[i].n_zones, file) != face[i].n_zones)
-		{ printf("\nERROR - write_case - writing the face zones"); return ERROR; }
-	}
-	//centroids
-	for(i = 0; i < n_faces; i ++) {
-		if(fwrite(face[i].centroid, sizeof(double), 2, file) != 2)
-		{ printf("\nERROR - write_case - writing the face centroid"); return ERROR; } 
+		handle(fwrite(index, sizeof(int), face[i].n_zones, file) == face[i].n_zones, "writing the face zones");
 	}
 
-	//--------------------------------------------------------------------//
-	
-	//cells
+	//face centroids
+	for(i = 0; i < n_faces; i ++) handle(fwrite(face[i].centroid, sizeof(double), 2, file) == 2, "writing the face centroid");
 
-	//node indices
-	for(i = 0; i < n_cells; i ++) {
-		if(fwrite(&(cell[i].n_faces), sizeof(int), 1, file) != 1)
-		{ printf("\nERROR - write_case - writing the number of cell faces"); return ERROR; }
-	}
-	for(i = 0; i < n_cells; i ++) {
+	//cell node indices
+	for(i = 0; i < n_cells; i ++) handle(fwrite(&(cell[i].n_faces), sizeof(int), 1, file) == 1, "writing the number of cell faces");
+	for(i = 0; i < n_cells; i ++)
+	{
 		for(j = 0; j < cell[i].n_faces; j ++) index[j] = (int)(cell[i].face[j] - &face[0]);
-		if(fwrite(index, sizeof(int), cell[i].n_faces, file) != cell[i].n_faces)
-		{ printf("\nERROR - write_case - writing the cell faces"); return ERROR; }
-		if(fwrite(cell[i].oriented, sizeof(int), cell[i].n_faces, file) != cell[i].n_faces)
-		{ printf("\nERROR - write_case - writing the cell orientations"); return ERROR; }
-	}
-	//zone indices
-	for(i = 0; i < n_cells; i ++) {
-		if(fwrite(&(cell[i].n_zones), sizeof(int), 1, file) != 1)
-		{ printf("\nERROR - write_case - writing the number of cell zones"); return ERROR; }
-	}
-	for(i = 0; i < n_cells; i ++) {
-		for(j = 0; j < cell[i].n_zones; j ++) index[j] = (int)(cell[i].zone[j] - &zone[0]);
-		if(fwrite(index, sizeof(int), cell[i].n_zones, file) != cell[i].n_zones)
-		{ printf("\nERROR - write_case - writing the cell zones"); return ERROR; }
-	}
-	//centroids
-	for(i = 0; i < n_cells; i ++) {
-		if(fwrite(cell[i].centroid, sizeof(double), 2, file) != 2)
-		{ printf("\nERROR - write_case - writing the cell centroid"); return ERROR; } 
+		handle(fwrite(index, sizeof(int), cell[i].n_faces, file) == cell[i].n_faces, "writing the cell faces");
+		handle(fwrite(cell[i].oriented, sizeof(int), cell[i].n_faces, file) == cell[i].n_faces, "writing the cell orientations");
 	}
 
-	//orders and stencil numbers
-	for(i = 0; i < n_cells; i ++) {
-		if(fwrite(cell[i].order, sizeof(int), n_variables, file) != n_variables)
-		{ printf("\nERROR - write_case - writing the cell order"); return ERROR; }
-		if(fwrite(cell[i].n_stencil, sizeof(int), n_variables, file) != n_variables)
-		{ printf("\nERROR - write_case - writing the cell stencil sizes"); return ERROR; }
+	//cell zone indices
+	for(i = 0; i < n_cells; i ++) handle(fwrite(&(cell[i].n_zones), sizeof(int), 1, file) == 1, "writing the number of cell zones");
+	for(i = 0; i < n_cells; i ++)
+	{
+		for(j = 0; j < cell[i].n_zones; j ++) index[j] = (int)(cell[i].zone[j] - &zone[0]);
+		handle(fwrite(index, sizeof(int), cell[i].n_zones, file) == cell[i].n_zones, "writing the cell zones");
 	}
-	//stencils and matrices
+
+	//cell centroids
+	for(i = 0; i < n_cells; i ++) handle(fwrite(cell[i].centroid, sizeof(double), 2, file) == 2, "writing the cell centroid");
+
+	//cell orders and stencil numbers
+	for(i = 0; i < n_cells; i ++)
+	{
+		handle(fwrite(cell[i].order, sizeof(int), n_variables, file) == n_variables, "writing the cell orders");
+		handle(fwrite(cell[i].n_stencil, sizeof(int), n_variables, file) == n_variables, "writing the cell stencil sizes");
+	}
+	//cell stencils and matrices
 	for(i = 0; i < n_cells; i ++) {
 		for(j = 0; j < n_variables; j ++) {
-			if(fwrite(cell[i].stencil[j], sizeof(int), cell[i].n_stencil[j], file) != cell[i].n_stencil[j])
-			{ printf("\nERROR - write_case - writing the cell stencil"); return ERROR; }
+			handle(fwrite(cell[i].stencil[j], sizeof(int), cell[i].n_stencil[j], file) == cell[i].n_stencil[j],"writing the cell stencil");
 			n = ORDER_TO_POWERS(cell[i].order[j]) * cell[i].n_stencil[j];
-			if(fwrite(cell[i].matrix[j], sizeof(double), n, file) != n)
-			{ printf("\nERROR - write_case - writing the cell matrix"); return ERROR; }
+			handle(fwrite(cell[i].matrix[j], sizeof(double), n, file) == n,"writing the cell matrix");
 		}
 	}
 
-	//--------------------------------------------------------------------//
-
 	//zones
+	handle(fwrite(&n_zones, sizeof(int), 1, file) == 1, "writing the number of zones");
+	handle(fwrite(zone, sizeof(struct ZONE), n_zones, file) == n_zones, "writing the zones");
 
-	if(fwrite(&n_zones, sizeof(int), 1, file) != 1)
-	{ printf("\nERROR - write_case - writing the number of zones"); return ERROR; }
-	if(fwrite(zone, sizeof(struct ZONE), n_zones, file) != n_zones)
-	{ printf("\nERROR - write_case - writing the zones"); return ERROR; }
-
-	//--------------------------------------------------------------------//
-
+	//clean up
 	free_vector(index);
 	fclose(file);
-
-	return SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

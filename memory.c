@@ -2,6 +2,9 @@
 
 #include "auplas.h"
 
+#define ALLOCATE_SUCCESS 1
+#define ALLOCATE_ERROR 0
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone)
@@ -10,19 +13,19 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 
 	if(n_nodes > 0 && *node == NULL) {
 		*node = (struct NODE *)malloc(n_nodes * sizeof(struct NODE));
-		if(*node == NULL) { printf("\nERROR - allocate_mesh - allocating nodes"); return ERROR; }
+		if(*node == NULL) return ALLOCATE_ERROR;
 	}
 	if(n_faces > 0 && *face == NULL) {
 		*face = (struct FACE *)malloc(n_faces * sizeof(struct FACE));
-		if(*face == NULL) { printf("\nERROR - allocate_mesh - allocating faces"); return ERROR; }
+		if(*face == NULL) return ALLOCATE_ERROR;
 	}
 	if(n_cells > 0 && *cell == NULL) {
 		*cell = (struct CELL *)malloc(n_cells * sizeof(struct CELL));
-		if(*cell == NULL) { printf("\nERROR - allocate_mesh - allocating cells"); return ERROR; }
+		if(*cell == NULL) return ALLOCATE_ERROR;
 	}
 	if(n_zones > 0 && *zone == NULL) {
 		*zone = (struct ZONE *)malloc(n_zones * sizeof(struct ZONE));
-		if(*zone == NULL) { printf("\nERROR - allocate_mesh - allocating zones"); return ERROR; }
+		if(*zone == NULL) return ALLOCATE_ERROR;
 	}
 
 	//-------------------------------------------------------------------//
@@ -31,19 +34,19 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 	{
 		if((*face)[i].n_nodes > 0 && (*face)[i].node == NULL) {
 			(*face)[i].node = (struct NODE **)malloc((*face)[i].n_nodes * sizeof(struct NODE *));
-			if((*face)[i].node == NULL) { printf("\nERROR - allocate_mesh - allocating face nodes"); return ERROR; }
+			if((*face)[i].node == NULL) return ALLOCATE_ERROR;
 		}
 		if((*face)[i].n_borders > 0 && (*face)[i].border == NULL) {
 			(*face)[i].border = (struct CELL **)malloc((*face)[i].n_borders * sizeof(struct CELL *));
-			if((*face)[i].border == NULL) { printf("\nERROR - allocate_mesh - allocating face borders"); return ERROR; }
+			if((*face)[i].border == NULL) return ALLOCATE_ERROR;
 		}
 		if((*face)[i].n_borders > 0 && (*face)[i].oriented == NULL) {
 			(*face)[i].oriented = (int *)malloc((*face)[i].n_borders * sizeof(int));
-			if((*face)[i].oriented == NULL) { printf("\nERROR - allocate_mesh - allocating face orientations"); return ERROR; }
+			if((*face)[i].oriented == NULL) return ALLOCATE_ERROR;
 		}
 		if((*face)[i].n_zones > 0 && (*face)[i].zone == NULL) {
 			(*face)[i].zone = (struct ZONE **)malloc((*face)[i].n_zones * sizeof(struct ZONE *));
-			if((*face)[i].zone == NULL) { printf("\nERROR - allocate_mesh - allocating face zones"); return ERROR; }
+			if((*face)[i].zone == NULL) return ALLOCATE_ERROR;
 		}
 	}
 
@@ -53,36 +56,36 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 	{
 		if((*cell)[i].n_faces > 0 && (*cell)[i].face == NULL) {
 			(*cell)[i].face = (struct FACE **)malloc((*cell)[i].n_faces * sizeof(struct FACE *));
-			if((*cell)[i].face == NULL) { printf("\nERROR - allocate_mesh - allocating cell faces"); return ERROR; }
+			if((*cell)[i].face == NULL) return ALLOCATE_ERROR;
 		}
 		if((*cell)[i].n_faces > 0 && (*cell)[i].oriented == NULL) {
 			(*cell)[i].oriented = (int *)malloc((*cell)[i].n_faces * sizeof(int));
-			if((*cell)[i].oriented == NULL) { printf("\nERROR - allocate_mesh - allocating cell orientations"); return ERROR; }
+			if((*cell)[i].oriented == NULL) return ALLOCATE_ERROR;
 		}
 		if((*cell)[i].n_zones > 0 && (*cell)[i].zone == NULL) {
 			(*cell)[i].zone = (struct ZONE **)malloc((*cell)[i].n_zones * sizeof(struct ZONE *));
-			if((*cell)[i].zone == NULL) { printf("\nERROR - allocate_mesh - allocating cell zones"); return ERROR; }
+			if((*cell)[i].zone == NULL) return ALLOCATE_ERROR;
 		}
 
 		if(n_variables > 0) {
 			if((*cell)[i].order == NULL) {
 				(*cell)[i].order = (int *)malloc(n_variables * sizeof(int));
-				if((*cell)[i].order == NULL) { printf("\nERROR - allocate_mesh - allocating cell orders"); return ERROR; }
+				if((*cell)[i].order == NULL) return ALLOCATE_ERROR;
 				for(j = 0; j < n_variables; j ++) (*cell)[i].order[j] = 0;
 			}
 			if((*cell)[i].n_stencil == NULL) {
 				(*cell)[i].n_stencil = (int *)malloc(n_variables * sizeof(int));
-				if((*cell)[i].n_stencil == NULL) { printf("\nERROR - allocate_mesh - allocating cell stencil numbers"); return ERROR; }
+				if((*cell)[i].n_stencil == NULL) return ALLOCATE_ERROR;
 				for(j = 0; j < n_variables; j ++) (*cell)[i].n_stencil[j] = 0;
 			}
 			if((*cell)[i].stencil == NULL) {
 				(*cell)[i].stencil = (int **)malloc(n_variables * sizeof(int *));
-				if((*cell)[i].stencil == NULL) { printf("\nERROR - allocate_mesh - allocating cell stencils"); return ERROR; }
+				if((*cell)[i].stencil == NULL) return ALLOCATE_ERROR;
 				for(j = 0; j < n_variables; j ++) (*cell)[i].stencil[j] = NULL;
 			}
 			if((*cell)[i].matrix == NULL) {
 				(*cell)[i].matrix = (double ***)malloc(n_variables * sizeof(double **));
-				if((*cell)[i].matrix == NULL) { printf("\nERROR - allocate_mesh - allocating cell matrices"); return ERROR; }
+				if((*cell)[i].matrix == NULL) return ALLOCATE_ERROR;
 				for(j = 0; j < n_variables; j ++) (*cell)[i].matrix[j] = NULL;
 			}
 		}
@@ -91,7 +94,7 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 			for(j = 0; j < n_variables; j ++) {
 				if((*cell)[i].n_stencil[j] > 0 && (*cell)[i].stencil[j] == NULL) {
 					(*cell)[i].stencil[j] = (int *)malloc((*cell)[i].n_stencil[j] * sizeof(int));
-					if((*cell)[i].stencil[j] == NULL) { printf("\nERROR - allocate_mesh - allocating cell stencil"); return ERROR; }
+					if((*cell)[i].stencil[j] == NULL) return ALLOCATE_ERROR;
 				}
 			}
 		}
@@ -104,10 +107,10 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 					width = (*cell)[i].n_stencil[j];
 
 					(*cell)[i].matrix[j] = (double **)malloc(height * sizeof(double *));
-					if((*cell)[i].matrix[j] == NULL) { printf("\nERROR - allocate_mesh - allocating cell matrix pointers"); return ERROR; }
+					if((*cell)[i].matrix[j] == NULL) return ALLOCATE_ERROR;
 
 					(*cell)[i].matrix[j][0] = (double *)malloc(height * width * sizeof(double));
-					if((*cell)[i].matrix[j][0] == NULL) { printf("\nERROR - allocate_mesh - allocating cell matrix values"); return ERROR; }
+					if((*cell)[i].matrix[j][0] == NULL) return ALLOCATE_ERROR;
 
 					for(k = 1; k < height; k ++) (*cell)[i].matrix[j][k] = (*cell)[i].matrix[j][k-1] + width;
 				}
@@ -117,7 +120,7 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 
 	//-------------------------------------------------------------------//
 	
-	return SUCCESS;
+	return ALLOCATE_SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,29 +131,29 @@ int allocate_instructions(int n_variables, char **geometry_filename, char **case
 
 	if(*geometry_filename == NULL) {
 		*geometry_filename = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
-		if(*geometry_filename == NULL) { printf("\nERROR - allocate_instructions - allocating geometry filename"); return ERROR; }
+		if(*geometry_filename == NULL) return ALLOCATE_ERROR;
 	}
 	if(*case_filename == NULL) {
 		*case_filename = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
-		if(*case_filename == NULL) { printf("\nERROR - allocate_instructions - allocating case filename"); return ERROR; }
+		if(*case_filename == NULL) return ALLOCATE_ERROR;
 	}
 	if(n_variables > 0 && *maximum_order == NULL) {
 		*maximum_order = (int *)malloc(n_variables * sizeof(int));
-		if(*maximum_order == NULL) { printf("\nERROR - allocate_instructions - allocating maximum orders"); return ERROR; }
+		if(*maximum_order == NULL) return ALLOCATE_ERROR;
 	}
 	if(n_variables > 0 && *weight_exponent == NULL) {
 		*weight_exponent = (double *)malloc(n_variables * sizeof(double));
-		if(*weight_exponent == NULL) { printf("\nERROR - allocate_instructions - allocating weight exponents"); return ERROR; }
+		if(*weight_exponent == NULL) return ALLOCATE_ERROR;
 	}
 	if(n_variables > 0 && *connectivity == NULL) {
 		*connectivity = (char **)malloc(n_variables * sizeof(char *));
-		if(*connectivity == NULL) { printf("\nERROR - allocate_instructions - allocating connectivity pointers"); return ERROR; }
+		if(*connectivity == NULL) return ALLOCATE_ERROR;
 		(*connectivity)[0] = (char *)malloc(n_variables * MAX_STRING_CHARACTERS * sizeof(char));
-		if(*connectivity == NULL) { printf("\nERROR - allocate_instructions - allocating connectivity pointers"); return ERROR; }
+		if(*connectivity == NULL) return ALLOCATE_ERROR;
 		for(i = 1; i < n_variables; i ++) (*connectivity)[i] = (*connectivity)[i-1] + MAX_STRING_CHARACTERS;
 	}
 
-	return SUCCESS;
+	return ALLOCATE_SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

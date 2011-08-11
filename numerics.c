@@ -19,7 +19,7 @@ void dgels_(char *, int *, int *, int *, double *, int *, double *, int *, doubl
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone)
+void calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone)
 {
 	int c, u, i, j, k;
 
@@ -29,18 +29,15 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 	int maximum_maximum_order = 0;
 	for(u = 0; u < n_variables; u ++) if(maximum_order[u] > maximum_maximum_order) maximum_maximum_order = maximum_order[u];
 
-	//memory allocation
-	if(allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) != SUCCESS)
-	{ printf("\nERROR - calculate_cell_reconstruction_matrices - allocating cell matrices"); return ERROR; }
-	double **matrix;
-	if(allocate_double_matrix(&matrix,ORDER_TO_POWERS(maximum_maximum_order),MAX_STENCIL) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - calculate_cell_reconstruction_matrices - allocating matrix memory"); return ERROR; }
+	//cell structure allocation
+	handle(allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell matrices");
+
+	//numerics values
+	double **matrix, *weight;
 	int n_constraints, *constraint;
-	if(allocate_integer_vector(&constraint,MAX_STENCIL) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - calculate_cell_reconstruction_matrices - allocating constraint memory"); return ERROR; }
-	double *weight;
-	if(allocate_double_vector(&weight,MAX_STENCIL) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - calculate_cell_reconstruction_matrices - allocating weight memory"); return ERROR; }
+	handle(allocate_double_matrix(&matrix,ORDER_TO_POWERS(maximum_maximum_order),MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating matrix");
+	handle(allocate_integer_vector(&constraint,MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating constraints");
+	handle(allocate_double_vector(&weight,MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating weights");
 
 	//stencil element properties
 	int s_id, s_index;
@@ -75,7 +72,7 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 					s_centroid = face[s_index].centroid;
 				} else if(s_location == 'c') {
 					s_centroid = cell[s_index].centroid;
-				} else { printf("\nERROR - calculate_cell_reconstruction_matrices - recognising zone location"); return ERROR; }
+				} else { handle(0,"recognising zone location"); }
 
 				s_weight  = (s_centroid[0] - cell[c].centroid[0])*(s_centroid[0] - cell[c].centroid[0]);
 				s_weight += (s_centroid[1] - cell[c].centroid[1])*(s_centroid[1] - cell[c].centroid[1]);
@@ -156,11 +153,9 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 
 			//solve
 			if(n_constraints > 0) {
-				if(constrained_least_squares(n_stencil,n_powers,matrix,n_constraints,constraint) != LS_SUCCESS)
-				{ printf("\nERROR - calculate_cell_reconstruction_matrices - doing constrained least squares calculation"); return ERROR; }
+				handle(constrained_least_squares(n_stencil,n_powers,matrix,n_constraints,constraint) == LS_SUCCESS, "doing CLS calculation");
 			} else {
-				if(least_squares(n_stencil,n_powers,matrix) != LS_SUCCESS)
-				{ printf("\nERROR - calculate_cell_reconstruction_matrices - doing least squares calculation"); return ERROR; }
+				handle(least_squares(n_stencil,n_powers,matrix) == LS_SUCCESS,"doing LS calculation");
 			}
 
 			//multiply by the weights
@@ -175,8 +170,6 @@ int calculate_cell_reconstruction_matrices(int n_variables, double *weight_expon
 	free_matrix((void**)matrix);
 	free_vector(constraint);
 	free_vector(weight);
-
-	return SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

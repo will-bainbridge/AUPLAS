@@ -7,7 +7,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell)
+void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell)
 {
 	int c, i, i1, j, k;
 	struct NODE *v0, *v1, *vr;
@@ -52,23 +52,19 @@ int generate_face_orientations(int n_faces, struct FACE *face, int n_cells, stru
 				}
 			}
 
-			if(k == face[i].border[j]->n_faces)
-			{ printf("\nERROR - generate_orientations - finding corresponding face"); return ERROR; }
+			handle(k < face[i].border[j]->n_faces,"finding corresponding face");
 		}
 	}
-
-	return SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell)
+void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell)
 {
 	int i;
 	double **polygon;
 
-	if(allocate_double_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) != ALLOCATE_SUCCESS)
-	{ printf("\nERROR - calculate_control_volume_geometry - allocating polygon memory"); return ERROR; }
+	handle(allocate_double_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
 
 	for(i = 0; i < n_cells; i ++)
 	{
@@ -82,8 +78,6 @@ int calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cell
 	}
 
 	free_matrix((void**)polygon);
-
-	return SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -160,79 +154,5 @@ void calculate_polygon_centroid(int n, double **polygon, double *centroid)
 	centroid[0] /= area;
 	centroid[1] /= area;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*int order_cells(int n_cells, struct CELL *cell)
-{
-	int c, f, n, f0, n0, f1, n1;
-	struct FACE *temp;
-	double area;
-
-	for(c = 0; c < n_cells; c ++)
-	{
-
-		printf("(%lf %lf)",cell[c].face[0]->node[1]->x[0],cell[c].face[0]->node[1]->x[1]);
-
-		//arbitrary starting node of first face
-		f1 = 0;
-		n1 = 0;
-		area = cell[c].face[f1]->node[!n1]->x[0]*cell[c].face[f1]->node[n1]->x[1] - cell[c].face[f1]->node[n1]->x[0]*cell[c].face[f1]->node[!n1]->x[1];
-
-
-		//loop over all the faces
-		for(f0 = 0; f0 < cell[c].n_faces - 1; f0 ++)
-		{
-			//update matching node
-			n0 = n1;
-			n1 = -1;
-
-			//next face
-			f = f1 = f0 + 1;
-
-			//loop over all remaining faces
-			while(n1 < 0 && f < cell[c].n_faces)
-			{
-				//loop over each node of the remaining face
-				n = 0;
-				while(n1 < 0 && n < 2)
-				{
-					//if the nodes match
-					if(cell[c].face[f0]->node[n0] == cell[c].face[f]->node[n])
-					{
-						//new node is the next one on the face
-						n1 = !n;
-
-						//put the matching face next in line
-						temp = cell[c].face[f];
-						cell[c].face[f] = cell[c].face[f1];
-						cell[c].face[f1] = temp;
-					}
-
-					n ++;
-				}
-
-				f ++;
-			}
-
-			//check a match was found
-			if(n1 < 0) { printf("\nERROR - order_cells - next face not found"); return ERROR; }
-
-			printf(" -> (%lf %lf)",cell[c].face[f1]->node[n1]->x[0],cell[c].face[f1]->node[n1]->x[1]);
-			
-
-
-			area += cell[c].face[f1]->node[!n1]->x[0]*cell[c].face[f1]->node[n1]->x[1] - cell[c].face[f1]->node[n1]->x[0]*cell[c].face[f1]->node[!n1]->x[1];
-
-		}
-
-
-		printf("\n%lf",area);
-		getchar();
-
-	}
-
-	return SUCCESS;
-}*/
 
 ////////////////////////////////////////////////////////////////////////////////
