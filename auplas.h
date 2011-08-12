@@ -8,7 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 //error handling macro
-#define handle(value,action); if(!(value)){ printf("\n[ERROR %s:%i] %s\n\n",__FILE__,__LINE__,action); exit(EXIT_FAILURE); }
+#define handle(value,action) do { if( !(value) ){ printf("\n[ERROR %s:%i] %s\n\n",__FILE__,__LINE__,action); exit(EXIT_FAILURE); } } while(0)
 
 //maximum extents for memory allocation
 #define MAX_CELL_FACES 5
@@ -105,5 +105,7 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 int least_squares(int m, int n, double **matrix);
 int constrained_least_squares(int m, int n, double **matrix, int c, int *constrained);
 double integer_power(double base, int exp);
+
+void exit_if_false(int value, char *filename, int line, char *action);
 
 ////////////////////////////////////////////////////////////////////////////////

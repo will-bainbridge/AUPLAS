@@ -152,11 +152,10 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 			}
 
 			//solve
-			if(n_constraints > 0) {
+			if(n_constraints > 0)
 				handle(constrained_least_squares(n_stencil,n_powers,matrix,n_constraints,constraint) == LS_SUCCESS, "doing CLS calculation");
-			} else {
+			else
 				handle(least_squares(n_stencil,n_powers,matrix) == LS_SUCCESS,"doing LS calculation");
-			}
 
 			//multiply by the weights
 			for(i = 0; i < n_powers; i ++) for(j = 0; j < n_stencil; j ++) matrix[i][j] *= weight[j];

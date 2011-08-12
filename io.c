@@ -71,10 +71,7 @@ void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_face
 			handle(allocate_mesh(0, *n_nodes, node, 0, NULL, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating node structures");
 
 			//read in the node locations
-			for(i = 0; i < *n_nodes; i ++)
-			{
-				handle(fscanf(file,"%lf %lf\n",&((*node)[i].x[0]),&((*node)[i].x[1])) == 2, "reading a node's coordinates");
-			}
+			for(i = 0; i < *n_nodes; i ++) handle(fscanf(file,"%lf %lf\n",&((*node)[i].x[0]),&((*node)[i].x[1])) == 2, "reading a node's coordinates");
 		}
 
 		//------------------------------------------------------------//
@@ -184,7 +181,7 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 
 	//fetch the data from the file
 	*n_zones = fetch_read(file, "zone", "csisd", MAX_ZONES, data);
-	handle(*n_zones != FETCH_FILE_ERROR && *n_zones != FETCH_MEMORY_ERROR && *n_zones > 0, "reading zones")
+	handle(*n_zones != FETCH_FILE_ERROR && *n_zones != FETCH_MEMORY_ERROR && *n_zones > 0, "reading zones");
 
 	//allocate the zone structures
 	handle(allocate_mesh(0, 0, NULL, 0, NULL, 0, NULL, *n_zones, zone) == ALLOCATE_SUCCESS, "allocating zone structures");
