@@ -2,9 +2,6 @@
 
 #include "auplas.h"
 
-#define ALLOCATE_SUCCESS 1
-#define ALLOCATE_ERROR 0
-
 ////////////////////////////////////////////////////////////////////////////////
 
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone)
