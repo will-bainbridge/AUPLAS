@@ -155,6 +155,7 @@ void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_face
 	free(index);
 	free(line);
 	free(temp);
+	fclose(file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -237,6 +238,7 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	free_matrix((void **)face_zone);
 	free_matrix((void **)cell_zone);
 	free_vector(temp);
+	fclose(file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

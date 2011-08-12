@@ -1,5 +1,5 @@
 CC		= gcc
-CFLAGS		= -g -Wall
+CFLAGS		= -O2 -Wall
 INCLS		= -I ~/include/
 LIBS		= -lm -llapack
 

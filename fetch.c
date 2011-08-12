@@ -249,6 +249,7 @@ void fetch_free(char *format, int max_n_lines, void **data)
 		}
 	}
 
+	free(data[0]);
 	free(data);
 }
 
