@@ -6,18 +6,14 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void read_instructions(char *filename, int *n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
+void read_instructions(char *filename, int *n_variables, int **maximum_order, double **weight_exponent, char ***connectivity)
 {
 	FILE *file = fopen(filename,"r");
 	handle(file != NULL,"opening input file");
 
 	handle(fetch_read(file, "number_of_variables", "i", 1, (void*)&n_variables) == 1, "reading \"number_of_variables\" from the input file");
 
-	handle(allocate_instructions(*n_variables, geometry_filename, case_filename, maximum_order, weight_exponent, connectivity)
-			== ALLOCATE_SUCCESS, "allocating instructions");
-
-	handle(fetch_read(file, "geometry_filename", "s", 1, (void*)&geometry_filename) == 1,"reading \"geometry_filename\" from the input file");
-	handle(fetch_read(file, "case_filename", "s", 1, (void*)&case_filename) == 1,"reading \"case_filename\" from the input file");
+	handle(allocate_instructions(*n_variables, maximum_order, weight_exponent, connectivity) == ALLOCATE_SUCCESS, "allocating instructions");
 
         char *format;
 	handle(allocate_character_vector(&format,*n_variables + 1) == ALLOCATE_SUCCESS,"allocating format string");

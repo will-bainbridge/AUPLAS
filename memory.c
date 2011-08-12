@@ -125,18 +125,10 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int allocate_instructions(int n_variables, char **geometry_filename, char **case_filename, int **maximum_order, double **weight_exponent, char ***connectivity)
+int allocate_instructions(int n_variables, int **maximum_order, double **weight_exponent, char ***connectivity)
 {
 	int i;
 
-	if(*geometry_filename == NULL) {
-		*geometry_filename = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
-		if(*geometry_filename == NULL) return ALLOCATE_ERROR;
-	}
-	if(*case_filename == NULL) {
-		*case_filename = (char *)malloc(MAX_STRING_CHARACTERS * sizeof(char));
-		if(*case_filename == NULL) return ALLOCATE_ERROR;
-	}
 	if(n_variables > 0 && *maximum_order == NULL) {
 		*maximum_order = (int *)malloc(n_variables * sizeof(int));
 		if(*maximum_order == NULL) return ALLOCATE_ERROR;
@@ -191,10 +183,8 @@ void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, str
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void free_instructions(int n_variables, char *geometry_filename, char *case_filename, int *maximum_order, double *weight_exponent, char **connectivity)
+void free_instructions(int n_variables, int *maximum_order, double *weight_exponent, char **connectivity)
 {
-	free(geometry_filename);
-	free(case_filename);
 	free(maximum_order);
 	free(weight_exponent);
 	free(connectivity[0]);
@@ -202,3 +192,88 @@ void free_instructions(int n_variables, char *geometry_filename, char *case_file
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+int allocate_integer_vector(int **vector, int length)
+{
+	*vector = (int *)malloc(length * sizeof(int));
+	if(*vector == NULL) { return ALLOCATE_ERROR; }
+	return ALLOCATE_SUCCESS;
+}
+
+int allocate_integer_zero_vector(int **vector, int length)
+{
+        *vector = (int *)calloc(length, sizeof(int));
+        if(*vector == NULL) { return ALLOCATE_ERROR; }
+        return ALLOCATE_SUCCESS;
+}
+
+int allocate_double_vector(double **vector, int length)
+{
+	*vector = (double *)malloc(length * sizeof(double));
+	if(*vector == NULL) { return ALLOCATE_ERROR; }
+	return ALLOCATE_SUCCESS;
+}
+
+int allocate_character_vector(char **vector, int length)
+{
+	*vector = (char *)malloc(length * sizeof(char));
+	if(*vector == NULL) { return ALLOCATE_ERROR; }
+	return ALLOCATE_SUCCESS;
+}
+
+void free_vector(void *vector)
+{
+	free(vector);
+}
+
+int allocate_integer_matrix(int ***matrix, int height, int width)
+{
+	*matrix = (int **)malloc(height * sizeof(int *));
+	if(*matrix == NULL) { return ALLOCATE_ERROR; }
+	(*matrix)[0] = (int *)malloc(height * width * sizeof(int));
+	if((*matrix)[0] == NULL) { return ALLOCATE_ERROR; }
+	int i;
+	for (i = 1; i < height; i++) { (*matrix)[i] = (*matrix)[i-1] + width; }
+	return ALLOCATE_SUCCESS;
+}
+
+int allocate_integer_zero_matrix(int ***matrix, int height, int width)
+{
+        *matrix = (int **)malloc(height * sizeof(int *));
+        if(*matrix == NULL) { return ALLOCATE_ERROR; }
+        (*matrix)[0] = (int *)calloc(height * width, sizeof(int));
+        if((*matrix)[0] == NULL) { return ALLOCATE_ERROR; }
+        int i;
+        for (i = 1; i < height; i++) { (*matrix)[i] = (*matrix)[i-1] + width; }
+        return ALLOCATE_SUCCESS;
+}
+
+int allocate_double_matrix(double ***matrix, int height, int width)
+{
+	*matrix = (double **)malloc(height * sizeof(double *));
+	if(*matrix == NULL) { return ALLOCATE_ERROR; }
+	(*matrix)[0] = (double *)malloc(height * width * sizeof(double));
+	if((*matrix)[0] == NULL) { return ALLOCATE_ERROR; }
+	int i;
+	for (i = 1; i < height; i++) { (*matrix)[i] = (*matrix)[i-1] + width; }
+	return ALLOCATE_SUCCESS;
+}
+
+int allocate_character_matrix(char ***matrix, int height, int width)
+{
+	*matrix = (char **)malloc(height * sizeof(char *));
+	if(*matrix == NULL) { return ALLOCATE_ERROR; }
+	(*matrix)[0] = (char *)malloc(height * width * sizeof(char));
+	if((*matrix)[0] == NULL) { return ALLOCATE_ERROR; }
+	int i;
+	for (i = 1; i < height; i++) { (*matrix)[i] = (*matrix)[i-1] + width; }
+	return ALLOCATE_SUCCESS;
+}
+
+void free_matrix(void **matrix)
+{
+	free(matrix[0]);
+	free(matrix);	
+}
+
+//////////////////////////////////////////////////////////////////

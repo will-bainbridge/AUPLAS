@@ -12,10 +12,21 @@ int main(int argc, char *argv[])
 	handle(argc == 2, "checking the input arguments");
 	char *input_filename = argv[1];
 
+	char *geometry_filename, *case_filename;
+	handle(allocate_character_vector(&geometry_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the geometry filename");
+	handle(allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
+	FILE *file = fopen(input_filename,"r");
+	handle(file != NULL, "opening the input file");
+	void *ptr = &geometry_filename;
+	handle(fetch_read(file, "geometry_filename", "s", 1, &ptr) == 1,"reading \"geometry_filename\" from the input file");
+	ptr = &case_filename;
+	handle(fetch_read(file, "case_filename", "s", 1, &ptr) == 1,"reading \"case_filename\" from the input file");
+	fclose(file);
+
 	int n_variables = 0, *maximum_order = NULL;
-	char *geometry_filename = NULL, *case_filename = NULL, **connectivity = NULL;
+	char **connectivity = NULL;
 	double *weight_exponent = NULL;
-	read_instructions(input_filename, &n_variables, &geometry_filename, &case_filename, &maximum_order, &weight_exponent, &connectivity);
+	read_instructions(input_filename, &n_variables, &maximum_order, &weight_exponent, &connectivity);
 
 	int n_nodes = 0, n_faces = 0, n_cells = 0;
 	struct NODE *node = NULL;
@@ -47,7 +58,9 @@ int main(int argc, char *argv[])
 
 	write_case(case_filename, n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
-	free_instructions(n_variables, geometry_filename, case_filename, maximum_order, weight_exponent, connectivity);
+	free(geometry_filename);
+	free(case_filename);
+	free_instructions(n_variables, maximum_order, weight_exponent, connectivity);
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
 	return 0;
