@@ -1,0 +1,79 @@
+#-------------------------------------------------------------------------#
+
+number_of_variables 3
+
+variable_names pressure x-momentum y-momentum
+
+connectivity f ff ff
+
+maximum_order 3 3 3
+
+weight_exponent 1.0 1.0 1.0
+
+geometry_filename cylinder.geometry
+
+case_filename cylinder.case
+
+#-------------------------------------------------------------------------#
+
+#timestep 0.02
+#number_of_steps 400
+#number_of_steps_per_output 10
+#iterations_per_step 5
+
+#-------------------------------------------------------------------------#
+
+# north 9396:9445
+# east 9446:9470
+# south 9471:9520
+# west 9521:9545
+# cylinder 9546:9608
+
+# location indices variable condition value
+
+# fluid
+zone f 0:9445,9471:9608 0 u 0.0
+zone c 0:6334 1 u 1.0
+zone c 0:6334 2 u 0.0
+
+# cylinder
+zone f 9546:9608 1 d 0.0
+zone f 9546:9608 2 d 0.0
+
+# outlet
+zone f 9446:9470 0 d 100.0
+
+# x-velocity
+zone f 9396:9445,9471:9520,9521:9545 1 d 1.0
+zone f 9396:9445,9471:9520,9521:9545 2 d 0.0
+
+#-------------------------------------------------------------------------#
+
+# INCOMPRESSIBLE NAVIER STOKES
+#            0 = d_dx( rhou ) + d_dy( rhov )
+# d_dt( rhou ) = d_dx( -p ) + d_dx( - u*rhou ) + d_dy( - v*rhou ) + d_dx( 2.0*mu*du_dx ) + d_dy( mu*du_dy ) + d_dy( mu*dv_dx )
+# d_dt( rhov ) = d_dy( -p ) + d_dx( - u*rhov ) + d_dy( - v*rhov ) + d_dx( mu*du_dy ) + d_dx( mu*dv_dx ) + d_dy( 2.0*mu*dv_dy )
+
+#            id variable implicit constant
+accumulation  1        2      1.0      1.0
+accumulation  2        3      1.0      1.0
+
+#          id equation variable direction differential constant
+divergence  1        1        2         x           0     +1.00
+divergence  2        1        3         y           0     +1.00
+
+divergence  3        2        1         x           0     -1.00
+divergence  4        2      2,2         x         0,0     -1.00
+divergence  5        2      2,3         y         0,0     -1.00
+divergence  6        2        2         x           x     +0.01
+divergence  7        2        2         y           y     +0.01
+divergence  8        2        3         y           x     +0.02
+
+divergence  9        3        1         y           0     -1.00
+divergence 10        3      3,2         x         0,0     -1.00
+divergence 11        3      3,3         y         0,0     -1.00
+divergence 12        3        2         x           y     +0.01
+divergence 13        3        3         x           x     +0.01
+divergence 14        3        3         y           y     +0.02
+
+#-------------------------------------------------------------------------#

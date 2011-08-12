@@ -17,7 +17,7 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 
 	//allocate face borders and copy over the data
 	handle(allocate_mesh(0, 0, NULL, n_faces, &face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS,"allocating face borders");
-	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[j].n_borders; j ++) face[i].border[j] = &cell[face_borders[i][j]];
+	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[i].n_borders; j ++) face[i].border[j] = &cell[face_borders[i][j]];
 
 	//generate list of cells surrounding each node
 	int index;

@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 	generate_connectivity(n_variables, connectivity, maximum_order, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
 	generate_face_orientations(n_faces, face, n_cells, cell);
-	
+
 	calculate_control_volume_geometry(n_faces, face, n_cells, cell);
 
 	calculate_cell_reconstruction_matrices(n_variables, weight_exponent, maximum_order, face, n_cells, cell, zone);

@@ -19,7 +19,7 @@
 //maximum extents for memory allocation
 #define MAX_CELL_FACES 5
 #define MAX_FACE_NODES 2
-#define MAX_NEIGHBOURS 10
+#define MAX_NEIGHBOURS 20
 #define MAX_STENCIL 100
 #define MAX_ZONES 100
 #define MAX_INDICES 100

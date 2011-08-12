@@ -15,10 +15,19 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 	if(n_faces > 0 && *face == NULL) {
 		*face = (struct FACE *)malloc(n_faces * sizeof(struct FACE));
 		if(*face == NULL) return ALLOCATE_ERROR;
+		/*for(i = 0; i < n_faces; i ++) {
+			(*face)[i].n_nodes = 0; (*face)[i].n_borders = 0; (*face)[i].n_zones = 0;
+			(*face)[i].node = NULL; (*face)[i].border = NULL; (*face)[i].oriented = NULL; (*face)[i].zone = NULL;
+		}*/
 	}
 	if(n_cells > 0 && *cell == NULL) {
 		*cell = (struct CELL *)malloc(n_cells * sizeof(struct CELL));
 		if(*cell == NULL) return ALLOCATE_ERROR;
+		/*for(i = 0; i < n_cells; i ++) {
+			(*cell)[i].n_faces = 0; (*cell)[i].n_zones = 0;
+			(*cell)[i].face = NULL; (*cell)[i].oriented = NULL; (*cell)[i].zone = NULL;
+			(*cell)[i].order = NULL; (*cell)[i].n_stencil = NULL; (*cell)[i].stencil = NULL; (*cell)[i].matrix = NULL;
+		}*/
 	}
 	if(n_zones > 0 && *zone == NULL) {
 		*zone = (struct ZONE *)malloc(n_zones * sizeof(struct ZONE));
