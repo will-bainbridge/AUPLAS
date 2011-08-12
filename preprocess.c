@@ -43,16 +43,6 @@ int main(int argc, char *argv[])
 
 	calculate_cell_reconstruction_matrices(n_variables, weight_exponent, maximum_order, face, n_cells, cell, zone);
 
-	//--------------------------------------------------------------------//
-	int c = 5, u = 1, i, j;
-	for(i = 0; i < ORDER_TO_POWERS(cell[c].order[u]); i ++) {
-		for(j = 0; j < cell[c].n_stencil[u]; j ++) {
-			printf("%+10.4lf ",cell[c].matrix[u][i][j]);
-		}
-		printf("\n");
-	}
-	//--------------------------------------------------------------------//
-
 	write_case(case_filename, n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
 	free(geometry_filename);

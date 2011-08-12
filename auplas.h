@@ -91,6 +91,7 @@ void read_instructions(char *filename, int *n_variables, int **maximum_order, do
 void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
 void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell, int *n_zones, struct ZONE **zone);
 
 //connectivity.c
 void generate_connectivity(int n_variables, char **connectivity, int *maximum_order, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
@@ -131,4 +132,3 @@ void fetch_print(char *format, int n_lines, void **data);
 void fetch_free(char *format, int max_n_lines, void **data);
 
 ////////////////////////////////////////////////////////////////////////////////
-

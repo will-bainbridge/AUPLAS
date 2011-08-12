@@ -262,15 +262,28 @@ void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node,
 	handle(fwrite(&n_nodes, sizeof(int), 1, file) == 1, "writing the number of nodes");
 	handle(fwrite(node, sizeof(struct NODE), n_nodes, file) == n_nodes, "writing the nodes");
 
-	//face nodes
+	//faces
+	handle(fwrite(&n_faces, sizeof(int), 1, file) == 1, "writing the number of faces");
 	for(i = 0; i < n_faces; i ++) handle(fwrite(&(face[i].n_nodes), sizeof(int), 1, file) == 1, "writing the number of face nodes");
 	for(i = 0; i < n_faces; i ++)
 	{
 		for(j = 0; j < face[i].n_nodes; j ++) index[j] = (int)(face[i].node[j] - &node[0]);
 		handle(fwrite(index, sizeof(int), face[i].n_nodes, file) == face[i].n_nodes, "writing the face nodes");
 	}
+	for(i = 0; i < n_faces; i ++) handle(fwrite(face[i].centroid, sizeof(double), 2, file) == 2, "writing the face centroid");
 
-	//face border indices
+	//cells
+	handle(fwrite(&n_cells, sizeof(int), 1, file) == 1, "writing the number of cells");
+	for(i = 0; i < n_cells; i ++) handle(fwrite(&(cell[i].n_faces), sizeof(int), 1, file) == 1, "writing the number of cell faces");
+	for(i = 0; i < n_cells; i ++)
+	{
+		for(j = 0; j < cell[i].n_faces; j ++) index[j] = (int)(cell[i].face[j] - &face[0]);
+		handle(fwrite(index, sizeof(int), cell[i].n_faces, file) == cell[i].n_faces, "writing the cell faces");
+		handle(fwrite(cell[i].oriented, sizeof(int), cell[i].n_faces, file) == cell[i].n_faces, "writing the cell orientations");
+	}
+	for(i = 0; i < n_cells; i ++) handle(fwrite(cell[i].centroid, sizeof(double), 2, file) == 2, "writing the cell centroid");
+
+	//face borders
 	for(i = 0; i < n_faces; i ++) handle(fwrite(&(face[i].n_borders), sizeof(int), 1, file) == 1, "writing the number of face borders");
 	for(i = 0; i < n_faces; i ++)
 	{
@@ -279,7 +292,11 @@ void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node,
 		handle(fwrite(face[i].oriented, sizeof(int), face[i].n_borders, file) == face[i].n_borders, "writing the face orientations");
 	}
 
-	//face zone indices
+	//zones
+	handle(fwrite(&n_zones, sizeof(int), 1, file) == 1, "writing the number of zones");
+	handle(fwrite(zone, sizeof(struct ZONE), n_zones, file) == n_zones, "writing the zones");
+
+	//face zones
 	for(i = 0; i < n_faces; i ++) handle(fwrite(&(face[i].n_zones), sizeof(int), 1, file) == 1, "writing the number of face zones");
 	for(i = 0; i < n_faces; i ++)
 	{
@@ -287,19 +304,7 @@ void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node,
 		handle(fwrite(index, sizeof(int), face[i].n_zones, file) == face[i].n_zones, "writing the face zones");
 	}
 
-	//face centroids
-	for(i = 0; i < n_faces; i ++) handle(fwrite(face[i].centroid, sizeof(double), 2, file) == 2, "writing the face centroid");
-
-	//cell node indices
-	for(i = 0; i < n_cells; i ++) handle(fwrite(&(cell[i].n_faces), sizeof(int), 1, file) == 1, "writing the number of cell faces");
-	for(i = 0; i < n_cells; i ++)
-	{
-		for(j = 0; j < cell[i].n_faces; j ++) index[j] = (int)(cell[i].face[j] - &face[0]);
-		handle(fwrite(index, sizeof(int), cell[i].n_faces, file) == cell[i].n_faces, "writing the cell faces");
-		handle(fwrite(cell[i].oriented, sizeof(int), cell[i].n_faces, file) == cell[i].n_faces, "writing the cell orientations");
-	}
-
-	//cell zone indices
+	//cell zones
 	for(i = 0; i < n_cells; i ++) handle(fwrite(&(cell[i].n_zones), sizeof(int), 1, file) == 1, "writing the number of cell zones");
 	for(i = 0; i < n_cells; i ++)
 	{
@@ -307,31 +312,124 @@ void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node,
 		handle(fwrite(index, sizeof(int), cell[i].n_zones, file) == cell[i].n_zones, "writing the cell zones");
 	}
 
-	//cell centroids
-	for(i = 0; i < n_cells; i ++) handle(fwrite(cell[i].centroid, sizeof(double), 2, file) == 2, "writing the cell centroid");
-
-	//cell orders and stencil numbers
+	//cell stencils
 	for(i = 0; i < n_cells; i ++)
 	{
 		handle(fwrite(cell[i].order, sizeof(int), n_variables, file) == n_variables, "writing the cell orders");
 		handle(fwrite(cell[i].n_stencil, sizeof(int), n_variables, file) == n_variables, "writing the cell stencil sizes");
 	}
-	//cell stencils and matrices
 	for(i = 0; i < n_cells; i ++) {
 		for(j = 0; j < n_variables; j ++) {
 			handle(fwrite(cell[i].stencil[j], sizeof(int), cell[i].n_stencil[j], file) == cell[i].n_stencil[j],"writing the cell stencil");
 			n = ORDER_TO_POWERS(cell[i].order[j]) * cell[i].n_stencil[j];
-			handle(fwrite(cell[i].matrix[j], sizeof(double), n, file) == n,"writing the cell matrix");
+			handle(fwrite(cell[i].matrix[j][0], sizeof(double), n, file) == n,"writing the cell matrix");
 		}
 	}
-
-	//zones
-	handle(fwrite(&n_zones, sizeof(int), 1, file) == 1, "writing the number of zones");
-	handle(fwrite(zone, sizeof(struct ZONE), n_zones, file) == n_zones, "writing the zones");
 
 	//clean up
 	free_vector(index);
 	fclose(file);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell, int *n_zones, struct ZONE **zone)
+{
+	int i, j, n;
+
+	//open the file
+	FILE *file = fopen(filename,"r");
+	handle(file != NULL, "opening the case file");
+
+	//temporary storage for element pointers cast to indices
+	int *index;
+	handle(allocate_integer_vector(&index,MAX_INDICES) == ALLOCATE_SUCCESS, "allocating indices");
+
+	//number of variables
+	handle(fread(n_variables, sizeof(int), 1, file) == 1, "reading the number of variables");
+
+	//nodes
+	handle(fread(n_nodes, sizeof(int), 1, file) == 1, "reading the number of nodes");
+	handle(allocate_mesh(0, *n_nodes, node, 0, NULL, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating node structures");
+	handle(fread(*node, sizeof(struct NODE), *n_nodes, file) == *n_nodes, "reading the nodes");
+
+	//faces
+	handle(fread(n_faces, sizeof(int), 1, file) == 1, "reading the number of faces");
+	handle(allocate_mesh(0, 0, NULL, *n_faces, face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating face structures");
+	for(i = 0; i < *n_faces; i ++) handle(fread(&((*face)[i].n_nodes), sizeof(int), 1, file) == 1, "reading the number of face nodes");
+	handle(allocate_mesh(0, 0, NULL, *n_faces, face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating face nodes");
+	for(i = 0; i < *n_faces; i ++)
+	{
+		handle(fread(index, sizeof(int), (*face)[i].n_nodes, file) == (*face)[i].n_nodes, "reading the face nodes");
+		for(j = 0; j < (*face)[i].n_nodes; j ++) (*face)[i].node[j] = &(*node)[index[j]];
+	}
+	for(i = 0; i < *n_faces; i ++) handle(fread((*face)[i].centroid, sizeof(double), 2, file) == 2, "reading the face centroid");
+
+	//cells
+        handle(fread(n_cells, sizeof(int), 1, file) == 1, "reading the number of cells");
+	handle(allocate_mesh(0, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell structures");
+        for(i = 0; i < *n_cells; i ++) handle(fread(&((*cell)[i].n_faces), sizeof(int), 1, file) == 1, "reading the number of cell faces");
+	handle(allocate_mesh(0, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell faces");
+        for(i = 0; i < *n_cells; i ++)
+        {
+                handle(fread(index, sizeof(int), (*cell)[i].n_faces, file) == (*cell)[i].n_faces, "reading the cell faces");
+                for(j = 0; j < (*cell)[i].n_faces; j ++) (*cell)[i].face[j] = &(*face)[index[j]];
+                handle(fread((*cell)[i].oriented, sizeof(int), (*cell)[i].n_faces, file) == (*cell)[i].n_faces, "reading the cell orientations");
+        }
+        for(i = 0; i < *n_cells; i ++) handle(fread((*cell)[i].centroid, sizeof(double), 2, file) == 2, "reading the cell centroid");
+
+	//face borders
+        for(i = 0; i < *n_faces; i ++) handle(fread(&((*face)[i].n_borders), sizeof(int), 1, file) == 1, "reading the number of face borders");
+	handle(allocate_mesh(0, 0, NULL, *n_faces, face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating face borders");
+        for(i = 0; i < *n_faces; i ++)
+        {
+                handle(fread(index, sizeof(int), (*face)[i].n_borders, file) == (*face)[i].n_borders, "reading the face borders");
+                for(j = 0; j < (*face)[i].n_borders; j ++) (*face)[i].border[j] = &(*cell)[index[j]];
+                handle(fread((*face)[i].oriented, sizeof(int), (*face)[i].n_borders, file) == (*face)[i].n_borders, "reading the face orientations");
+        }
+
+	//zones
+        handle(fread(n_zones, sizeof(int), 1, file) == 1, "reading the number of zones");
+	handle(allocate_mesh(0, 0, NULL, 0, NULL, 0, NULL, *n_zones, zone) == ALLOCATE_SUCCESS, "allocating zone structures");
+        handle(fread(*zone, sizeof(struct ZONE), *n_zones, file) == *n_zones, "reading the zones");
+
+	//face zones
+        for(i = 0; i < *n_faces; i ++) handle(fread(&((*face)[i].n_zones), sizeof(int), 1, file) == 1, "reading the number of face zones");
+	handle(allocate_mesh(0, 0, NULL, *n_faces, face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS, "allocating face zones");
+        for(i = 0; i < *n_faces; i ++)
+        {
+                handle(fread(index, sizeof(int), (*face)[i].n_zones, file) == (*face)[i].n_zones, "reading the face zones");
+                for(j = 0; j < (*face)[i].n_zones; j ++) (*face)[i].zone[j] = &(*zone)[index[j]];
+        }
+
+        //cell zones
+        for(i = 0; i < *n_cells; i ++) handle(fread(&((*cell)[i].n_zones), sizeof(int), 1, file) == 1, "reading the number of cell zones");
+	handle(allocate_mesh(0, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell zones");
+        for(i = 0; i < *n_cells; i ++)
+        {
+                handle(fread(index, sizeof(int), (*cell)[i].n_zones, file) == (*cell)[i].n_zones, "reading the cell zones");
+                for(j = 0; j < (*cell)[i].n_zones; j ++) (*cell)[i].zone[j] = &(*zone)[index[j]];
+        }
+
+	//cell stencils
+	handle(allocate_mesh(*n_variables, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell stencil numbers and orders");
+        for(i = 0; i < *n_cells; i ++)
+        {
+                handle(fread((*cell)[i].order, sizeof(int), *n_variables, file) == *n_variables, "reading the cell orders");
+                handle(fread((*cell)[i].n_stencil, sizeof(int), *n_variables, file) == *n_variables, "reading the cell stencil sizes");
+        }
+	handle(allocate_mesh(*n_variables, 0, NULL, 0, NULL, *n_cells, cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell stencils and matrices");
+        for(i = 0; i < *n_cells; i ++) {
+                for(j = 0; j < *n_variables; j ++) {
+                        handle(fread((*cell)[i].stencil[j], sizeof(int), (*cell)[i].n_stencil[j], file) == (*cell)[i].n_stencil[j],"reading the cell stencil");
+                        n = ORDER_TO_POWERS((*cell)[i].order[j]) * (*cell)[i].n_stencil[j];
+                        handle(fread((*cell)[i].matrix[j][0], sizeof(double), n, file) == n,"reading the cell matrix");
+                }
+        }
+
+	//clean up
+        free_vector(index);
+        fclose(file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
