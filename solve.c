@@ -25,25 +25,29 @@ int main(int argc, char *argv[])
 	struct ZONE *zone = NULL;
 	read_case(case_filename, &n_variables, &n_nodes, &node, &n_faces, &face, &n_cells, &cell, &n_zones, &zone);
 
-	/*int n = 10, f = 10, c = 10, z = 5, i, j, k;
+	int n_divergences = 0;
+	struct DIVERGENCE *divergence = NULL;
+	read_divergences(input_filename, n_variables, &n_divergences, &divergence);
+
+	/*int n = 10, f = 10, c = 10, z = 5, d = 4, i, j, k;
 	printf("\n\n#### node %i ####",n);
-	printf("\n    centroid -> %lf %lf",node[n].x[0],node[n].x[1]);
+	printf("\n     centroid -> %lf %lf",node[n].x[0],node[n].x[1]);
 	printf("\n\n#### face %i ####",f);
-	printf("\n       nodes ->"); for(i = 0; i < face[f].n_nodes; i ++) printf(" %i",(int)(face[f].node[i] - &node[0]));
-	printf("\n     borders ->"); for(i = 0; i < face[f].n_borders; i ++) printf(" %i",(int)(face[f].border[i] - &cell[0]));
-	printf("\norientations ->"); for(i = 0; i < face[f].n_borders; i ++) printf(" %i",face[f].oriented[i]);
-	printf("\n       zones ->"); for(i = 0; i < face[f].n_zones; i ++) printf(" %i",(int)(face[f].zone[i] - &zone[0]));
-	printf("\n    centroid -> %lf %lf",face[f].centroid[0],face[f].centroid[1]);
+	printf("\n        nodes ->"); for(i = 0; i < face[f].n_nodes; i ++) printf(" %i",(int)(face[f].node[i] - &node[0]));
+	printf("\n      borders ->"); for(i = 0; i < face[f].n_borders; i ++) printf(" %i",(int)(face[f].border[i] - &cell[0]));
+	printf("\n orientations ->"); for(i = 0; i < face[f].n_borders; i ++) printf(" %i",face[f].oriented[i]);
+	printf("\n        zones ->"); for(i = 0; i < face[f].n_zones; i ++) printf(" %i",(int)(face[f].zone[i] - &zone[0]));
+	printf("\n     centroid -> %lf %lf",face[f].centroid[0],face[f].centroid[1]);
 	printf("\n\n#### cell %i ####",c);
-	printf("\n       faces ->"); for(i = 0; i < cell[c].n_faces; i ++) printf(" %i",(int)(cell[c].face[i] - &face[0]));
-	printf("\norientations ->"); for(i = 0; i < cell[c].n_faces; i ++) printf(" %i",cell[c].oriented[i]);
-	printf("\n       zones ->"); for(i = 0; i < cell[c].n_zones; i ++) printf(" %i",(int)(cell[c].zone[i] - &zone[0]));
-	printf("\n    centroid -> %lf %lf",cell[c].centroid[0],cell[c].centroid[1]);
+	printf("\n        faces ->"); for(i = 0; i < cell[c].n_faces; i ++) printf(" %i",(int)(cell[c].face[i] - &face[0]));
+	printf("\n orientations ->"); for(i = 0; i < cell[c].n_faces; i ++) printf(" %i",cell[c].oriented[i]);
+	printf("\n        zones ->"); for(i = 0; i < cell[c].n_zones; i ++) printf(" %i",(int)(cell[c].zone[i] - &zone[0]));
+	printf("\n     centroid -> %lf %lf",cell[c].centroid[0],cell[c].centroid[1]);
 	for(i = 0; i < n_variables; i ++)
 	{
-		printf("\n   stencil %i ->",i);
+		printf("\n    stencil %i ->",i);
 		for(j = 0; j < cell[c].n_stencil[i]; j ++) printf(" %7i",cell[c].stencil[i][j]);
-		printf("\n    matrix %i ->",i);
+		printf("\n     matrix %i ->",i);
 		for(j = 0; j < ORDER_TO_POWERS(cell[c].order[i]); j ++) {
 			for(k = 0; k < cell[c].n_stencil[i]; k ++) {
 				printf(" %+7.2lf",cell[c].matrix[i][j][k]);
@@ -52,14 +56,21 @@ int main(int argc, char *argv[])
 		}
 	}
 	printf("\n\n#### zone %i ####",z);
-	printf("\n    location -> %c",zone[z].location);
-	printf("\n    variable -> %i",zone[z].variable);
-	printf("\n   condition -> %s",zone[z].condition);
-	printf("\n       value -> %lf",zone[z].value);
+	printf("\n     location -> %c",zone[z].location);
+	printf("\n     variable -> %i",zone[z].variable);
+	printf("\n    condition -> %s",zone[z].condition);
+	printf("\n        value -> %lf",zone[z].value);
+	printf("\n\n#### divergence %i ####",d);
+	printf("\n     equation -> %i",divergence[d].equation);
+	printf("\n    direction -> %i",divergence[d].direction);
+	printf("\n    variables ->"); for(i = 0; i < divergence[d].n_variables; i ++) printf(" %i",divergence[d].variable[i]);
+	printf("\ndifferentials ->"); for(i = 0; i < divergence[d].n_variables; i ++) printf(" %i",divergence[d].differential[i]);
+	printf("\n     constant -> %lf",divergence[d].constant);
 	printf("\n\n");*/
 
 	free(case_filename);
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+	free_equations(n_divergences, divergence);
 
 	return 0;
 }

@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "auplas.h"
+#include "polynomial.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -238,6 +239,116 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	free_matrix((void **)face_zone);
 	free_matrix((void **)cell_zone);
 	free_vector(temp);
+	fclose(file);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void read_divergences(char *filename, int n_variables, int *n_divergences, struct DIVERGENCE **divergence)
+{
+	//counters
+	int i, j;
+
+	//open the file
+	FILE *file = fopen(filename,"r");
+	handle(file != NULL,"opening input file");
+
+	//allocate the divergence data
+	void **data;
+	data = fetch_allocate("iscsd", MAX_DIVERGENCES);
+	handle(data != NULL, "allocating fetch data");
+
+	//fetch the data from the file
+	*n_divergences = fetch_read(file, "divergence", "iscsd", MAX_DIVERGENCES, data);
+	handle(*n_divergences != FETCH_FILE_ERROR && *n_divergences != FETCH_MEMORY_ERROR && *n_divergences > 0, "reading divergences");
+
+	//allocate the divergence structures
+	handle(allocate_equations(*n_divergences, divergence) == ALLOCATE_SUCCESS,"allocating divergence structures");
+
+	//allocate temporary storage
+	char direction, *input, *temp;
+	int **term, **differential, offset, nd, d[2];
+	handle(allocate_character_vector(&temp,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS,"allocating temporary string");
+	handle(allocate_integer_matrix(&term,*n_divergences,n_variables) == ALLOCATE_SUCCESS,"allocating temporary divergence variables");
+	handle(allocate_integer_matrix(&differential,*n_divergences,n_variables) == ALLOCATE_SUCCESS,"allocating temporary divergence differentials");
+
+	for(i = 0; i < *n_divergences; i ++)
+	{
+		//equation
+		fetch_get("iscsd", data, i, 0, &(*divergence)[i].equation);
+
+		//constant
+		fetch_get("iscsd", data, i, 4, &(*divergence)[i].constant);
+
+		//direction
+		fetch_get("iscsd", data, i, 2, &direction);
+		if(direction == 'x') {
+			(*divergence)[i].direction = 0;
+		} else if(direction == 'y') {
+			(*divergence)[i].direction = 1;
+		} else handle(0,"recognsing divergence direction");
+
+		//variables
+		fetch_get("iscsd", data, i, 1, &input);
+		//convert comma delimiters to whitespace
+		for(j = 0; j < strlen(input); j ++) if(input[j] == ',') input[j] = ' ';
+		//sequentially read variables
+		offset = 0;
+		while(offset < strlen(input))
+		{
+			//read the variable from the string
+			handle(sscanf(&input[offset],"%s",temp) == 1, "reading variable string");
+			handle(sscanf(temp,"%i",&term[i][(*divergence)[i].n_variables++]) == 1, "getting index from variable string");
+			//move to the next variable in the string
+			offset += strlen(temp) + 1;
+		}
+
+		//differentials
+		fetch_get("iscsd", data, i, 3, &input);
+		//convert comma delimiters to whitespace
+		for(j = 0; j < strlen(input); j ++) if(input[j] == ',') input[j] = ' ';
+		//sequentially read differentials
+		offset = nd = 0;
+		while(offset < strlen(input))
+		{
+			//read the variables' differential string
+			handle(sscanf(&input[offset],"%s",temp) == 1, "reading differential string");
+			//count the differentials in the different dimensions
+			j = d[0] = d[1] = 0;
+			while(temp[j] != '\0')
+			{
+				d[0] += (temp[j] == 'x');
+				d[1] += (temp[j] == 'y');
+				j ++;
+			}
+			//convert to a unique differential index
+			differential[i][nd++] = differential_index[d[0]][d[1]];
+			//move to the next differential in the string
+			offset += strlen(temp) + 1;
+		}
+
+		//check numbers
+		handle((*divergence)[i].n_variables == nd,"checking the number of variables and differentials match in a divergence");
+	}
+
+	//allocate the divergence variables
+	handle(allocate_equations(*n_divergences, divergence) == ALLOCATE_SUCCESS,"allocating divergence variables");
+
+	//copy remaining parameters into the divergence structure
+	for(i = 0; i < *n_divergences; i ++)
+	{
+		for(j = 0; j < (*divergence)[i].n_variables; j ++)
+		{
+			(*divergence)[i].variable[j] = term[i][j];
+			(*divergence)[i].differential[j] = differential[i][j];
+		}
+	}
+
+	//clean up
+	fetch_free("iscsd", MAX_DIVERGENCES, data);
+	free_vector(temp);
+	free_matrix((void**)term);
+	free_matrix((void**)differential);
 	fclose(file);
 }
 

@@ -70,7 +70,7 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 					s_centroid = face[s_index].centroid;
 				} else if(s_location == 'c') {
 					s_centroid = cell[s_index].centroid;
-				} else { handle(0,"recognising zone location"); }
+				} else handle(0,"recognising zone location");
 
 				s_weight  = (s_centroid[0] - cell[c].centroid[0])*(s_centroid[0] - cell[c].centroid[0]);
 				s_weight += (s_centroid[1] - cell[c].centroid[1])*(s_centroid[1] - cell[c].centroid[1]);
@@ -92,6 +92,7 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 					{
 						differential[0] += (s_condition[j] == 'x');
 						differential[1] += (s_condition[j] == 'y');
+						j ++;
 					}
 				}
 
