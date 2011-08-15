@@ -29,6 +29,46 @@ int main(int argc, char *argv[])
 	struct DIVERGENCE *divergence = NULL;
 	read_divergences(input_filename, n_variables, &n_divergences, &divergence);
 
+
+
+	//put all this in a function...
+	
+	int n_id, *id_to_unknown, *id_to_known;
+	n_id = INDEX_AND_ZONE_TO_ID(MAX(n_faces,n_cells)-1,n_zones-1);
+	handle(allocate_integer_vector(&id_to_unknown,n_id) == ALLOCATE_SUCCESS,"allocating id to unknown vector");
+	handle(allocate_integer_vector(&id_to_known,n_id) == ALLOCATE_SUCCESS,"allocating id to known vector");
+
+	int n_unknowns = 0, n_knowns = 0;
+
+	int i, j;
+
+	for(i = 0; i < n_id; i ++) id_to_unknown[i] = id_to_known[i] = -1;
+	for(i = 0; i < n_faces; i ++) {
+		for(j = 0; j < face[i].n_zones; j ++) {
+			if(face[i].zone[j]->condition[0] == 'u') {
+				id_to_unknown[INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0]))] = n_unknowns ++;
+			} else {
+				id_to_known[INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0]))] = n_knowns ++;
+			}
+		}
+	}
+	for(i = 0; i < n_cells; i ++) {
+		for(j = 0; j < cell[i].n_zones; j ++) {
+			if(cell[i].zone[j]->condition[0] == 'u') {
+				id_to_unknown[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = n_unknowns ++;
+			} else {
+				id_to_known[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = n_knowns ++;
+			}
+		}
+	}
+
+	for(i = 0; i < n_id; i ++)
+		if(id_to_unknown[i] != -1 || id_to_known[i] != -1)
+			printf("[%5i] %5i %5i\n",i,id_to_unknown[i],id_to_known[i]);
+
+	free_vector(id_to_unknown);
+	free_vector(id_to_known);
+
 	/*int n = 10, f = 10, c = 10, z = 5, d = 4, i, j, k;
 	printf("\n\n#### node %i ####",n);
 	printf("\n     centroid -> %lf %lf",node[n].x[0],node[n].x[1]);
