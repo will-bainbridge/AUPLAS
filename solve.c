@@ -29,9 +29,7 @@ int main(int argc, char *argv[])
 	struct DIVERGENCE *divergence = NULL;
 	read_divergences(input_filename, n_variables, &n_divergences, &divergence);
 
-
-
-	//put all this in a function...
+	//--------------------------------------------------------------------//
 	
 	int n_id, *id_to_unknown, *id_to_known;
 	n_id = INDEX_AND_ZONE_TO_ID(MAX(n_faces,n_cells)-1,n_zones-1);
@@ -69,6 +67,8 @@ int main(int argc, char *argv[])
 	free_vector(id_to_unknown);
 	free_vector(id_to_known);
 
+	//--------------------------------------------------------------------//
+
 	/*int n = 10, f = 10, c = 10, z = 5, d = 4, i, j, k;
 	printf("\n\n#### node %i ####",n);
 	printf("\n     centroid -> %lf %lf",node[n].x[0],node[n].x[1]);
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 			for(k = 0; k < cell[c].n_stencil[i]; k ++) {
 				printf(" %+7.2lf",cell[c].matrix[i][j][k]);
 			}
-			if(j < ORDER_TO_POWERS(cell[c].order[i]) - 1) printf("\n               ");
+			if(j < ORDER_TO_POWERS(cell[c].order[i]) - 1) printf("\n                ");
 		}
 	}
 	printf("\n\n#### zone %i ####",z);
@@ -114,5 +114,20 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+/*void assemble_matrices(int n_unknowns, int *id_to_unknown, int n_knowns, int *id_to_known, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_divergences, struct DIVERGENCE *divergence)
+{
+	for(c = 0; c < n_cells; c ++)
+	{
+		//generate control volume polygon
+
+		for(i = 0; i < cell[c].n_zones; i ++)
+		{
+			row = id_to_unknown[INDEX_AND_ZONE_TO_ID(c,i)];
+		}
+	}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////

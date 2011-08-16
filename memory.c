@@ -311,6 +311,17 @@ int allocate_double_matrix(double ***matrix, int height, int width)
 	return ALLOCATE_SUCCESS;
 }
 
+int allocate_double_pointer_matrix(double ****matrix, int height, int width)
+{
+	*matrix = (double ***)malloc(height * sizeof(double **));
+	if(*matrix == NULL) { return ALLOCATE_ERROR; }
+	(*matrix)[0] = (double **)malloc(height * width * sizeof(double *));
+	if((*matrix)[0] == NULL) { return ALLOCATE_ERROR; }
+	int i;
+	for (i = 1; i < height; i++) { (*matrix)[i] = (*matrix)[i-1] + width; }
+	return ALLOCATE_SUCCESS;
+}
+
 int allocate_character_matrix(char ***matrix, int height, int width)
 {
 	*matrix = (char **)malloc(height * sizeof(char *));

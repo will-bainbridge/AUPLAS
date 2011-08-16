@@ -125,6 +125,7 @@ int allocate_character_vector(char **vector, int length);
 int allocate_integer_matrix(int ***matrix, int height, int width);
 int allocate_integer_zero_matrix(int ***matrix, int height, int width);
 int allocate_double_matrix(double ***matrix, int height, int width);
+int allocate_double_pointer_matrix(double ****matrix, int height, int width);
 int allocate_character_matrix(char ***matrix, int height, int width);
 void free_vector(void *vector);
 void free_matrix(void **matrix);
@@ -132,8 +133,8 @@ void free_matrix(void **matrix);
 //geometry.c
 void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
-void generate_control_volume_polygon(double **polygon, int index, int location, struct FACE *face, struct CELL *cell);
-void calculate_polygon_centroid(int n, double **polygon, double *centroid);
+void generate_control_volume_polygon(double ***polygon, int index, int location, struct FACE *face, struct CELL *cell);
+void calculate_polygon_centroid(int n, double ***polygon, double *centroid);
 
 //numerics.c
 void calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone);

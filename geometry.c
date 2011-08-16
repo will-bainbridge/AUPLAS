@@ -60,9 +60,9 @@ void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, str
 void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell)
 {
 	int i;
-	double **polygon;
+	double ***polygon;
 
-	handle(allocate_double_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
+	handle(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
 
 	for(i = 0; i < n_cells; i ++)
 	{
@@ -80,48 +80,90 @@ void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cel
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void generate_control_volume_polygon(double **polygon, int index, int location, struct FACE *face, struct CELL *cell)
+/*void calculate_control_volume_centroid(double *centroid, int index, int location, struct FACE *face, struct CELL *cell)
 {
+	int i, j;
+	double area, nx[2], x[2];
+
+	area = 0;
+	centroid[0] = 0;
+	centroid[1] = 0;
+
 	if(location == 'f')
 	{
-		double temp;
+		//0 -> face[index].oriented[0] ? face[index].node[1]->x : face[index].node[0]->x
+		//1 -> face[index].border[0]->centroid
 
-		polygon[0][0] = face[index].node[0]->x[0];
-		polygon[0][1] = face[index].node[0]->x[1];
-
-		polygon[1][0] = face[index].border[0]->centroid[0];
-		polygon[1][1] = face[index].border[0]->centroid[1];
-
-		polygon[2][0] = face[index].node[1]->x[0];
-		polygon[2][1] = face[index].node[1]->x[1];
+		//0 -> face[index].border[0]->centroid
+		//1 -> face[index].oriented[0] ? face[index].node[0]->x : face[index].node[1]->x
 
 		if(face[index].n_borders == 2) {
-			polygon[3][0] = face[index].border[1]->centroid[0];
-			polygon[3][1] = face[index].border[1]->centroid[1];
-		}
+			//0 -> face[index].oriented[0] ? face[index].node[0]->x : face[index].node[1]->x
+			//1 -> face[index].border[1]->centroid
+			//0 -> face[index].border[1]->centroid
+			//1 -> face[index].oriented[0] ? face[index].node[1]->x : face[index].node[0]->x
+	}
 
-		if(face[index].oriented[0])
+	if(location == 'c')
+	{
+		for(i = 0; i < cell[index].n_faces; i ++)
 		{
-			temp = polygon[0][0]; polygon[0][0] = polygon[2][0]; polygon[2][0] = temp;
-			temp = polygon[0][1]; polygon[0][1] = polygon[2][1]; polygon[2][1] = temp;
+			nx[0] = cell[index].face[i]->node[1]->x[1] - cell[index].face[i]->node[0]->x[1];
+			nx[1] = cell[index].face[i]->node[0]->x[0] - cell[index].face[i]->node[1]->x[0];
+			nx[0] *= cell[index].oriented[i] ? +1 : -1;
+			nx[1] *= cell[index].oriented[i] ? +1 : -1;
+
+			for(j = 0; j < 2; j ++)
+			{
+				x[0] = 0.5*cell[index].face[i]->node[0]->x[0]*(1.0 - gauss_x[1][j]) + 0.5*cell[index].face[i]->node[1]->x[0]*(1.0 + gauss_x[1][j]);
+				x[1] = 0.5*cell[index].face[i]->node[0]->x[1]*(1.0 - gauss_x[1][j]) + 0.5*cell[index].face[i]->node[1]->x[1]*(1.0 + gauss_x[1][j]);
+
+				area += x[0]*nx[0]*gauss_w[1][j]*0.5;
+
+				centroid[0] += x[0]*x[1]*nx[1]*gauss_w[1][j]*0.5;
+				centroid[1] += x[0]*x[1]*nx[0]*gauss_w[1][j]*0.5;
+			}
 		}
+	}
+
+	centroid[0] /= area;
+	centroid[1] /= area;
+}*/
+
+////////////////////////////////////////////////////////////////////////////////
+
+void generate_control_volume_polygon(double ***polygon, int index, int location, struct FACE *face, struct CELL *cell)
+{
+	int i;
+
+	if(location == 'f')
+	{
+		i = 1 + face[index].n_borders;
+
+		polygon[0][0] = polygon[i][1] = face[index].oriented[0] ? face[index].node[1]->x : face[index].node[0]->x;
+
+		polygon[0][1] = polygon[1][0] = face[index].border[0]->centroid;
+
+		polygon[1][1] = polygon[2][0] = face[index].oriented[0] ? face[index].node[0]->x : face[index].node[1]->x;
+
+		if(face[index].n_borders == 2) polygon[2][1] = polygon[3][0] = face[index].border[1]->centroid;
 	}
 	if(location == 'c')
 	{
-		int i, n;
+		int o;
 
 		for(i = 0; i < cell[index].n_faces; i ++)
 		{
-			n = !cell[index].oriented[i];
-			polygon[i][0] = cell[index].face[i]->node[n]->x[0];
-			polygon[i][1] = cell[index].face[i]->node[n]->x[1];
+			o = cell[index].oriented[i];
+			polygon[i][0] = cell[index].face[i]->node[!o]->x;
+			polygon[i][1] = cell[index].face[i]->node[o]->x;
 		}
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_polygon_centroid(int n, double **polygon, double *centroid)
+void calculate_polygon_centroid(int n, double ***polygon, double *centroid)
 {
 	double x[2], nx[2], area;
 	int i, i1, j;
@@ -134,13 +176,13 @@ void calculate_polygon_centroid(int n, double **polygon, double *centroid)
 	{
 		i1 = i + 1 - n*(i == n - 1);
 
-		nx[0] = polygon[i1][1] - polygon[i][1];
-		nx[1] = polygon[i][0] - polygon[i1][0];
+		nx[0] = polygon[i][1][1] - polygon[i][0][1];
+		nx[1] = polygon[i][0][0] - polygon[i][1][0];
 
 		for(j = 0; j < 2; j ++)
 		{
-			x[0] = 0.5*polygon[i][0]*(1.0 - gauss_x[1][j]) + 0.5*polygon[i1][0]*(1.0 + gauss_x[1][j]);
-			x[1] = 0.5*polygon[i][1]*(1.0 - gauss_x[1][j]) + 0.5*polygon[i1][1]*(1.0 + gauss_x[1][j]);
+			x[0] = 0.5*polygon[i][0][0]*(1.0 - gauss_x[1][j]) + 0.5*polygon[i][1][0]*(1.0 + gauss_x[1][j]);
+			x[1] = 0.5*polygon[i][0][1]*(1.0 - gauss_x[1][j]) + 0.5*polygon[i][1][1]*(1.0 + gauss_x[1][j]);
 
 			area += x[0]*nx[0]*gauss_w[1][j]*0.5;
 
