@@ -25,6 +25,7 @@
 #define MAX_DIVERGENCES 100
 #define MAX_INDICES 100
 #define MAX_STRING_CHARACTERS 128
+#define MAX_INTERPOLANTS 2
 
 //cell order to number of powers
 #define ORDER_TO_POWERS(order) ((order+1.0)*(order+2.0)*0.5)
@@ -115,9 +116,11 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone);
 int allocate_instructions(int n_variables, int **maximum_order, double **weight_exponent, char ***connectivity);
 int allocate_equations(int n_divergences, struct DIVERGENCE **divergence);
+int allocate_system(int n_id, int **id_to_unknown, int **id_to_known, int n_unknowns, double **x, double **rhs);
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void free_instructions(int n_variables, int *maximum_order, double *weight_exponent, char **connectivity);
 void free_equations(int n_divergences, struct DIVERGENCE *divergence);
+void free_system(int n_id, int *id_to_unknown, int *id_to_known, int n_unknowns, double *x, double *rhs);
 int allocate_integer_vector(int **vector, int length);
 int allocate_integer_zero_vector(int **vector, int length);
 int allocate_double_vector(double **vector, int length);
@@ -148,5 +151,10 @@ int fetch_read(FILE *file, char *label, char *format, int max_n_lines, void **da
 void fetch_get(char *format, void **data, int line_index, int value_index, void *value);
 void fetch_print(char *format, int n_lines, void **data);
 void fetch_free(char *format, int max_n_lines, void **data);
+
+//system.c
+void generate_system_lists(int *n_id, int **id_to_unknown, int **id_to_known, int *n_unknowns, int *n_knowns, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void assemble_matrices(int n_id, int *id_to_unknown, int *id_to_known, int n_unknowns, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, int *id_to_known, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE *divergence);
 
 ////////////////////////////////////////////////////////////////////////////////

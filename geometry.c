@@ -80,58 +80,6 @@ void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cel
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/*void calculate_control_volume_centroid(double *centroid, int index, int location, struct FACE *face, struct CELL *cell)
-{
-	int i, j;
-	double area, nx[2], x[2];
-
-	area = 0;
-	centroid[0] = 0;
-	centroid[1] = 0;
-
-	if(location == 'f')
-	{
-		//0 -> face[index].oriented[0] ? face[index].node[1]->x : face[index].node[0]->x
-		//1 -> face[index].border[0]->centroid
-
-		//0 -> face[index].border[0]->centroid
-		//1 -> face[index].oriented[0] ? face[index].node[0]->x : face[index].node[1]->x
-
-		if(face[index].n_borders == 2) {
-			//0 -> face[index].oriented[0] ? face[index].node[0]->x : face[index].node[1]->x
-			//1 -> face[index].border[1]->centroid
-			//0 -> face[index].border[1]->centroid
-			//1 -> face[index].oriented[0] ? face[index].node[1]->x : face[index].node[0]->x
-	}
-
-	if(location == 'c')
-	{
-		for(i = 0; i < cell[index].n_faces; i ++)
-		{
-			nx[0] = cell[index].face[i]->node[1]->x[1] - cell[index].face[i]->node[0]->x[1];
-			nx[1] = cell[index].face[i]->node[0]->x[0] - cell[index].face[i]->node[1]->x[0];
-			nx[0] *= cell[index].oriented[i] ? +1 : -1;
-			nx[1] *= cell[index].oriented[i] ? +1 : -1;
-
-			for(j = 0; j < 2; j ++)
-			{
-				x[0] = 0.5*cell[index].face[i]->node[0]->x[0]*(1.0 - gauss_x[1][j]) + 0.5*cell[index].face[i]->node[1]->x[0]*(1.0 + gauss_x[1][j]);
-				x[1] = 0.5*cell[index].face[i]->node[0]->x[1]*(1.0 - gauss_x[1][j]) + 0.5*cell[index].face[i]->node[1]->x[1]*(1.0 + gauss_x[1][j]);
-
-				area += x[0]*nx[0]*gauss_w[1][j]*0.5;
-
-				centroid[0] += x[0]*x[1]*nx[1]*gauss_w[1][j]*0.5;
-				centroid[1] += x[0]*x[1]*nx[0]*gauss_w[1][j]*0.5;
-			}
-		}
-	}
-
-	centroid[0] /= area;
-	centroid[1] /= area;
-}*/
-
-////////////////////////////////////////////////////////////////////////////////
-
 void generate_control_volume_polygon(double ***polygon, int index, int location, struct FACE *face, struct CELL *cell)
 {
 	int i;
@@ -148,7 +96,7 @@ void generate_control_volume_polygon(double ***polygon, int index, int location,
 
 		if(face[index].n_borders == 2) polygon[2][1] = polygon[3][0] = face[index].border[1]->centroid;
 	}
-	if(location == 'c')
+	else if(location == 'c')
 	{
 		int o;
 
@@ -159,6 +107,7 @@ void generate_control_volume_polygon(double ***polygon, int index, int location,
 			polygon[i][1] = cell[index].face[i]->node[o]->x;
 		}
 	}
+	else handle(0,"recognising the location");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

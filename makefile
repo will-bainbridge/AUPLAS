@@ -4,7 +4,7 @@ INCLS		= -I ~/include/
 LIBS		= -lm -llapack
 
 MAINSRCS	= preprocess.c solve.c
-COMMONSRCS 	= io.c connectivity.c fetch.c geometry.c numerics.c memory.c
+COMMONSRCS 	= io.c connectivity.c fetch.c geometry.c numerics.c memory.c system.c
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)
 

@@ -33,9 +33,9 @@ case_filename cavity.case
 
 # lid driven
 #    location indices variable condition value
-zone        f   0:711        0         u   0.0
-zone        c   0:455        1         u   0.0
-zone        c   0:455        2         u   0.0
+zone        f   0:711        0         u   5.0
+zone        c   0:455        1         u   0.1
+zone        c   0:455        2         u  -0.1
 zone        f 604:617        1         d   1.0
 zone        f 604:617        2         d   0.0
 zone        f 618:631        1         d   0.0

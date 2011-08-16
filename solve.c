@@ -29,45 +29,18 @@ int main(int argc, char *argv[])
 	struct DIVERGENCE *divergence = NULL;
 	read_divergences(input_filename, n_variables, &n_divergences, &divergence);
 
-	//--------------------------------------------------------------------//
-	
-	int n_id, *id_to_unknown, *id_to_known;
-	n_id = INDEX_AND_ZONE_TO_ID(MAX(n_faces,n_cells)-1,n_zones-1);
-	handle(allocate_integer_vector(&id_to_unknown,n_id) == ALLOCATE_SUCCESS,"allocating id to unknown vector");
-	handle(allocate_integer_vector(&id_to_known,n_id) == ALLOCATE_SUCCESS,"allocating id to known vector");
-
+	int n_id = 0, *id_to_unknown = NULL, *id_to_known = NULL;
 	int n_unknowns = 0, n_knowns = 0;
+	generate_system_lists(&n_id, &id_to_unknown, &id_to_known, &n_unknowns, &n_knowns, n_faces, face, n_cells, cell, n_zones, zone);
 
-	int i, j;
+	double *lhs = NULL, *rhs = NULL;
+	handle(allocate_system(0,NULL,NULL,n_unknowns,&lhs,&rhs) == ALLOCATE_SUCCESS,"allocating system arrays");
 
-	for(i = 0; i < n_id; i ++) id_to_unknown[i] = id_to_known[i] = -1;
-	for(i = 0; i < n_faces; i ++) {
-		for(j = 0; j < face[i].n_zones; j ++) {
-			if(face[i].zone[j]->condition[0] == 'u') {
-				id_to_unknown[INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0]))] = n_unknowns ++;
-			} else {
-				id_to_known[INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0]))] = n_knowns ++;
-			}
-		}
-	}
-	for(i = 0; i < n_cells; i ++) {
-		for(j = 0; j < cell[i].n_zones; j ++) {
-			if(cell[i].zone[j]->condition[0] == 'u') {
-				id_to_unknown[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = n_unknowns ++;
-			} else {
-				id_to_known[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = n_knowns ++;
-			}
-		}
-	}
+	int i;
+	for(i = 0; i < n_id; i ++) if(id_to_unknown[i] >= 0) lhs[id_to_unknown[i]] = zone[ID_TO_ZONE(i)].value;
 
-	for(i = 0; i < n_id; i ++)
-		if(id_to_unknown[i] != -1 || id_to_known[i] != -1)
-			printf("[%5i] %5i %5i\n",i,id_to_unknown[i],id_to_known[i]);
+	assemble_matrices(n_id, id_to_unknown, id_to_known, n_unknowns, lhs, rhs, n_faces, face, n_cells, cell, n_zones, zone, n_divergences, divergence);
 
-	free_vector(id_to_unknown);
-	free_vector(id_to_known);
-
-	//--------------------------------------------------------------------//
 
 	/*int n = 10, f = 10, c = 10, z = 5, d = 4, i, j, k;
 	printf("\n\n#### node %i ####",n);
@@ -111,23 +84,9 @@ int main(int argc, char *argv[])
 	free(case_filename);
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 	free_equations(n_divergences, divergence);
+	free_system(n_id, id_to_unknown, id_to_known, n_unknowns, lhs, rhs);
 
 	return 0;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*void assemble_matrices(int n_unknowns, int *id_to_unknown, int n_knowns, int *id_to_known, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_divergences, struct DIVERGENCE *divergence)
-{
-	for(c = 0; c < n_cells; c ++)
-	{
-		//generate control volume polygon
-
-		for(i = 0; i < cell[c].n_zones; i ++)
-		{
-			row = id_to_unknown[INDEX_AND_ZONE_TO_ID(c,i)];
-		}
-	}
-}*/
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -186,6 +186,31 @@ int allocate_equations(int n_divergences, struct DIVERGENCE **divergence)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+int allocate_system(int n_id, int **id_to_unknown, int **id_to_known, int n_unknowns, double **lhs, double **rhs)
+{
+	if(n_id > 0 && *id_to_unknown == NULL) {
+		*id_to_unknown = (int *)malloc(n_id * sizeof(int));
+		if(*id_to_unknown == NULL) return ALLOCATE_ERROR;
+	}
+	if(n_id > 0 && *id_to_known == NULL) {
+		*id_to_known = (int *)malloc(n_id * sizeof(int));
+		if(*id_to_known == NULL) return ALLOCATE_ERROR;
+	}
+
+	if(n_unknowns > 0 && *lhs == NULL) {
+		*lhs = (double *)malloc(n_unknowns  * sizeof(double));
+		if(*lhs == NULL) return ALLOCATE_ERROR;
+	}
+	if(n_unknowns > 0 && *rhs == NULL) {
+		*rhs = (double *)malloc(n_unknowns  * sizeof(double));
+		if(*rhs == NULL) return ALLOCATE_ERROR;
+	}
+
+	return ALLOCATE_SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
 	int i, j;
@@ -241,6 +266,16 @@ void free_equations(int n_divergences, struct DIVERGENCE *divergence)
 	}
 
 	free(divergence);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void free_system(int n_id, int *id_to_unknown, int *id_to_known, int n_unknowns, double *lhs, double *rhs)
+{
+	free(id_to_unknown);
+	free(id_to_known);
+	free(lhs);
+	free(rhs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
