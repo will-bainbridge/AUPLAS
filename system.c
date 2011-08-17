@@ -32,7 +32,21 @@ void generate_system_lists(int *n_id, int **id_to_unknown, int **id_to_known, in
 		}
 	}
 	for(i = 0; i < n_cells; i ++) {
-		for(j = 0; j < cell[i].n_zones; j ++) {
+		//for(j = 0; j < cell[i].n_zones; j ++) {
+		{
+			j = 0;
+			if(cell[i].zone[j]->condition[0] == 'u') {
+				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
+			} else {
+				(*id_to_known)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_knowns) ++;
+			}
+		}
+	}
+	for(i = 0; i < n_cells; i ++) {
+		//for(j = 0; j < cell[i].n_zones; j ++)
+		if(cell[i].n_zones > 1)
+		{
+			j = 1;
 			if(cell[i].zone[j]->condition[0] == 'u') {
 				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
 			} else {
@@ -71,6 +85,11 @@ void assemble_matrices(int n_id, int *id_to_unknown, int *id_to_known, int n_unk
         handle(allocate_double_vector(&row,n_unknowns) == ALLOCATE_SUCCESS,"allocating the row");
 	for(i = 0; i < n_unknowns; i ++) row[i] = 0.0;
 
+
+	FILE *afile, *bfile;
+	afile = fopen("A","w");
+	bfile = fopen("b","w");
+
         for(id = 0; id < n_id; id ++)
         {
                 if(id_to_unknown[id] < 0) continue;
@@ -106,12 +125,17 @@ void assemble_matrices(int n_id, int *id_to_unknown, int *id_to_known, int n_unk
 		for(d = 0; d < n_divergences; d ++)
 		{
 			if(divergence[d].equation != zone[z].variable) continue;
+
 			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, id_to_known, lhs, &rhs[u], row, zone, &divergence[d]);
-
 		}
-		//for(j = 0; j < n_unknowns; j ++) if(row[j] > 0.0) printf("%5i %5i %15.10e\n",u,j,row[j]);
 
+		for(j = 0; j < n_unknowns; j ++) if(fabs(row[j]) > 0.0) fprintf(afile,"%5i %5i %15.10e\n",u,j,row[j]);
 	}
+
+	for(j = 0; j < n_unknowns; j ++) fprintf(bfile,"%15.10e\n",rhs[j]);
+
+	fclose(afile);
+	fclose(bfile);
 
 	free_matrix((void **)polygon);
 	free_vector(n_interpolant);
@@ -150,8 +174,8 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 
 	for(p = 0; p < n_polygon; p ++)
 	{
-		if(divergence->direction == 0) normal = polygon[i][1][1] - polygon[i][0][1];
-		else                           normal = polygon[i][0][0] - polygon[i][1][0];
+		if(divergence->direction == 0) normal = polygon[p][1][1] - polygon[p][0][1];
+		else                           normal = polygon[p][0][0] - polygon[p][1][0];
 
 		for(q = 0; q < max_order; q ++)
 		{
@@ -159,11 +183,11 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 
 			for(i = 0; i < n_interpolant[p]; i ++)
 			{
-				x[0] =  0.5*polygon[p][0][0]*(1.0 - gauss_x[max_order][q]) +
-					0.5*polygon[p][1][0]*(1.0 + gauss_x[max_order][q]) -
+				x[0] =  0.5*polygon[p][0][0]*(1.0 - gauss_x[max_order-1][q]) +
+					0.5*polygon[p][1][0]*(1.0 + gauss_x[max_order-1][q]) -
 					interpolant[p][i]->centroid[0];
-				x[1] =  0.5*polygon[p][0][1]*(1.0 - gauss_x[max_order][q]) +
-					0.5*polygon[p][1][1]*(1.0 + gauss_x[max_order][q]) -
+				x[1] =  0.5*polygon[p][0][1]*(1.0 - gauss_x[max_order-1][q]) +
+					0.5*polygon[p][1][1]*(1.0 + gauss_x[max_order-1][q]) -
 					interpolant[p][i]->centroid[1];
 
 				for(j = divergence->n_variables - 1; j >= 0; j --)
@@ -180,34 +204,10 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 							integer_power(x[1],polynomial_power_y[divergence->differential[j]][k]);
 					}
 
-					/*printf("\n----------\n");
-					for(k = 0; k < m; k ++) printf("%+10.5e ",polynomial[k]);
-					printf("\n----------\n");
-					for(k = 0; k < m; k ++)
-					{
-						for(l = 0; l < n; l ++)
-						{
-							printf("%+10.5e ",interpolant[p][i]->matrix[u][k][l]);
-						}
-						printf("\n");
-					}
-					printf("----------\n");
-					for(k = 0; k < n; k ++)
-					{
-						s = interpolant[p][i]->stencil[u][k];
-						if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
-							printf("%+10.5e ",lhs[id_to_unknown[s]]);
-						} else {
-							printf("(%+8.3e) ",zone[ID_TO_ZONE(s)].value);
-						}
-					}
-					printf("\n----------\n");*/
-
 					//multiply polynomial and matrix
 					dgemv_(&trans, &n, &m, &alpha, interpolant[p][i]->matrix[u][0], &n, polynomial, &increment, &beta, interpolation_values, &increment);
 
-					//for(k = 0; k < n; k ++) printf("%lf ",interpolation_values[k]);
-
+					// ??? combine these loops once tested ???
 					if(j > 0)
 					{
 						value = 0;
@@ -217,9 +217,9 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 							s = interpolant[p][i]->stencil[u][k];
 
 							if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
-								value += interpolation_values[k]*lhs[id_to_unknown[s]];
+								value += interpolation_values[k] * lhs[id_to_unknown[s]];
 							} else {
-								value += interpolation_values[k]*zone[ID_TO_ZONE(s)].value;
+								value += interpolation_values[k] * zone[ID_TO_ZONE(s)].value;
 							}
 						}
 
@@ -232,9 +232,14 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 							s = interpolant[p][i]->stencil[u][k];
 
 							if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
-								row[id_to_unknown[s]] += normal*gauss_w[max_order][q]*point_value*interpolation_values[k];
+								row[id_to_unknown[s]] += divergence->constant * normal *
+									0.5 * gauss_w[max_order-1][q] * point_value *
+									interpolation_values[k] / n_interpolant[p];
 							} else {
-								*rhs += normal*gauss_w[max_order][q]*point_value*interpolation_values[k]*zone[ID_TO_ZONE(s)].value;
+								*rhs -= divergence->constant * normal *
+									0.5 * gauss_w[max_order-1][q] * point_value *
+									interpolation_values[k] * zone[ID_TO_ZONE(s)].value /
+									n_interpolant[p];
 							}
 						}
 					}

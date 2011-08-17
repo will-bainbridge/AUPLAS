@@ -115,7 +115,7 @@ void generate_control_volume_polygon(double ***polygon, int index, int location,
 void calculate_polygon_centroid(int n, double ***polygon, double *centroid)
 {
 	double x[2], nx[2], area;
-	int i, i1, j;
+	int i, j;
 
 	area = 0;
 	centroid[0] = 0;
@@ -123,8 +123,6 @@ void calculate_polygon_centroid(int n, double ***polygon, double *centroid)
 
 	for(i = 0; i < n; i ++)
 	{
-		i1 = i + 1 - n*(i == n - 1);
-
 		nx[0] = polygon[i][1][1] - polygon[i][0][1];
 		nx[1] = polygon[i][0][0] - polygon[i][1][0];
 
