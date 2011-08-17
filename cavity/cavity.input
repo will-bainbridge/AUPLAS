@@ -33,17 +33,28 @@ case_filename cavity.case
 
 # lid driven
 #    location indices variable condition value
-zone        f   0:711        0         u   0.0
-zone        c   0:455        1         u   0.0
-zone        c   0:455        2         u   0.0
-zone        f 604:617        1         d   1.0
-zone        f 604:617        2         d   0.0
-zone        f 618:631        1         d   0.0
-zone        f 618:631        2         d   0.0
-zone        f 632:645        1         d   0.0
-zone        f 632:645        2         d   0.0
-zone        f 646:659        1         d   0.0
-zone        f 646:659        2         d   0.0
+#zone        f   0:711        0         u   0.0
+#zone        c   0:455        1         u   0.0
+#zone        c   0:455        2         u   0.0
+#zone        f 604:617        1         d   1.0
+#zone        f 604:617        2         d   0.0
+#zone        f 618:631        1         d   0.0
+#zone        f 618:631        2         d   0.0
+#zone        f 632:645        1         d   0.0
+#zone        f 632:645        2         d   0.0
+#zone        f 646:659        1         d   0.0
+#zone        f 646:659        2         d   0.0
+
+zone f 0:617,632:711 0 u 0.0
+zone c 0:455 1 u 0.0
+zone c 0:455 2 u 0.0
+zone f 604:617 1 d 0.0
+zone f 604:617 2 d 0.0
+zone f 618:631 0 d 100.0
+zone f 632:645 1 d 0.0
+zone f 632:645 2 d 0.0
+zone f 646:659 1 d 1.0
+zone f 646:659 2 d 0.0
 
 #-------------------------------------------------------------------------#
 
@@ -88,15 +99,15 @@ divergence 0   1 x   0 +1.00
 divergence 0   2 y   0 +1.00
 
 divergence 1   0 x   0 -1.00
-divergence 1 1,1 x 0,0 -1.00
-divergence 1 1,2 y 0,0 -1.00
+#divergence 1 1,1 x 0,0 -1.00
+#divergence 1 1,2 y 0,0 -1.00
 divergence 1   1 x   x +0.10
 divergence 1   1 y   y +0.05
 divergence 1   2 y   x +0.05
 
 divergence 2   0 y   0 -1.00
-divergence 2 2,1 x 0,0 -1.00
-divergence 2 2,2 y 0,0 -1.00
+#divergence 2 2,1 x 0,0 -1.00
+#divergence 2 2,2 y 0,0 -1.00
 divergence 2   1 x   y +0.05
 divergence 2   2 x   x +0.05
 divergence 2   2 y   y +0.10

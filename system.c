@@ -233,11 +233,11 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 
 							if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
 								row[id_to_unknown[s]] += divergence->constant * normal *
-									0.5 * gauss_w[max_order-1][q] * point_value *
+									gauss_w[max_order-1][q] * point_value *
 									interpolation_values[k] / n_interpolant[p];
 							} else {
 								*rhs -= divergence->constant * normal *
-									0.5 * gauss_w[max_order-1][q] * point_value *
+									gauss_w[max_order-1][q] * point_value *
 									interpolation_values[k] * zone[ID_TO_ZONE(s)].value /
 									n_interpolant[p];
 							}
