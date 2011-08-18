@@ -99,6 +99,14 @@ struct DIVERGENCE
 	double constant;
 };
 
+struct SPARSE
+{
+	int n, nnz, space;
+	int *row;
+	int *index;
+	double *value;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 //io.c
@@ -116,11 +124,15 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone);
 int allocate_instructions(int n_variables, int **maximum_order, double **weight_exponent, char ***connectivity);
 int allocate_equations(int n_divergences, struct DIVERGENCE **divergence);
-int allocate_system(int n_id, int **id_to_unknown, int **id_to_known, int n_unknowns, double **x, double **rhs);
+int allocate_system(int n_unknowns, double **lhs, double **rhs);
+int allocate_lists(int n_ids, int **id_to_unknown, int n_unknowns, int **unknown_to_id);
+int allocate_sparse_matrix(struct SPARSE *matrix);
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void free_instructions(int n_variables, int *maximum_order, double *weight_exponent, char **connectivity);
 void free_equations(int n_divergences, struct DIVERGENCE *divergence);
-void free_system(int n_id, int *id_to_unknown, int *id_to_known, int n_unknowns, double *x, double *rhs);
+void free_system(int n_unknowns, double *lhs, double *rhs);
+void free_lists(int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id);
+void free_sparse_matrix(struct SPARSE *matrix);
 int allocate_integer_vector(int **vector, int length);
 int allocate_integer_zero_vector(int **vector, int length);
 int allocate_double_vector(double **vector, int length);
@@ -153,8 +165,8 @@ void fetch_print(char *format, int n_lines, void **data);
 void fetch_free(char *format, int max_n_lines, void **data);
 
 //system.c
-void generate_system_lists(int *n_id, int **id_to_unknown, int **id_to_known, int *n_unknowns, int *n_knowns, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
-void assemble_matrices(int n_id, int *id_to_unknown, int *id_to_known, int n_unknowns, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
-void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, int *id_to_known, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE *divergence);
+void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void assemble_matrix(struct SPARSE *matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE *divergence);
 
 ////////////////////////////////////////////////////////////////////////////////

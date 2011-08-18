@@ -29,18 +29,51 @@ int main(int argc, char *argv[])
 	struct DIVERGENCE *divergence = NULL;
 	read_divergences(input_filename, n_variables, &n_divergences, &divergence);
 
-	int n_id = 0, *id_to_unknown = NULL, *id_to_known = NULL;
-	int n_unknowns = 0, n_knowns = 0;
-	generate_system_lists(&n_id, &id_to_unknown, &id_to_known, &n_unknowns, &n_knowns, n_faces, face, n_cells, cell, n_zones, zone);
+	int n_ids = 0, *id_to_unknown = NULL;
+	int n_unknowns = 0, *unknown_to_id = NULL;
+	generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone);
 
 	double *lhs = NULL, *rhs = NULL;
-	handle(allocate_system(0,NULL,NULL,n_unknowns,&lhs,&rhs) == ALLOCATE_SUCCESS,"allocating system arrays");
+	handle(allocate_system(n_unknowns,&lhs,&rhs) == ALLOCATE_SUCCESS,"allocating system arrays");
 
-	int i;
-	for(i = 0; i < n_id; i ++) if(id_to_unknown[i] >= 0) lhs[id_to_unknown[i]] = zone[ID_TO_ZONE(i)].value;
+	struct SPARSE matrix;
+	matrix.n = n_unknowns;
+	matrix.nnz = matrix.space = 0;
+	matrix.row = matrix.index = NULL;
+	matrix.value = NULL;
+	handle(allocate_sparse_matrix(&matrix) == ALLOCATE_SUCCESS,"allocating the sparse matrix");
 
-	assemble_matrices(n_id, id_to_unknown, id_to_known, n_unknowns, lhs, rhs, n_faces, face, n_cells, cell, n_zones, zone, n_divergences, divergence);
+	//initialise
+	{
+		int i;
+		for(i = 0; i < n_ids; i ++)
+		{
+			if(id_to_unknown[i] >= 0)
+			{
+				lhs[id_to_unknown[i]] = zone[ID_TO_ZONE(i)].value;
+			}
+		}
+	}
 
+	assemble_matrix(&matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, lhs, rhs, n_faces, face, n_cells, cell, n_zones, zone, n_divergences, divergence);
+
+	//write out system
+	{
+		FILE *afile, *bfile;
+		afile = fopen("A","w");
+		bfile = fopen("b","w");
+
+		int i, j;
+		for(i = 0; i < n_unknowns; i ++) {
+			for(j = matrix.row[i]; j < matrix.row[i+1]; j ++) {
+				fprintf(afile,"%5i %5i %+15.10e\n",i,matrix.index[j],matrix.value[j]);
+			}
+			fprintf(bfile,"%+15.10e\n",rhs[i]);
+		}
+
+		fclose(afile);
+		fclose(bfile);
+	}
 
 	/*int n = 10, f = 10, c = 10, z = 5, d = 4, i, j, k;
 	printf("\n\n#### node %i ####",n);
@@ -81,10 +114,13 @@ int main(int argc, char *argv[])
 	printf("\n     constant -> %lf",divergence[d].constant);
 	printf("\n\n");*/
 
+	//clean up
 	free(case_filename);
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 	free_equations(n_divergences, divergence);
-	free_system(n_id, id_to_unknown, id_to_known, n_unknowns, lhs, rhs);
+	free_system(n_unknowns, lhs, rhs);
+	free_lists(n_ids, id_to_unknown, n_unknowns, unknown_to_id);
+	free_sparse_matrix(&matrix);
 
 	return 0;
 }

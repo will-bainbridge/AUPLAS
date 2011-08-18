@@ -10,59 +10,53 @@ double ddot_(int *, double *, int *, double *, int *);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void generate_system_lists(int *n_id, int **id_to_unknown, int **id_to_known, int *n_unknowns, int *n_knowns, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
 	int i, j;
 	
-	*n_id = INDEX_AND_ZONE_TO_ID(MAX(n_faces,n_cells)-1,n_zones-1);
+	*n_ids = *n_unknowns = 0;
 
-	handle(allocate_system(*n_id,id_to_unknown,id_to_known,0,NULL,NULL) == ALLOCATE_SUCCESS,"allocating id to system indices");
+	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[i].n_zones; j ++) *n_ids = MAX(*n_ids,INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0])));
+	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) *n_ids = MAX(*n_ids,INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0])));
+	(*n_ids) ++;
 
-	*n_unknowns = *n_knowns = 0;
+	handle(allocate_lists(*n_ids,id_to_unknown,0,NULL) == ALLOCATE_SUCCESS,"allocating id to system indices");
 
-	for(i = 0; i < *n_id; i ++) (*id_to_unknown)[i] = (*id_to_known)[i] = -1;
+	for(i = 0; i < *n_ids; i ++) (*id_to_unknown)[i] = -1;
 
 	for(i = 0; i < n_faces; i ++) {
 		for(j = 0; j < face[i].n_zones; j ++) {
 			if(face[i].zone[j]->condition[0] == 'u') {
 				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
-			} else {
-				(*id_to_known)[INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0]))] = (*n_knowns) ++;
-			}
+			} 
 		}
 	}
 	for(i = 0; i < n_cells; i ++) {
 		//for(j = 0; j < cell[i].n_zones; j ++) {
-		{
-			j = 0;
+		//{
+		{ j = 0;
 			if(cell[i].zone[j]->condition[0] == 'u') {
 				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
-			} else {
-				(*id_to_known)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_knowns) ++;
 			}
 		}
 	}
 	for(i = 0; i < n_cells; i ++) {
-		//for(j = 0; j < cell[i].n_zones; j ++)
 		if(cell[i].n_zones > 1)
-		{
-			j = 1;
+		{ j = 1;
 			if(cell[i].zone[j]->condition[0] == 'u') {
 				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
-			} else {
-				(*id_to_known)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_knowns) ++;
 			}
 		}
 	}
 
-	//for(i = 0; i < *n_id; i ++)
-	//	if((*id_to_unknown)[i] != -1 || (*id_to_known)[i] != -1)
-	//		printf("[%5i] %5i %5i\n",i,(*id_to_unknown)[i],(*id_to_known)[i]);
+	handle(allocate_lists(0,NULL,*n_unknowns,unknown_to_id) == ALLOCATE_SUCCESS,"allocating system indices to id");
+
+	for(i = 0; i < *n_ids; i ++) if((*id_to_unknown)[i] >= 0) (*unknown_to_id)[(*id_to_unknown)[i]] = i;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void assemble_matrices(int n_id, int *id_to_unknown, int *id_to_known, int n_unknowns, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
+void assemble_matrix(struct SPARSE *matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
         int i, j, k, id, z, d, u;
 
@@ -83,18 +77,14 @@ void assemble_matrices(int n_id, int *id_to_unknown, int *id_to_known, int n_unk
 
         double *row;
         handle(allocate_double_vector(&row,n_unknowns) == ALLOCATE_SUCCESS,"allocating the row");
-	for(i = 0; i < n_unknowns; i ++) row[i] = 0.0;
 
+	//zero the right hand size
+	for(i = 0; i < n_unknowns; i ++) rhs[i] = 0.0;
 
-	FILE *afile, *bfile;
-	afile = fopen("A","w");
-	bfile = fopen("b","w");
-
-        for(id = 0; id < n_id; id ++)
+	for(u = 0; u < n_unknowns; u ++)
         {
-                if(id_to_unknown[id] < 0) continue;
+		id = unknown_to_id[u];
 
-		u = id_to_unknown[id];
                 i = ID_TO_INDEX(id);
                 z = ID_TO_ZONE(id);
 
@@ -125,17 +115,27 @@ void assemble_matrices(int n_id, int *id_to_unknown, int *id_to_known, int n_unk
 		for(d = 0; d < n_divergences; d ++)
 		{
 			if(divergence[d].equation != zone[z].variable) continue;
-
-			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, id_to_known, lhs, &rhs[u], row, zone, &divergence[d]);
+			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], row, zone, &divergence[d]);
 		}
 
-		for(j = 0; j < n_unknowns; j ++) if(fabs(row[j]) > 0.0) fprintf(afile,"%5i %5i %15.10e\n",u,j,row[j]);
+		//----------//
+		matrix->row[u] = matrix->nnz;
+		if(matrix->nnz + matrix->n > matrix->space)
+		{
+			matrix->space = MAX(2*matrix->space,matrix->space+matrix->n);
+			allocate_sparse_matrix(matrix);
+		}
+		for(j = 0; j < n_unknowns; j ++)
+		{
+			if(fabs(row[j]) > 0.0)
+			{
+				matrix->index[matrix->nnz] = j;
+				matrix->value[matrix->nnz++] = row[j];
+			}
+		}
 	}
 
-	for(j = 0; j < n_unknowns; j ++) fprintf(bfile,"%15.10e\n",rhs[j]);
-
-	fclose(afile);
-	fclose(bfile);
+	matrix->row[matrix->n] = matrix->nnz;
 
 	free_matrix((void **)polygon);
 	free_vector(n_interpolant);
@@ -146,7 +146,7 @@ void assemble_matrices(int n_id, int *id_to_unknown, int *id_to_known, int n_unk
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, int *id_to_known, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE *divergence)
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE *divergence)
 {
 	int i, j, k, p, q, s, u;
 

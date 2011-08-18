@@ -186,24 +186,48 @@ int allocate_equations(int n_divergences, struct DIVERGENCE **divergence)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int allocate_system(int n_id, int **id_to_unknown, int **id_to_known, int n_unknowns, double **lhs, double **rhs)
+int allocate_system(int n_unknowns, double **lhs, double **rhs)
 {
-	if(n_id > 0 && *id_to_unknown == NULL) {
-		*id_to_unknown = (int *)malloc(n_id * sizeof(int));
-		if(*id_to_unknown == NULL) return ALLOCATE_ERROR;
-	}
-	if(n_id > 0 && *id_to_known == NULL) {
-		*id_to_known = (int *)malloc(n_id * sizeof(int));
-		if(*id_to_known == NULL) return ALLOCATE_ERROR;
-	}
-
 	if(n_unknowns > 0 && *lhs == NULL) {
-		*lhs = (double *)malloc(n_unknowns  * sizeof(double));
+		*lhs = (double *)malloc(n_unknowns * sizeof(double));
 		if(*lhs == NULL) return ALLOCATE_ERROR;
 	}
 	if(n_unknowns > 0 && *rhs == NULL) {
-		*rhs = (double *)malloc(n_unknowns  * sizeof(double));
+		*rhs = (double *)malloc(n_unknowns * sizeof(double));
 		if(*rhs == NULL) return ALLOCATE_ERROR;
+	}
+
+	return ALLOCATE_SUCCESS;
+}
+
+int allocate_lists(int n_ids, int **id_to_unknown, int n_unknowns, int **unknown_to_id)
+{
+	if(n_ids > 0 && *id_to_unknown == NULL) {
+		*id_to_unknown = (int *)malloc(n_ids * sizeof(int));
+		if(*id_to_unknown == NULL) return ALLOCATE_ERROR;
+	}
+	if(n_unknowns > 0 && *unknown_to_id == NULL) {
+		*unknown_to_id = (int *)malloc(n_unknowns * sizeof(int));
+		if(*unknown_to_id == NULL) return ALLOCATE_ERROR;
+	}
+
+	return ALLOCATE_SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int allocate_sparse_matrix(struct SPARSE *matrix)
+{
+	if(matrix->n > 0 && matrix->row == NULL) {
+		matrix->row = (int *)malloc((matrix->n + 1) * sizeof(int));
+		if(matrix->row == NULL) return ALLOCATE_ERROR;
+	}
+
+	if(matrix->space > 0) {
+		matrix->index = (int *)realloc(matrix->index , matrix->space * sizeof(int));
+		if(matrix->index == NULL) return ALLOCATE_ERROR;
+		matrix->value = (double *)realloc(matrix->value , matrix->space * sizeof(double));
+		if(matrix->value == NULL) return ALLOCATE_ERROR;
 	}
 
 	return ALLOCATE_SUCCESS;
@@ -270,12 +294,25 @@ void free_equations(int n_divergences, struct DIVERGENCE *divergence)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void free_system(int n_id, int *id_to_unknown, int *id_to_known, int n_unknowns, double *lhs, double *rhs)
+void free_system(int n_unknowns, double *lhs, double *rhs)
 {
-	free(id_to_unknown);
-	free(id_to_known);
 	free(lhs);
 	free(rhs);
+}
+
+void free_lists(int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id)
+{
+	free(id_to_unknown);
+	free(unknown_to_id);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void free_sparse_matrix(struct SPARSE *matrix)
+{
+	free(matrix->row);
+	free(matrix->index);
+	free(matrix->value);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
