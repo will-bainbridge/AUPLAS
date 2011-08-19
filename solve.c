@@ -2,6 +2,9 @@
 
 #include "auplas.h"
 
+#include "slu_ddefs.h"
+#include "cs.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
@@ -57,23 +60,97 @@ int main(int argc, char *argv[])
 
 	assemble_matrix(&matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, lhs, rhs, n_faces, face, n_cells, cell, n_zones, zone, n_divergences, divergence);
 
-	//write out system
-	{
-		FILE *afile, *bfile;
-		afile = fopen("A","w");
-		bfile = fopen("b","w");
+	//solve with CXSparse
+	cs *AT, *A;
+	AT = cs_calloc(1,sizeof(cs));
 
-		int i, j;
-		for(i = 0; i < n_unknowns; i ++) {
-			for(j = matrix.row[i]; j < matrix.row[i+1]; j ++) {
-				fprintf(afile,"%5i %5i %+15.10e\n",i,matrix.index[j],matrix.value[j]);
+	AT->nzmax = matrix.nnz;
+	AT->m = matrix.n;
+	AT->n = matrix.n;
+	AT->p = matrix.row;
+	AT->i = matrix.index;
+	AT->x = matrix.value;
+	AT->nz = -1;
+
+	A = cs_transpose(AT,1);
+
+	handle(cs_lusol(1, A, rhs, 1e-10),"solving the system");
+
+	cs_spfree(A);
+	cs_free(AT);
+
+	/*//solve with SuperLU
+	SuperMatrix A, L, U, B;
+	superlu_options_t options;
+	SuperLUStat_t stat;
+	int *perm_c, *perm_r;
+	int info;
+
+	allocate_integer_vector(&perm_c,matrix.n);
+	allocate_integer_vector(&perm_r,matrix.n);
+
+	dCreate_CompRow_Matrix(&A, matrix.n, matrix.n, matrix.nnz, matrix.value, matrix.index, matrix.row, SLU_NR, SLU_D, SLU_GE);
+
+	dCreate_Dense_Matrix(&B, matrix.n, 1, rhs, matrix.n, SLU_DN, SLU_D, SLU_GE);
+
+	set_default_options(&options);
+	options.ColPerm = NATURAL;
+
+	StatInit(&stat);
+
+	dgssv(&options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
+	handle(info == 0,"solving the system");
+
+	free_vector(perm_c);
+	free_vector(perm_r);
+	Destroy_SuperMatrix_Store(&A);
+	Destroy_SuperMatrix_Store(&B);
+	Destroy_SuperNode_Matrix(&L);
+	Destroy_CompCol_Matrix(&U);
+	StatFree(&stat);*/
+
+
+
+
+	{
+		int u, id, i, z, j;
+		int n_polygon;
+		double ***polygon;
+		handle(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
+
+		FILE **file;
+		file = (FILE **)malloc(n_zones * sizeof(FILE *));
+		char *filename;
+		allocate_character_vector(&filename,MAX_STRING_CHARACTERS);
+
+		for(z = 0; z < n_zones; z ++) {
+			if(zone[z].condition[0] == 'u') {
+				sprintf(filename,"zone-%i.gnuplot",z);
+				file[z] = fopen(filename,"w");
 			}
-			fprintf(bfile,"%+15.10e\n",rhs[i]);
 		}
 
-		fclose(afile);
-		fclose(bfile);
+		for(u = 0; u < n_unknowns; u ++)
+		{
+			id = unknown_to_id[u];
+
+			i = ID_TO_INDEX(id);
+			z = ID_TO_ZONE(id);
+
+			n_polygon = (zone[z].location == 'f') ? 2 + face[i].n_borders : cell[i].n_faces;
+			generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
+
+			for(j = 0; j < n_polygon; j ++) fprintf(file[z],"%lf %lf %lf\n",polygon[j][0][0],polygon[j][0][1],rhs[u]);
+			fprintf(file[z],"%lf %lf %lf\n\n\n",polygon[j-1][1][0],polygon[j-1][1][1],rhs[u]);
+		}
+
+		for(z = 0; z < n_zones; z ++) if(zone[z].condition[0] == 'u') fclose(file[z]);
+
+		free_matrix((void **)polygon);
+		free(file);
+		free_vector(filename);
 	}
+
 
 	/*int n = 10, f = 10, c = 10, z = 5, d = 4, i, j, k;
 	printf("\n\n#### node %i ####",n);

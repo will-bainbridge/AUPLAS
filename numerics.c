@@ -80,12 +80,9 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 				weight[i] = s_weight;
 
 				//unknown and dirichlet conditions have zero differentiation
-				if(s_condition[0] == 'u' || s_condition[0] == 'd')
-				{
-					differential[0] = differential[1] = 0;
-				}
-				//determine differentiation from the numbers of x and y characters in the condition string
-				else
+				differential[0] = differential[1] = 0;
+				//other conditions have differentiation  determmmined from the numbers of x and y characters in the condition string
+				if(s_condition[0] != 'u' && s_condition[0] != 'd')
 				{
 					j = 0;
 					while(s_condition[j] != '\0')

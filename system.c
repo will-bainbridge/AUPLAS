@@ -150,7 +150,7 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 {
 	int i, j, k, p, q, s, u;
 
-	int max_order = 0, max_stencil;
+	int max_order = 0, max_stencil = 0;
 	for(p = 0; p < n_polygon; p ++) {
 		for(i = 0; i < n_interpolant[p]; i ++) {
 			for(j = 0; j < divergence->n_variables; j ++) {
