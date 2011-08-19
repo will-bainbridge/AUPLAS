@@ -2,9 +2,6 @@
 
 #include "auplas.h"
 
-#include "slu_ddefs.h"
-#include "cs.h"
-
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
@@ -39,12 +36,7 @@ int main(int argc, char *argv[])
 	double *lhs = NULL, *rhs = NULL;
 	handle(allocate_system(n_unknowns,&lhs,&rhs) == ALLOCATE_SUCCESS,"allocating system arrays");
 
-	struct SPARSE matrix;
-	matrix.n = n_unknowns;
-	matrix.nnz = matrix.space = 0;
-	matrix.row = matrix.index = NULL;
-	matrix.value = NULL;
-	handle(allocate_sparse_matrix(&matrix) == ALLOCATE_SUCCESS,"allocating the sparse matrix");
+	csr matrix = csr_new();
 
 	//initialise
 	{
@@ -58,59 +50,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	assemble_matrix(&matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, lhs, rhs, n_faces, face, n_cells, cell, n_zones, zone, n_divergences, divergence);
+	assemble_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, lhs, rhs, n_faces, face, n_cells, cell, n_zones, zone, n_divergences, divergence);
 
-	//solve with CXSparse
-	cs *AT, *A;
-	AT = cs_calloc(1,sizeof(cs));
-
-	AT->nzmax = matrix.nnz;
-	AT->m = matrix.n;
-	AT->n = matrix.n;
-	AT->p = matrix.row;
-	AT->i = matrix.index;
-	AT->x = matrix.value;
-	AT->nz = -1;
-
-	A = cs_transpose(AT,1);
-
-	handle(cs_lusol(1, A, rhs, 1e-10),"solving the system");
-
-	cs_spfree(A);
-	cs_free(AT);
-
-	/*//solve with SuperLU
-	SuperMatrix A, L, U, B;
-	superlu_options_t options;
-	SuperLUStat_t stat;
-	int *perm_c, *perm_r;
-	int info;
-
-	allocate_integer_vector(&perm_c,matrix.n);
-	allocate_integer_vector(&perm_r,matrix.n);
-
-	dCreate_CompRow_Matrix(&A, matrix.n, matrix.n, matrix.nnz, matrix.value, matrix.index, matrix.row, SLU_NR, SLU_D, SLU_GE);
-
-	dCreate_Dense_Matrix(&B, matrix.n, 1, rhs, matrix.n, SLU_DN, SLU_D, SLU_GE);
-
-	set_default_options(&options);
-	options.ColPerm = NATURAL;
-
-	StatInit(&stat);
-
-	dgssv(&options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
-	handle(info == 0,"solving the system");
-
-	free_vector(perm_c);
-	free_vector(perm_r);
-	Destroy_SuperMatrix_Store(&A);
-	Destroy_SuperMatrix_Store(&B);
-	Destroy_SuperNode_Matrix(&L);
-	Destroy_CompCol_Matrix(&U);
-	StatFree(&stat);*/
-
-
-
+	handle(csr_solve_superlu(matrix, rhs) == CSR_SUCCESS,"solving the system");
 
 	{
 		int u, id, i, z, j;
@@ -193,11 +135,13 @@ int main(int argc, char *argv[])
 
 	//clean up
 	free(case_filename);
+
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 	free_equations(n_divergences, divergence);
 	free_system(n_unknowns, lhs, rhs);
 	free_lists(n_ids, id_to_unknown, n_unknowns, unknown_to_id);
-	free_sparse_matrix(&matrix);
+
+	csr_destroy(matrix);
 
 	return 0;
 }

@@ -216,25 +216,6 @@ int allocate_lists(int n_ids, int **id_to_unknown, int n_unknowns, int **unknown
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int allocate_sparse_matrix(struct SPARSE *matrix)
-{
-	if(matrix->n > 0 && matrix->row == NULL) {
-		matrix->row = (int *)malloc((matrix->n + 1) * sizeof(int));
-		if(matrix->row == NULL) return ALLOCATE_ERROR;
-	}
-
-	if(matrix->space > 0) {
-		matrix->index = (int *)realloc(matrix->index , matrix->space * sizeof(int));
-		if(matrix->index == NULL) return ALLOCATE_ERROR;
-		matrix->value = (double *)realloc(matrix->value , matrix->space * sizeof(double));
-		if(matrix->value == NULL) return ALLOCATE_ERROR;
-	}
-
-	return ALLOCATE_SUCCESS;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
 	int i, j;
@@ -304,15 +285,6 @@ void free_lists(int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_i
 {
 	free(id_to_unknown);
 	free(unknown_to_id);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void free_sparse_matrix(struct SPARSE *matrix)
-{
-	free(matrix->row);
-	free(matrix->index);
-	free(matrix->value);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

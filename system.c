@@ -5,7 +5,6 @@
 #include "polynomial.h"
 
 void dgemv_(char *, int *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
-
 double ddot_(int *, double *, int *, double *, int *);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -32,17 +31,7 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 		}
 	}
 	for(i = 0; i < n_cells; i ++) {
-		//for(j = 0; j < cell[i].n_zones; j ++) {
-		//{
-		{ j = 0;
-			if(cell[i].zone[j]->condition[0] == 'u') {
-				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
-			}
-		}
-	}
-	for(i = 0; i < n_cells; i ++) {
-		if(cell[i].n_zones > 1)
-		{ j = 1;
+		for(j = 0; j < cell[i].n_zones; j ++) {
 			if(cell[i].zone[j]->condition[0] == 'u') {
 				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
 			}
@@ -56,7 +45,7 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void assemble_matrix(struct SPARSE *matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
+void assemble_matrix(csr matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
         int i, j, k, id, z, d, u;
 
@@ -108,8 +97,6 @@ void assemble_matrix(struct SPARSE *matrix, int n_ids, int *id_to_unknown, int n
 		}
 		else handle(0,"recognising the location");
 
-		//------------------------------------------------------------//
-
 		for(j = 0; j < n_unknowns; j ++) row[j] = 0.0;
 
 		for(d = 0; d < n_divergences; d ++)
@@ -118,25 +105,10 @@ void assemble_matrix(struct SPARSE *matrix, int n_ids, int *id_to_unknown, int n
 			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], row, zone, &divergence[d]);
 		}
 
-		//----------//
-		matrix->row[u] = matrix->nnz;
-		if(matrix->nnz + matrix->n > matrix->space)
-		{
-			matrix->space = MAX(2*matrix->space,matrix->space+matrix->n);
-			allocate_sparse_matrix(matrix);
-		}
-		for(j = 0; j < n_unknowns; j ++)
-		{
-			if(fabs(row[j]) > 0.0)
-			{
-				matrix->index[matrix->nnz] = j;
-				matrix->value[matrix->nnz++] = row[j];
-			}
-		}
+		handle(csr_append_row(matrix, n_unknowns, row) == CSR_SUCCESS,"appending row to system");
 	}
 
-	matrix->row[matrix->n] = matrix->nnz;
-
+	//clean up
 	free_matrix((void **)polygon);
 	free_vector(n_interpolant);
 	free(interpolant[0]);
