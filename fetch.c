@@ -10,7 +10,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct _fetch
+struct _FETCH
 {
 	int n_lines, max_n_lines; //number of data lines
 	char *format; //data formats
@@ -19,13 +19,13 @@ struct _fetch
 
 ////////////////////////////////////////////////////////////////////////////////
 
-fetch fetch_new(char *format, int max_n_lines)
+FETCH fetch_new(char *format, int max_n_lines)
 {
         //counters
         int i, j;
 
 	//allocate the structure
-	fetch input = (fetch)malloc(sizeof(struct _fetch));
+	FETCH input = (FETCH)malloc(sizeof(struct _FETCH));
 	if(input == NULL) return NULL;
 
 	//set the numbers
@@ -86,7 +86,7 @@ fetch fetch_new(char *format, int max_n_lines)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int fetch_read(FILE *file, char *label, fetch input)
+int fetch_read(FILE *file, char *label, FETCH input)
 {
 	//check the file
 	if(file == NULL) { return FETCH_FILE_ERROR; }
@@ -175,7 +175,7 @@ int fetch_read(FILE *file, char *label, fetch input)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void fetch_get(fetch input, int line_index, int value_index, void *value)
+void fetch_get(FETCH input, int line_index, int value_index, void *value)
 {
 	int i;
 	void *d = input->data[line_index];
@@ -205,7 +205,7 @@ void fetch_get(fetch input, int line_index, int value_index, void *value)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void fetch_print(fetch input)
+void fetch_print(FETCH input)
 {
 	int i, j, n_pieces = strlen(input->format);
 	void *d;
@@ -230,7 +230,7 @@ void fetch_print(fetch input)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void fetch_destroy(fetch input)
+void fetch_destroy(FETCH input)
 {
 	int i, j, n_pieces = strlen(input->format);
 	void *d;

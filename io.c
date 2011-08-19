@@ -14,7 +14,7 @@ void read_instructions(char *filename, int *n_variables, int **maximum_order, do
 	FILE *file = fopen(filename,"r");
 	handle(file != NULL,"opening input file");
 
-	fetch input;
+	FETCH input;
 
 	input = fetch_new("i",1);
 	handle(input != NULL,"allocating number of variables input");
@@ -190,7 +190,7 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	handle(file != NULL,"opening input file");
 
 	//allocate the zone data
-	fetch input;
+	FETCH input;
 	input = fetch_new("csisd", MAX_ZONES);
 	handle(input != NULL,"allocating zone input");
 
@@ -272,7 +272,7 @@ void read_divergences(char *filename, int n_variables, int *n_divergences, struc
 	handle(file != NULL,"opening input file");
 
 	//allocate the divergence data
-	fetch input;
+	FETCH input;
 	input = fetch_new("iscsd", MAX_DIVERGENCES);
 	handle(input != NULL,"allocating divergence input");
 

@@ -1,15 +1,15 @@
 #ifndef CSR_H
 #define CSR_H
 
-typedef struct _csr * csr;
+typedef struct _CSR * CSR;
 
-csr csr_new();
-int csr_append_row(csr A, int n, double *row);
-void csr_empty(csr A);
-void csr_print(csr A);
-int csr_solve_superlu(csr A, double *b);
-int csr_solve_csparse(csr A, double *b);
-void csr_destroy(csr A);
+CSR csr_new();
+int csr_append_row(CSR A, int n, double *row);
+void csr_empty(CSR A);
+void csr_print(CSR A);
+int csr_solve_superlu(CSR A, double *b);
+int csr_solve_csparse(CSR A, double *b);
+void csr_destroy(CSR A);
 
 #define CSR_SUCCESS 1
 #define CSR_SOLVE_ERROR -1

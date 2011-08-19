@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 	handle(allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
 	FILE *file = fopen(input_filename,"r");
 	handle(file != NULL, "opening the input file");
-	fetch input = fetch_new("s",1);
+	FETCH input = fetch_new("s",1);
 	handle(input != NULL,"allocating case filename input");
 	handle(fetch_read(file, "case_filename", input) == 1,"reading \"case_filename\" from the input file");
 	fetch_get(input, 0, 0, case_filename);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	double *lhs = NULL, *rhs = NULL;
 	handle(allocate_system(n_unknowns,&lhs,&rhs) == ALLOCATE_SUCCESS,"allocating system arrays");
 
-	csr matrix = csr_new();
+	CSR matrix = csr_new();
 
 	//initialise
 	{

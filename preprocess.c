@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
 	FILE *file = fopen(input_filename,"r");
 	handle(file != NULL, "opening the input file");
-	fetch input = fetch_new("s",1);
+	FETCH input = fetch_new("s",1);
 	handle(input != NULL,"allocating filename inputs");
 	handle(fetch_read(file, "geometry_filename", input) == 1,"reading \"geometry_filename\" from the input file");
 	fetch_get(input, 0, 0, geometry_filename);

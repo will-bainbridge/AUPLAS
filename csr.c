@@ -11,7 +11,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct _csr
+struct _CSR
 {
 	int n, n_space; //number of rows
 	int nnz, nnz_space; //number of non-zero elements
@@ -22,11 +22,11 @@ struct _csr
 
 ////////////////////////////////////////////////////////////////////////////////
 
-csr csr_new()
+CSR csr_new()
 {
-	csr A;
+	CSR A;
 
-	A = (csr)malloc(sizeof(struct _csr));
+	A = (CSR)malloc(sizeof(struct _CSR));
 	if(A == NULL) return NULL;;
 
 	A->n = A->n_space = 0;
@@ -40,7 +40,7 @@ csr csr_new()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_append_row(csr A, int n, double *row)
+int csr_append_row(CSR A, int n, double *row)
 {
 	if(A->n + 2 > A->n_space)
 	{
@@ -82,14 +82,14 @@ int csr_append_row(csr A, int n, double *row)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void csr_empty(csr A)
+void csr_empty(CSR A)
 {
 	A->n = A->nnz = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void csr_print(csr A)
+void csr_print(CSR A)
 {
 	int i, j;
 	for(i = 0; i < A->n; i ++)
@@ -103,7 +103,7 @@ void csr_print(csr A)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_solve_superlu(csr A, double *b)
+int csr_solve_superlu(CSR A, double *b)
 {
 	SuperMatrix M, L, U, X;
 	superlu_options_t options;
@@ -142,7 +142,7 @@ int csr_solve_superlu(csr A, double *b)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_solve_csparse(csr A, double *b)
+int csr_solve_csparse(CSR A, double *b)
 {
 	cs *MT, *M;
 	MT = cs_calloc(1,sizeof(cs));
@@ -167,7 +167,7 @@ int csr_solve_csparse(csr A, double *b)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void csr_destroy(csr A)
+void csr_destroy(CSR A)
 {
 	free(A->row);
 	free(A->index);
