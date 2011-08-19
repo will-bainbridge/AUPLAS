@@ -15,8 +15,6 @@
 //error handlind return values
 #define ALLOCATE_SUCCESS 1
 #define ALLOCATE_ERROR 0
-#define FETCH_FILE_ERROR -1
-#define FETCH_MEMORY_ERROR -2
 
 //maximum extents for memory allocation
 #define MAX_CELL_FACES 5
@@ -148,13 +146,6 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 int least_squares(int m, int n, double **matrix);
 int constrained_least_squares(int m, int n, double **matrix, int c, int *constrained);
 double integer_power(double base, int exp);
-
-//fetch.c
-void **fetch_allocate(char *format, int max_n_lines);
-int fetch_read(FILE *file, char *label, char *format, int max_n_lines, void **data);
-void fetch_get(char *format, void **data, int line_index, int value_index, void *value);
-void fetch_print(char *format, int n_lines, void **data);
-void fetch_free(char *format, int max_n_lines, void **data);
 
 //system.c
 void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);

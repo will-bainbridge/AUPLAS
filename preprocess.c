@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "auplas.h"
+#include "fetch.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -12,13 +13,17 @@ int main(int argc, char *argv[])
 	char *geometry_filename, *case_filename;
 	handle(allocate_character_vector(&geometry_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the geometry filename");
 	handle(allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
+
 	FILE *file = fopen(input_filename,"r");
 	handle(file != NULL, "opening the input file");
-	void *ptr = &geometry_filename;
-	handle(fetch_read(file, "geometry_filename", "s", 1, &ptr) == 1,"reading \"geometry_filename\" from the input file");
-	ptr = &case_filename;
-	handle(fetch_read(file, "case_filename", "s", 1, &ptr) == 1,"reading \"case_filename\" from the input file");
+	fetch input = fetch_new("s",1);
+	handle(input != NULL,"allocating filename inputs");
+	handle(fetch_read(file, "geometry_filename", input) == 1,"reading \"geometry_filename\" from the input file");
+	fetch_get(input, 0, 0, geometry_filename);
+	handle(fetch_read(file, "case_filename", input) == 1,"reading \"case_filename\" from the input file");
+	fetch_get(input, 0, 0, case_filename);
 	fclose(file);
+	fetch_destroy(input);
 
 	int n_variables = 0, *maximum_order = NULL;
 	char **connectivity = NULL;
