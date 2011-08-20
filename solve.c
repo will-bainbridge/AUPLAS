@@ -14,11 +14,11 @@ int main(int argc, char *argv[])
 	handle(allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
 	FILE *file = fopen(input_filename,"r");
 	handle(file != NULL, "opening the input file");
-	FETCH input = fetch_new("s",1);
-	handle(input != NULL,"allocating case filename input");
-	handle(fetch_read(file, "case_filename", input) == 1,"reading \"case_filename\" from the input file");
-	fetch_get(input, 0, 0, case_filename);
-	fetch_destroy(input);
+	FETCH fetch = fetch_new("s",1);
+	handle(fetch != NULL,"allocating case filename input");
+	handle(fetch_read(file, "case_filename", fetch) == 1,"reading \"case_filename\" from the input file");
+	fetch_get(fetch, 0, 0, case_filename);
+	fetch_destroy(fetch);
 	fclose(file);
 
 	int n_variables = 0;

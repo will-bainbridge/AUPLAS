@@ -16,14 +16,14 @@ int main(int argc, char *argv[])
 
 	FILE *file = fopen(input_filename,"r");
 	handle(file != NULL, "opening the input file");
-	FETCH input = fetch_new("s",1);
-	handle(input != NULL,"allocating filename inputs");
-	handle(fetch_read(file, "geometry_filename", input) == 1,"reading \"geometry_filename\" from the input file");
-	fetch_get(input, 0, 0, geometry_filename);
-	handle(fetch_read(file, "case_filename", input) == 1,"reading \"case_filename\" from the input file");
-	fetch_get(input, 0, 0, case_filename);
+	FETCH fetch = fetch_new("s",1);
+	handle(fetch != NULL,"allocating filename inputs");
+	handle(fetch_read(file, "geometry_filename", fetch) == 1,"reading \"geometry_filename\" from the input file");
+	fetch_get(fetch, 0, 0, geometry_filename);
+	handle(fetch_read(file, "case_filename", fetch) == 1,"reading \"case_filename\" from the input file");
+	fetch_get(fetch, 0, 0, case_filename);
 	fclose(file);
-	fetch_destroy(input);
+	fetch_destroy(fetch);
 
 	int n_variables = 0, *maximum_order = NULL;
 	char **connectivity = NULL;

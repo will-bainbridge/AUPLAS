@@ -7,9 +7,9 @@
 typedef struct _FETCH * FETCH;
 
 FETCH fetch_new(char *format, int max_n_lines);
-int fetch_read(FILE *file, char *label, FETCH input);
-void fetch_get(FETCH input, int line_index, int value_index, void *value);
-void fetch_print(FETCH input);
-void fetch_destroy(FETCH input);
+int fetch_read(FILE *file, char *label, FETCH fetch);
+void fetch_get(FETCH fetch, int line_index, int value_index, void *value);
+void fetch_print(FETCH fetch);
+void fetch_destroy(FETCH fetch);
 
 #endif

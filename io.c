@@ -14,13 +14,13 @@ void read_instructions(char *filename, int *n_variables, int **maximum_order, do
 	FILE *file = fopen(filename,"r");
 	handle(file != NULL,"opening input file");
 
-	FETCH input;
+	FETCH fetch;
 
-	input = fetch_new("i",1);
-	handle(input != NULL,"allocating number of variables input");
-	handle(fetch_read(file, "number_of_variables", input) == 1, "reading \"number_of_variables\" from the input file");
-	fetch_get(input, 0, 0, n_variables);
-	fetch_destroy(input);
+	fetch = fetch_new("i",1);
+	handle(fetch != NULL,"allocating number of variables input");
+	handle(fetch_read(file, "number_of_variables", fetch) == 1, "reading \"number_of_variables\" from the input file");
+	fetch_get(fetch, 0, 0, n_variables);
+	fetch_destroy(fetch);
 
 	handle(allocate_instructions(*n_variables, maximum_order, weight_exponent, connectivity) == ALLOCATE_SUCCESS, "allocating instructions");
 
@@ -29,25 +29,25 @@ void read_instructions(char *filename, int *n_variables, int **maximum_order, do
         format[*n_variables] = '\0';
 
         memset(format,'i',*n_variables);
-	input = fetch_new(format,1);
-	handle(input != NULL,"allocating maximum order input");
-	handle(fetch_read(file, "maximum_order", input) == 1 ,"reading \"maximum_order\" from the input file");
-	for(i = 0; i < *n_variables; i ++) { fetch_get(input, 0, i, &(*maximum_order)[i]); (*maximum_order)[i] -= 1; }
-	fetch_destroy(input);
+	fetch = fetch_new(format,1);
+	handle(fetch != NULL,"allocating maximum order input");
+	handle(fetch_read(file, "maximum_order", fetch) == 1 ,"reading \"maximum_order\" from the input file");
+	for(i = 0; i < *n_variables; i ++) { fetch_get(fetch, 0, i, &(*maximum_order)[i]); (*maximum_order)[i] -= 1; }
+	fetch_destroy(fetch);
 
         memset(format,'d',*n_variables);
-	input = fetch_new(format,1);
-	handle(input != NULL,"allocating weight exponent input");
-	handle(fetch_read(file, "weight_exponent", input) == 1, "reading \"weight_exponent\" from the input file");
-	for(i = 0; i < *n_variables; i ++) fetch_get(input, 0, i, &(*weight_exponent)[i]);
-	fetch_destroy(input);
+	fetch = fetch_new(format,1);
+	handle(fetch != NULL,"allocating weight exponent input");
+	handle(fetch_read(file, "weight_exponent", fetch) == 1, "reading \"weight_exponent\" from the input file");
+	for(i = 0; i < *n_variables; i ++) fetch_get(fetch, 0, i, &(*weight_exponent)[i]);
+	fetch_destroy(fetch);
 
         memset(format,'s',*n_variables);
-	input = fetch_new(format,1);
-	handle(input != NULL,"allocating connectivity input");
-	handle(fetch_read(file, "connectivity", input) == 1, "reading \"connectivity\" from the input file");
-	for(i = 0; i < *n_variables; i ++) fetch_get(input, 0, i, (*connectivity)[i]);
-	fetch_destroy(input);
+	fetch = fetch_new(format,1);
+	handle(fetch != NULL,"allocating connectivity input");
+	handle(fetch_read(file, "connectivity", fetch) == 1, "reading \"connectivity\" from the input file");
+	for(i = 0; i < *n_variables; i ++) fetch_get(fetch, 0, i, (*connectivity)[i]);
+	fetch_destroy(fetch);
 
         fclose(file);
         free_vector(format);
@@ -190,12 +190,12 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	handle(file != NULL,"opening input file");
 
 	//allocate the zone data
-	FETCH input;
-	input = fetch_new("csisd", MAX_ZONES);
-	handle(input != NULL,"allocating zone input");
+	FETCH fetch;
+	fetch = fetch_new("csisd", MAX_ZONES);
+	handle(fetch != NULL,"allocating zone input");
 
 	//fetch the data from the file
-	*n_zones = fetch_read(file, "zone", input);
+	*n_zones = fetch_read(file, "zone", fetch);
 	handle(*n_zones != FETCH_FILE_ERROR && *n_zones != FETCH_MEMORY_ERROR && *n_zones > 0, "reading zones");
 
 	//allocate the zone structures
@@ -204,10 +204,10 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	//get the zone parameters
 	for(i = 0; i < *n_zones; i ++)
 	{
-		fetch_get(input, i, 0, &(*zone)[i].location);
-		fetch_get(input, i, 2, &(*zone)[i].variable);
-		fetch_get(input, i, 3, (*zone)[i].condition);
-		fetch_get(input, i, 4, &(*zone)[i].value);
+		fetch_get(fetch, i, 0, &(*zone)[i].location);
+		fetch_get(fetch, i, 2, &(*zone)[i].variable);
+		fetch_get(fetch, i, 3, (*zone)[i].condition);
+		fetch_get(fetch, i, 4, &(*zone)[i].value);
 	}
 
 	//temporary storage for face and cell zones
@@ -224,7 +224,7 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	for(i = 0; i < *n_zones; i ++)
 	{
 		//get the range string
-		fetch_get(input, i, 1, range);
+		fetch_get(fetch, i, 1, range);
 
 		//convert comma delimiters to whitespace
 		for(j = 0; j < strlen(range); j ++) if(range[j] == ',') range[j] = ' ';
@@ -252,7 +252,7 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) cell[i].zone[j] = &(*zone)[cell_zone[i][j]];
 
 	//clean up
-	fetch_destroy(input);
+	fetch_destroy(fetch);
 	free_matrix((void **)face_zone);
 	free_matrix((void **)cell_zone);
 	free_vector(range);
@@ -272,12 +272,12 @@ void read_divergences(char *filename, int n_variables, int *n_divergences, struc
 	handle(file != NULL,"opening input file");
 
 	//allocate the divergence data
-	FETCH input;
-	input = fetch_new("iscsd", MAX_DIVERGENCES);
-	handle(input != NULL,"allocating divergence input");
+	FETCH fetch;
+	fetch = fetch_new("iscsd", MAX_DIVERGENCES);
+	handle(fetch != NULL,"allocating divergence input");
 
 	//fetch the data from the file
-	*n_divergences = fetch_read(file, "divergence", input);
+	*n_divergences = fetch_read(file, "divergence", fetch);
 	handle(*n_divergences != FETCH_FILE_ERROR && *n_divergences != FETCH_MEMORY_ERROR && *n_divergences > 0, "reading divergences");
 
 	//allocate the divergence structures
@@ -294,13 +294,13 @@ void read_divergences(char *filename, int n_variables, int *n_divergences, struc
 	for(i = 0; i < *n_divergences; i ++)
 	{
 		//equation
-		fetch_get(input, i, 0, &(*divergence)[i].equation);
+		fetch_get(fetch, i, 0, &(*divergence)[i].equation);
 
 		//constant
-		fetch_get(input, i, 4, &(*divergence)[i].constant);
+		fetch_get(fetch, i, 4, &(*divergence)[i].constant);
 
 		//direction
-		fetch_get(input, i, 2, &direction);
+		fetch_get(fetch, i, 2, &direction);
 		if(direction == 'x') {
 			(*divergence)[i].direction = 0;
 		} else if(direction == 'y') {
@@ -308,7 +308,7 @@ void read_divergences(char *filename, int n_variables, int *n_divergences, struc
 		} else handle(0,"recognsing divergence direction");
 
 		//variables
-		fetch_get(input, i, 1, piece);
+		fetch_get(fetch, i, 1, piece);
 		//convert comma delimiters to whitespace
 		for(j = 0; j < strlen(piece); j ++) if(piece[j] == ',') piece[j] = ' ';
 		//sequentially read variables
@@ -323,7 +323,7 @@ void read_divergences(char *filename, int n_variables, int *n_divergences, struc
 		}
 
 		//differentials
-		fetch_get(input, i, 3, piece);
+		fetch_get(fetch, i, 3, piece);
 		//convert comma delimiters to whitespace
 		for(j = 0; j < strlen(piece); j ++) if(piece[j] == ',') piece[j] = ' ';
 		//sequentially read differentials
@@ -364,7 +364,7 @@ void read_divergences(char *filename, int n_variables, int *n_divergences, struc
 	}
 
 	//clean up
-	fetch_destroy(input);
+	fetch_destroy(fetch);
 	free_vector(piece);
 	free_vector(temp);
 	free_matrix((void**)term);
