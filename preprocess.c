@@ -10,25 +10,35 @@ int main(int argc, char *argv[])
 	handle(argc == 2, "checking the input arguments");
 	char *input_filename = argv[1];
 
+	//--------------------------------------------------------------------//
+
+	FILE *file = fopen(input_filename,"r");
+	handle(file != NULL,"opening the input file");
+
 	char *geometry_filename, *case_filename;
 	handle(allocate_character_vector(&geometry_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the geometry filename");
 	handle(allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
+	handle(fetch_single_value(file, "geometry_filename", 's', geometry_filename) == FETCH_SUCCESS,"reading \"geometry_filename\" from the input file");
+	handle(fetch_single_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
 
-	FILE *file = fopen(input_filename,"r");
-	handle(file != NULL, "opening the input file");
-	FETCH fetch = fetch_new("s",1);
-	handle(fetch != NULL,"allocating filename inputs");
-	handle(fetch_read(file, "geometry_filename", fetch) == 1,"reading \"geometry_filename\" from the input file");
-	fetch_get(fetch, 0, 0, geometry_filename);
-	handle(fetch_read(file, "case_filename", fetch) == 1,"reading \"case_filename\" from the input file");
-	fetch_get(fetch, 0, 0, case_filename);
+	int n_variables;
+	handle(fetch_single_value(file, "number_of_variables", 'i', &n_variables) == FETCH_SUCCESS,"reading \"number_of_variables\" from the input file");
+
 	fclose(file);
-	fetch_destroy(fetch);
 
-	int n_variables = 0, *maximum_order = NULL;
-	char **connectivity = NULL;
-	double *weight_exponent = NULL;
-	read_instructions(input_filename, &n_variables, &maximum_order, &weight_exponent, &connectivity);
+	//--------------------------------------------------------------------//
+
+	int *maximum_order;
+	char **connectivity;
+	double *weight_exponent;
+
+	handle(allocate_integer_vector(&maximum_order,n_variables) == ALLOCATE_SUCCESS,"allocating the maximum orders");
+	handle(allocate_character_matrix(&connectivity,n_variables,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS,"allocating the connectivity");
+	handle(allocate_double_vector(&weight_exponent,n_variables) == ALLOCATE_SUCCESS,"allocating the weight exponents");
+
+	read_instructions(input_filename, n_variables, maximum_order, weight_exponent, connectivity);
+
+	//--------------------------------------------------------------------//
 
 	int n_nodes = 0, n_faces = 0, n_cells = 0;
 	struct NODE *node = NULL;
@@ -50,9 +60,14 @@ int main(int argc, char *argv[])
 
 	write_case(case_filename, n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
-	free(geometry_filename);
-	free(case_filename);
-	free_instructions(n_variables, maximum_order, weight_exponent, connectivity);
+	//--------------------------------------------------------------------//
+
+	free_vector(geometry_filename);
+	free_vector(case_filename);
+	free_vector(maximum_order);
+	free_vector(weight_exponent);
+	free_matrix((void **)connectivity);
+
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
 	return 0;

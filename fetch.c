@@ -259,3 +259,24 @@ void fetch_destroy(FETCH fetch)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+int fetch_single_value(FILE *file, char *label, char type, void *value)
+{
+	char format[2];
+
+	format[0] = type;
+	format[1] = '\0';
+
+	FETCH fetch = fetch_new(format,1);
+	if(fetch == NULL) return FETCH_MEMORY_ERROR;
+
+	if(fetch_read(file, label, fetch) != 1) return FETCH_FAIL;
+
+	fetch_get(fetch, 0, 0, value);
+
+	fetch_destroy(fetch);
+
+	return FETCH_SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void read_instructions(char *filename, int *n_variables, int **maximum_order, double **weight_exponent, char ***connectivity)
+void read_instructions(char *filename, int n_variables, int *maximum_order, double *weight_exponent, char **connectivity)
 {
 	int i;
 
@@ -16,37 +16,29 @@ void read_instructions(char *filename, int *n_variables, int **maximum_order, do
 
 	FETCH fetch;
 
-	fetch = fetch_new("i",1);
-	handle(fetch != NULL,"allocating number of variables input");
-	handle(fetch_read(file, "number_of_variables", fetch) == 1, "reading \"number_of_variables\" from the input file");
-	fetch_get(fetch, 0, 0, n_variables);
-	fetch_destroy(fetch);
-
-	handle(allocate_instructions(*n_variables, maximum_order, weight_exponent, connectivity) == ALLOCATE_SUCCESS, "allocating instructions");
-
         char *format;
-	handle(allocate_character_vector(&format,*n_variables + 1) == ALLOCATE_SUCCESS,"allocating format string");
-        format[*n_variables] = '\0';
+	handle(allocate_character_vector(&format,n_variables + 1) == ALLOCATE_SUCCESS,"allocating format string");
+        format[n_variables] = '\0';
 
-        memset(format,'i',*n_variables);
+        memset(format,'i',n_variables);
 	fetch = fetch_new(format,1);
 	handle(fetch != NULL,"allocating maximum order input");
 	handle(fetch_read(file, "maximum_order", fetch) == 1 ,"reading \"maximum_order\" from the input file");
-	for(i = 0; i < *n_variables; i ++) { fetch_get(fetch, 0, i, &(*maximum_order)[i]); (*maximum_order)[i] -= 1; }
+	for(i = 0; i < n_variables; i ++) { fetch_get(fetch, 0, i, &maximum_order[i]); maximum_order[i] -= 1; }
 	fetch_destroy(fetch);
 
-        memset(format,'d',*n_variables);
+        memset(format,'d',n_variables);
 	fetch = fetch_new(format,1);
 	handle(fetch != NULL,"allocating weight exponent input");
 	handle(fetch_read(file, "weight_exponent", fetch) == 1, "reading \"weight_exponent\" from the input file");
-	for(i = 0; i < *n_variables; i ++) fetch_get(fetch, 0, i, &(*weight_exponent)[i]);
+	for(i = 0; i < n_variables; i ++) fetch_get(fetch, 0, i, &weight_exponent[i]);
 	fetch_destroy(fetch);
 
-        memset(format,'s',*n_variables);
+        memset(format,'s',n_variables);
 	fetch = fetch_new(format,1);
 	handle(fetch != NULL,"allocating connectivity input");
 	handle(fetch_read(file, "connectivity", fetch) == 1, "reading \"connectivity\" from the input file");
-	for(i = 0; i < *n_variables; i ++) fetch_get(fetch, 0, i, (*connectivity)[i]);
+	for(i = 0; i < n_variables; i ++) fetch_get(fetch, 0, i, connectivity[i]);
 	fetch_destroy(fetch);
 
         fclose(file);

@@ -12,13 +12,10 @@ int main(int argc, char *argv[])
 
 	char *case_filename;
 	handle(allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
+
 	FILE *file = fopen(input_filename,"r");
-	handle(file != NULL, "opening the input file");
-	FETCH fetch = fetch_new("s",1);
-	handle(fetch != NULL,"allocating case filename input");
-	handle(fetch_read(file, "case_filename", fetch) == 1,"reading \"case_filename\" from the input file");
-	fetch_get(fetch, 0, 0, case_filename);
-	fetch_destroy(fetch);
+	handle(file != NULL,"opening the input file");
+	handle(fetch_single_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
 	fclose(file);
 
 	int n_variables = 0;
@@ -37,8 +34,9 @@ int main(int argc, char *argv[])
 	int n_unknowns = 0, *unknown_to_id = NULL;
 	generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone);
 
-	double *lhs = NULL, *rhs = NULL;
-	handle(allocate_system(n_unknowns,&lhs,&rhs) == ALLOCATE_SUCCESS,"allocating system arrays");
+	double *lhs, *rhs;
+	handle(allocate_double_vector(&lhs,n_unknowns) == ALLOCATE_SUCCESS,"allocating system left hand side vector");
+	handle(allocate_double_vector(&rhs,n_unknowns) == ALLOCATE_SUCCESS,"allocating system right hand side vector");
 
 	CSR matrix = csr_new();
 
@@ -142,8 +140,10 @@ int main(int argc, char *argv[])
 
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 	free_equations(n_divergences, divergence);
-	free_system(n_unknowns, lhs, rhs);
 	free_lists(n_ids, id_to_unknown, n_unknowns, unknown_to_id);
+
+	free_vector(lhs);
+	free_vector(rhs);
 
 	csr_destroy(matrix);
 

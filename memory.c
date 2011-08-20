@@ -131,31 +131,6 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int allocate_instructions(int n_variables, int **maximum_order, double **weight_exponent, char ***connectivity)
-{
-	int i;
-
-	if(n_variables > 0 && *maximum_order == NULL) {
-		*maximum_order = (int *)malloc(n_variables * sizeof(int));
-		if(*maximum_order == NULL) return ALLOCATE_ERROR;
-	}
-	if(n_variables > 0 && *weight_exponent == NULL) {
-		*weight_exponent = (double *)malloc(n_variables * sizeof(double));
-		if(*weight_exponent == NULL) return ALLOCATE_ERROR;
-	}
-	if(n_variables > 0 && *connectivity == NULL) {
-		*connectivity = (char **)malloc(n_variables * sizeof(char *));
-		if(*connectivity == NULL) return ALLOCATE_ERROR;
-		(*connectivity)[0] = (char *)malloc(n_variables * MAX_STRING_CHARACTERS * sizeof(char));
-		if(*connectivity == NULL) return ALLOCATE_ERROR;
-		for(i = 1; i < n_variables; i ++) (*connectivity)[i] = (*connectivity)[i-1] + MAX_STRING_CHARACTERS;
-	}
-
-	return ALLOCATE_SUCCESS;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 int allocate_equations(int n_divergences, struct DIVERGENCE **divergence)
 {
 	int i;
@@ -185,20 +160,6 @@ int allocate_equations(int n_divergences, struct DIVERGENCE **divergence)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-int allocate_system(int n_unknowns, double **lhs, double **rhs)
-{
-	if(n_unknowns > 0 && *lhs == NULL) {
-		*lhs = (double *)malloc(n_unknowns * sizeof(double));
-		if(*lhs == NULL) return ALLOCATE_ERROR;
-	}
-	if(n_unknowns > 0 && *rhs == NULL) {
-		*rhs = (double *)malloc(n_unknowns * sizeof(double));
-		if(*rhs == NULL) return ALLOCATE_ERROR;
-	}
-
-	return ALLOCATE_SUCCESS;
-}
 
 int allocate_lists(int n_ids, int **id_to_unknown, int n_unknowns, int **unknown_to_id)
 {
@@ -250,16 +211,6 @@ void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, str
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void free_instructions(int n_variables, int *maximum_order, double *weight_exponent, char **connectivity)
-{
-	free(maximum_order);
-	free(weight_exponent);
-	free(connectivity[0]);
-	free(connectivity);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 void free_equations(int n_divergences, struct DIVERGENCE *divergence)
 {
 	int i;
@@ -274,12 +225,6 @@ void free_equations(int n_divergences, struct DIVERGENCE *divergence)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-void free_system(int n_unknowns, double *lhs, double *rhs)
-{
-	free(lhs);
-	free(rhs);
-}
 
 void free_lists(int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id)
 {
