@@ -19,7 +19,7 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) *n_ids = MAX(*n_ids,INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0])));
 	(*n_ids) ++;
 
-	handle(allocate_lists(*n_ids,id_to_unknown,0,NULL) == ALLOCATE_SUCCESS,"allocating id to system indices");
+	handle(allocate_integer_vector(id_to_unknown,*n_ids) == ALLOCATE_SUCCESS,"allocating id to system indices");
 
 	for(i = 0; i < *n_ids; i ++) (*id_to_unknown)[i] = -1;
 
@@ -38,7 +38,7 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 		}
 	}
 
-	handle(allocate_lists(0,NULL,*n_unknowns,unknown_to_id) == ALLOCATE_SUCCESS,"allocating system indices to id");
+	handle(allocate_integer_vector(unknown_to_id,*n_unknowns) == ALLOCATE_SUCCESS,"allocating system indices to ids");
 
 	for(i = 0; i < *n_ids; i ++) if((*id_to_unknown)[i] >= 0) (*unknown_to_id)[(*id_to_unknown)[i]] = i;
 }

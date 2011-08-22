@@ -115,10 +115,8 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 //memory.c
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone);
 int allocate_equations(int n_divergences, struct DIVERGENCE **divergence);
-int allocate_lists(int n_ids, int **id_to_unknown, int n_unknowns, int **unknown_to_id);
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void free_equations(int n_divergences, struct DIVERGENCE *divergence);
-void free_lists(int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id);
 int allocate_integer_vector(int **vector, int length);
 int allocate_integer_zero_vector(int **vector, int length);
 int allocate_double_vector(double **vector, int length);

@@ -1,7 +1,7 @@
 #ifndef CSR_H
 #define CSR_H
 
-typedef struct _CSR * CSR;
+typedef struct s_CSR * CSR;
 
 CSR csr_new();
 int csr_append_row(CSR A, int n, double *row);

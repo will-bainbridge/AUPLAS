@@ -140,7 +140,9 @@ int main(int argc, char *argv[])
 
 	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 	free_equations(n_divergences, divergence);
-	free_lists(n_ids, id_to_unknown, n_unknowns, unknown_to_id);
+
+	free_vector(id_to_unknown);
+	free_vector(unknown_to_id);
 
 	free_vector(lhs);
 	free_vector(rhs);

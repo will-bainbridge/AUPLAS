@@ -2,6 +2,7 @@
 
 #include "auplas.h"
 #include "polynomial.h"
+#include "differential.h"
 #include "quadrature.h"
 
 #define LS_SUCCESS 1

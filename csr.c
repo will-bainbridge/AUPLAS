@@ -11,7 +11,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct _CSR
+struct s_CSR
 {
 	int n, n_space; //number of rows
 	int nnz, nnz_space; //number of non-zero elements
@@ -26,7 +26,7 @@ CSR csr_new()
 {
 	CSR A;
 
-	A = (CSR)malloc(sizeof(struct _CSR));
+	A = (CSR)malloc(sizeof(struct s_CSR));
 	if(A == NULL) return NULL;;
 
 	A->n = A->n_space = 0;

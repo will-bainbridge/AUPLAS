@@ -7,7 +7,7 @@
 #define FETCH_SUCCESS 1
 #define FETCH_FAIL 0
 
-typedef struct _FETCH * FETCH;
+typedef struct s_FETCH * FETCH;
 
 FETCH fetch_new(char *format, int max_n_lines);
 int fetch_read(FILE *file, char *label, FETCH fetch);

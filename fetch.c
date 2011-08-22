@@ -10,7 +10,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct _FETCH
+struct s_FETCH
 {
 	int n_lines, max_n_lines; //number of data lines
 	char *format; //data formats
@@ -25,7 +25,7 @@ FETCH fetch_new(char *format, int max_n_lines)
         int i, j;
 
 	//allocate the structure
-	FETCH fetch = (FETCH)malloc(sizeof(struct _FETCH));
+	FETCH fetch = (FETCH)malloc(sizeof(struct s_FETCH));
 	if(fetch == NULL) return NULL;
 
 	//set the numbers
