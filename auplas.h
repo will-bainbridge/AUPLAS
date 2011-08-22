@@ -6,11 +6,10 @@
 #include <string.h>
 
 #include "csr.h"
+#include "divergence.h"
+#include "handle.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-
-//error handling macro
-#define handle(value,action) do { if( !(value) ){ printf("\n[ERROR %s:%i] %s\n\n",__FILE__,__LINE__,action); exit(EXIT_FAILURE); } } while(0)
 
 //error handlind return values
 #define ALLOCATE_SUCCESS 1
@@ -86,7 +85,7 @@ struct ZONE
 	double value;
 };
 
-struct DIVERGENCE
+/*struct DIVERGENCE
 {
 	int equation;
 
@@ -97,7 +96,7 @@ struct DIVERGENCE
 	int direction;
 
 	double constant;
-};
+};*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -105,7 +104,7 @@ struct DIVERGENCE
 void read_instructions(char *filename, int n_variables, int *maximum_order, double *weight_exponent, char **connectivity);
 void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
-void read_divergences(char *filename, int n_variables, int *n_divergences, struct DIVERGENCE **divergence);
+//void read_divergences(char *filename, int n_variables, int *n_divergences, struct DIVERGENCE **divergence);
 void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell, int *n_zones, struct ZONE **zone);
 
@@ -114,9 +113,9 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 
 //memory.c
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone);
-int allocate_equations(int n_divergences, struct DIVERGENCE **divergence);
+//int allocate_equations(int n_divergences, struct DIVERGENCE **divergence);
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
-void free_equations(int n_divergences, struct DIVERGENCE *divergence);
+//void free_equations(int n_divergences, struct DIVERGENCE *divergence);
 int allocate_integer_vector(int **vector, int length);
 int allocate_integer_zero_vector(int **vector, int length);
 int allocate_double_vector(double **vector, int length);
@@ -143,7 +142,7 @@ double integer_power(double base, int exp);
 
 //system.c
 void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
-void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
-void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE *divergence);
+void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, DIVERGENCE *divergence);
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, DIVERGENCE divergence);
 
 ////////////////////////////////////////////////////////////////////////////////

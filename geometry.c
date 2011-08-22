@@ -50,7 +50,7 @@ void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, str
 				}
 			}
 
-			handle(k < face[i].border[j]->n_faces,"finding corresponding face");
+			handle(1,k < face[i].border[j]->n_faces,"finding corresponding face");
 		}
 	}
 }
@@ -62,7 +62,7 @@ void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cel
 	int i;
 	double ***polygon;
 
-	handle(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
+	handle(1,allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
 
 	for(i = 0; i < n_cells; i ++)
 	{
@@ -107,7 +107,7 @@ void generate_control_volume_polygon(double ***polygon, int index, int location,
 			polygon[i][1] = cell[index].face[i]->node[o]->x;
 		}
 	}
-	else handle(0,"recognising the location");
+	else handle(1,0,"recognising the location");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

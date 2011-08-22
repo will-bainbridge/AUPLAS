@@ -7,22 +7,22 @@
 
 int main(int argc, char *argv[])
 {
-	handle(argc == 2, "checking the input arguments");
+	handle(1,argc == 2, "checking the input arguments");
 	char *input_filename = argv[1];
 
 	//--------------------------------------------------------------------//
 
 	FILE *file = fopen(input_filename,"r");
-	handle(file != NULL,"opening the input file");
-
-	char *geometry_filename, *case_filename;
-	handle(allocate_character_vector(&geometry_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the geometry filename");
-	handle(allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
-	handle(fetch_single_value(file, "geometry_filename", 's', geometry_filename) == FETCH_SUCCESS,"reading \"geometry_filename\" from the input file");
-	handle(fetch_single_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
+	handle(1,file != NULL,"opening the input file");
 
 	int n_variables;
-	handle(fetch_single_value(file, "number_of_variables", 'i', &n_variables) == FETCH_SUCCESS,"reading \"number_of_variables\" from the input file");
+	handle(1,fetch_single_value(file, "number_of_variables", 'i', &n_variables) == FETCH_SUCCESS,"reading \"number_of_variables\" from the input file");
+
+	char *geometry_filename, *case_filename;
+	handle(1,allocate_character_vector(&geometry_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the geometry filename");
+	handle(1,fetch_single_value(file, "geometry_filename", 's', geometry_filename) == FETCH_SUCCESS,"reading \"geometry_filename\" from the input file");
+	handle(1,allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
+	handle(1,fetch_single_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
 
 	fclose(file);
 
@@ -32,9 +32,9 @@ int main(int argc, char *argv[])
 	char **connectivity;
 	double *weight_exponent;
 
-	handle(allocate_integer_vector(&maximum_order,n_variables) == ALLOCATE_SUCCESS,"allocating the maximum orders");
-	handle(allocate_character_matrix(&connectivity,n_variables,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS,"allocating the connectivity");
-	handle(allocate_double_vector(&weight_exponent,n_variables) == ALLOCATE_SUCCESS,"allocating the weight exponents");
+	handle(1,allocate_integer_vector(&maximum_order,n_variables) == ALLOCATE_SUCCESS,"allocating the maximum orders");
+	handle(1,allocate_character_matrix(&connectivity,n_variables,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS,"allocating the connectivity");
+	handle(1,allocate_double_vector(&weight_exponent,n_variables) == ALLOCATE_SUCCESS,"allocating the weight exponents");
 
 	read_instructions(input_filename, n_variables, maximum_order, weight_exponent, connectivity);
 

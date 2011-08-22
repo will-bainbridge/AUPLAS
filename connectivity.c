@@ -11,19 +11,19 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 
 	//generate list of cells surrounding each face
 	int **face_borders;
-	handle(allocate_integer_matrix(&face_borders,n_faces,MAX_NEIGHBOURS) == ALLOCATE_SUCCESS,"allocating list of face borders");
+	handle(1,allocate_integer_matrix(&face_borders,n_faces,MAX_NEIGHBOURS) == ALLOCATE_SUCCESS,"allocating list of face borders");
 	for(i = 0; i < n_faces; i ++) face[i].n_borders = 0;
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_faces; j ++) face_borders[(int)(cell[i].face[j] - &face[0])][cell[i].face[j]->n_borders ++] = i;
 
 	//allocate face borders and copy over the data
-	handle(allocate_mesh(0, 0, NULL, n_faces, &face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS,"allocating face borders");
+	handle(1,allocate_mesh(0, 0, NULL, n_faces, &face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS,"allocating face borders");
 	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[i].n_borders; j ++) face[i].border[j] = &cell[face_borders[i][j]];
 
 	//generate list of cells surrounding each node
 	int index;
 	int *n_node_surround, **node_surround;
-	handle(allocate_integer_zero_vector(&n_node_surround,n_nodes) == ALLOCATE_SUCCESS,"allocating list of the numbers of nodes surrounding cells");
-	handle(allocate_integer_matrix(&node_surround,n_nodes,MAX_NEIGHBOURS) == ALLOCATE_SUCCESS,"allocating list of the nodes surrounding cells");
+	handle(1,allocate_integer_zero_vector(&n_node_surround,n_nodes) == ALLOCATE_SUCCESS,"allocating list of the numbers of nodes surrounding cells");
+	handle(1,allocate_integer_matrix(&node_surround,n_nodes,MAX_NEIGHBOURS) == ALLOCATE_SUCCESS,"allocating list of the nodes surrounding cells");
 
 	for(c = 0; c < n_cells; c ++)
 	{
@@ -44,10 +44,10 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 
 	//generate lists of cells surrounding each cell
 	int *n_cell_face_neighbours, **cell_face_neighbours, *n_cell_node_neighbours, **cell_node_neighbours;
-	handle(allocate_integer_zero_vector(&n_cell_face_neighbours,n_cells) == ALLOCATE_SUCCESS,"allocating list of the numbers of cell face neighbours");
-	handle(allocate_integer_matrix(&cell_face_neighbours,n_cells,MAX_NEIGHBOURS) == ALLOCATE_SUCCESS,"allocating list of cell face neighbours");
-	handle(allocate_integer_zero_vector(&n_cell_node_neighbours,n_cells) == ALLOCATE_SUCCESS,"allocating list of the numbers of cell node neighbours");
-	handle(allocate_integer_matrix(&cell_node_neighbours,n_cells,MAX_NEIGHBOURS) == ALLOCATE_SUCCESS,"allocating list of cell node neighbours");
+	handle(1,allocate_integer_zero_vector(&n_cell_face_neighbours,n_cells) == ALLOCATE_SUCCESS,"allocating list of the numbers of cell face neighbours");
+	handle(1,allocate_integer_matrix(&cell_face_neighbours,n_cells,MAX_NEIGHBOURS) == ALLOCATE_SUCCESS,"allocating list of cell face neighbours");
+	handle(1,allocate_integer_zero_vector(&n_cell_node_neighbours,n_cells) == ALLOCATE_SUCCESS,"allocating list of the numbers of cell node neighbours");
+	handle(1,allocate_integer_matrix(&cell_node_neighbours,n_cells,MAX_NEIGHBOURS) == ALLOCATE_SUCCESS,"allocating list of cell node neighbours");
 
 	for(c = 0; c < n_cells; c ++)
 	{
@@ -78,7 +78,7 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 	}
 
 	//allocate the stencil numbers and pointers
-	handle(allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) == ALLOCATE_SUCCESS,"allocating cell stencils");
+	handle(1,allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) == ALLOCATE_SUCCESS,"allocating cell stencils");
 
 	//generate the stencils
 	int *n_cell_neighbours, **cell_neighbours;
@@ -86,9 +86,9 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 	int is_variable, is_unknown, is_in_cell;
 	int *stencil_cells, *stencil_faces, *stencil;
 
-	handle(allocate_integer_vector(&stencil_cells,MAX_STENCIL) == ALLOCATE_SUCCESS,"allocating stencil cells");
-	handle(allocate_integer_vector(&stencil_faces,MAX_STENCIL) == ALLOCATE_SUCCESS,"allocating stencil faces");
-	handle(allocate_integer_vector(&stencil,MAX_STENCIL) == ALLOCATE_SUCCESS,"allocating stencil ids");
+	handle(1,allocate_integer_vector(&stencil_cells,MAX_STENCIL) == ALLOCATE_SUCCESS,"allocating stencil cells");
+	handle(1,allocate_integer_vector(&stencil_faces,MAX_STENCIL) == ALLOCATE_SUCCESS,"allocating stencil faces");
+	handle(1,allocate_integer_vector(&stencil,MAX_STENCIL) == ALLOCATE_SUCCESS,"allocating stencil ids");
 
 	for(c = 0; c < n_cells; c ++)
 	{
@@ -110,7 +110,7 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 				} else if(connectivity[u][i] == 'f') {
 					cell_neighbours = cell_face_neighbours;
 					n_cell_neighbours = n_cell_face_neighbours;
-				} else { handle(0,"reconising the connectivity"); }
+				} else { handle(1,0,"reconising the connectivity"); }
 
 				//loop over and add the neighbours of all the existing stencil cells
 				for(j = 0; j < n_old_stencil_cells; j ++)
@@ -180,7 +180,7 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 			}
 
 			//allocate and store the stencils in the cell structure
-			handle(allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL),"allocating a cell stencil");
+			handle(1,allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL),"allocating a cell stencil");
 			for(i = 0; i < cell[c].n_stencil[u]; i ++) cell[c].stencil[u][i] = stencil[i];
 
 			//generate the cell orders

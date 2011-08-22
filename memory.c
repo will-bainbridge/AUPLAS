@@ -131,7 +131,7 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int allocate_equations(int n_divergences, struct DIVERGENCE **divergence)
+/*int allocate_equations(int n_divergences, struct DIVERGENCE **divergence)
 {
 	int i;
 
@@ -157,7 +157,7 @@ int allocate_equations(int n_divergences, struct DIVERGENCE **divergence)
 	}
 
 	return ALLOCATE_SUCCESS;
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -195,7 +195,7 @@ void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, str
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void free_equations(int n_divergences, struct DIVERGENCE *divergence)
+/*void free_equations(int n_divergences, struct DIVERGENCE *divergence)
 {
 	int i;
 
@@ -206,7 +206,7 @@ void free_equations(int n_divergences, struct DIVERGENCE *divergence)
 	}
 
 	free(divergence);
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 

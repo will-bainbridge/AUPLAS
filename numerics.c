@@ -29,14 +29,14 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 	for(u = 0; u < n_variables; u ++) if(maximum_order[u] > maximum_maximum_order) maximum_maximum_order = maximum_order[u];
 
 	//cell structure allocation
-	handle(allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell matrices");
+	handle(1,allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell matrices");
 
 	//numerics values
 	double **matrix, *weight;
 	int n_constraints, *constraint;
-	handle(allocate_double_matrix(&matrix,ORDER_TO_POWERS(maximum_maximum_order),MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating matrix");
-	handle(allocate_integer_vector(&constraint,MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating constraints");
-	handle(allocate_double_vector(&weight,MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating weights");
+	handle(1,allocate_double_matrix(&matrix,ORDER_TO_POWERS(maximum_maximum_order),MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating matrix");
+	handle(1,allocate_integer_vector(&constraint,MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating constraints");
+	handle(1,allocate_double_vector(&weight,MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating weights");
 
 	//stencil element properties
 	int s_id, s_index;
@@ -71,7 +71,7 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 					s_centroid = face[s_index].centroid;
 				} else if(s_location == 'c') {
 					s_centroid = cell[s_index].centroid;
-				} else handle(0,"recognising zone location");
+				} else handle(1,0,"recognising zone location");
 
 				s_weight  = (s_centroid[0] - cell[c].centroid[0])*(s_centroid[0] - cell[c].centroid[0]);
 				s_weight += (s_centroid[1] - cell[c].centroid[1])*(s_centroid[1] - cell[c].centroid[1]);
@@ -150,9 +150,9 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 
 			//solve
 			if(n_constraints > 0)
-				handle(constrained_least_squares(n_stencil,n_powers,matrix,n_constraints,constraint) == LS_SUCCESS, "doing CLS calculation");
+				handle(1,constrained_least_squares(n_stencil,n_powers,matrix,n_constraints,constraint) == LS_SUCCESS, "doing CLS calculation");
 			else
-				handle(least_squares(n_stencil,n_powers,matrix) == LS_SUCCESS,"doing LS calculation");
+				handle(1,least_squares(n_stencil,n_powers,matrix) == LS_SUCCESS,"doing LS calculation");
 
 			//multiply by the weights
 			for(i = 0; i < n_powers; i ++) for(j = 0; j < n_stencil; j ++) matrix[i][j] *= weight[j];

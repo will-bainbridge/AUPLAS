@@ -198,7 +198,6 @@ void fetch_get(FETCH fetch, int line_index, int value_index, void *value)
 		case 'f': *((float*)value) = *((float*)d); return;
 		case 'd': *((double*)value) = *((double*)d); return;
 		case 'c': *((char*)value) = *((char*)d); return;
-		//case 's': *((char**)value) = *((char**)d); return;
 		case 's': strcpy((char*)value,*((char**)d)); return;
 	}
 }
