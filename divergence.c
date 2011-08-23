@@ -8,39 +8,40 @@
 #include "divergence.h"
 #include "handle.h"
 
+#define DIVERGENCE_LABEL "divergence"
+#define DIVERGENCE_FORMAT "iscsd"
+
 #define MAX_DIVERGENCES 100
 #define MAX_VARIABLES 5
 #define MAX_STRING_LENGTH 128
 
 ////////////////////////////////////////////////////////////////////////////////
 
-DIVERGENCE divergence_new()
-{
-	DIVERGENCE divergence = (DIVERGENCE)malloc(sizeof(struct s_DIVERGENCE));
-	if(divergence == NULL) return NULL;
-
-	divergence->n_variables = 0;
-	divergence->variable = NULL;
-	divergence->differential = NULL;
-
-	return divergence;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 DIVERGENCE * divergences_new(DIVERGENCE *divergence, int n_old, int n_new)
 {
 	int i;
-
-	for(i = n_new; i < n_old; i ++) divergence_destroy(divergence[i]);
+	
+	for(i = n_new; i < n_old; i ++)
+	{
+		free(divergence[i]->variable);
+		free(divergence[i]->differential);
+	}
 
 	divergence = (DIVERGENCE *)realloc(divergence, n_new * sizeof(DIVERGENCE));
 	if(divergence == NULL) return NULL;
 
+	if(n_old == 0) divergence[0] = NULL;
+
+	divergence[0] = (DIVERGENCE)realloc(divergence[0], n_new * sizeof(struct s_DIVERGENCE));
+	if(divergence[0] == NULL) return NULL;
+
+	for(i = 0; i < n_new; i ++) divergence[i] = divergence[0] + i;
+
 	for(i = n_old; i < n_new; i ++)
 	{
-		divergence[i] = divergence_new();
-		if(divergence[i] == NULL) return NULL;
+		divergence[i]->n_variables = 0;
+		divergence[i]->variable = NULL;
+		divergence[i]->differential = NULL;
 	}
 
 	return divergence;
@@ -186,19 +187,11 @@ void divergences_read(char *filename, int *n_divergences, DIVERGENCE **divergenc
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void divergence_destroy(DIVERGENCE divergence)
-{
-	free(divergence->variable);
-	free(divergence->differential);
-	free(divergence);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 void divergences_destroy(int n_divergences, DIVERGENCE *divergence)
 {
 	int i;
-	for(i = 0; i < n_divergences; i ++) divergence_destroy(divergence[i]);
+	for(i = 0; i < n_divergences; i ++) { free(divergence[i]->variable); free(divergence[i]->differential); }
+	free(divergence[0]);
 	free(divergence);
 }
 
