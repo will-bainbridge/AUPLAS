@@ -21,7 +21,6 @@
 #define MAX_NEIGHBOURS 20
 #define MAX_STENCIL 100
 #define MAX_ZONES 100
-#define MAX_DIVERGENCES 100
 #define MAX_INDICES 100
 #define MAX_STRING_CHARACTERS 128
 #define MAX_INTERPOLANTS 2
@@ -104,7 +103,6 @@ struct ZONE
 void read_instructions(char *filename, int n_variables, int *maximum_order, double *weight_exponent, char **connectivity);
 void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
-//void read_divergences(char *filename, int n_variables, int *n_divergences, struct DIVERGENCE **divergence);
 void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell, int *n_zones, struct ZONE **zone);
 
@@ -113,9 +111,7 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 
 //memory.c
 int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces, struct FACE **face, int n_cells, struct CELL **cell, int n_zones, struct ZONE **zone);
-//int allocate_equations(int n_divergences, struct DIVERGENCE **divergence);
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
-//void free_equations(int n_divergences, struct DIVERGENCE *divergence);
 int allocate_integer_vector(int **vector, int length);
 int allocate_integer_zero_vector(int **vector, int length);
 int allocate_double_vector(double **vector, int length);

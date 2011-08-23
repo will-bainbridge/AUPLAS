@@ -8,50 +8,22 @@
 
 int main(int argc, char *argv[])
 {
-	int i, n_fetch, info;
-	FILE *file;
-	FETCH fetch;
-
 	handle(1,argc == 2,"wrong number of input arguments");
 
-	//--------------------------------------------------------------------//
+	int i;
+	FILE *file;
+	char *input_filename = argv[1];
 
 	char *case_filename;
-	int n_divergences = 0;
-	DIVERGENCE *divergence;
-
-	file = fopen(argv[1],"r");
+	file = fopen(input_filename,"r");
 	handle(1,file != NULL,"opening the input file");
-
 	handle(1,allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS,"allocating the case filename");
 	handle(1,fetch_single_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
-
-	fetch = fetch_new(DIVERGENCE_FORMAT,MAX_DIVERGENCES);
-
-	n_fetch = fetch_read(file,DIVERGENCE_LABEL,fetch);
-	handle(0,n_fetch < MAX_DIVERGENCES,"maximum number of divergences read");
-	handle(1,n_fetch,"no divergences found in the input file");
-
-	divergence = (DIVERGENCE *)malloc(n_fetch * sizeof(DIVERGENCE));
-	handle(1,divergence != NULL,"allocating the divergences");
-	for(i = 0; i < n_fetch; i ++)
-	{
-		if(i == 0 || info == DIVERGENCE_SUCCESS) divergence[n_divergences] = divergence_new();
-		handle(1,divergence[n_divergences] != NULL,"allocating divergence");
-		info = divergence_get(fetch,i,divergence[n_divergences]);
-		handle(1,info != DIVERGENCE_MEMORY_ERROR,"memory error when getting divergences");
-		n_divergences += info == DIVERGENCE_SUCCESS;
-	}
-
-	fetch_destroy(fetch);
-
-	fetch = fetch_new("",MAX_DIVERGENCES);
-	handle(0,fetch_read(file,DIVERGENCE_LABEL,fetch) == n_divergences,"skipping divergences with unrecognised formats");
-	fetch_destroy(fetch);
-
 	fclose(file);
 
-	//--------------------------------------------------------------------//
+	int n_divergences;
+	DIVERGENCE *divergence;
+	divergences_read(input_filename,&n_divergences,&divergence);
 
 	int n_variables = 0;
 	int n_nodes = 0, n_faces = 0, n_cells = 0, n_zones = 0;
@@ -158,18 +130,13 @@ int main(int argc, char *argv[])
 
 	//clean up
 	free_vector(case_filename);
-
-	for(i = 0; i < n_divergences; i ++) divergence_destroy(divergence[i]);
-	free(divergence);
-
-	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
-
 	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
-
 	free_vector(lhs);
 	free_vector(rhs);
 
+	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+	divergences_destroy(n_divergences, divergence);
 	csr_destroy(matrix);
 
 	return 0;
