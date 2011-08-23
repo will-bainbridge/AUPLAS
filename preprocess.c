@@ -19,11 +19,11 @@ int main(int argc, char *argv[])
 	handle(1,fetch_value(file, "number_of_variables", 'i', &n_variables) == FETCH_SUCCESS,"reading \"number_of_variables\" from the input file");
 
 	char *geometry_filename;
-	handle(1,allocate_character_vector(&geometry_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the geometry filename");
+	handle(1,allocate_character_vector(&geometry_filename,MAX_STRING_LENGTH) == ALLOCATE_SUCCESS, "allocating the geometry filename");
 	handle(1,fetch_value(file, "geometry_filename", 's', geometry_filename) == FETCH_SUCCESS,"reading \"geometry_filename\" from the input file");
 	
 	char *case_filename;
-	handle(1,allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating the case filename");
+	handle(1,allocate_character_vector(&case_filename,MAX_STRING_LENGTH) == ALLOCATE_SUCCESS, "allocating the case filename");
 	handle(1,fetch_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
 
 	int *maximum_order;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	{ int i; for(i = 0; i < n_variables; i ++) maximum_order[i] -= 1; }
 
 	char **connectivity;
-	handle(1,allocate_character_matrix(&connectivity,n_variables,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS,"allocating the connectivity");
+	handle(1,allocate_character_matrix(&connectivity,n_variables,MAX_STRING_LENGTH) == ALLOCATE_SUCCESS,"allocating the connectivity");
 	handle(1,fetch_vector(file,"connectivity",'s',n_variables,connectivity) == FETCH_SUCCESS,"reading \"connectivity\" from the input file");
 
 	double *weight_exponent;
@@ -49,9 +49,9 @@ int main(int argc, char *argv[])
 	struct CELL *cell = NULL;
 	read_geometry(geometry_filename, &n_nodes, &node, &n_faces, &face, &n_cells, &cell);
 
-	int n_zones = 0;
-	struct ZONE *zone = NULL;
-	read_zones(input_filename, n_faces, face, n_cells, cell, &n_zones, &zone);
+	int n_zones;
+	struct ZONE *zone;
+	zones_read(input_filename, n_faces, face, n_cells, cell, &n_zones, &zone);
 
 	generate_connectivity(n_variables, connectivity, maximum_order, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
@@ -71,7 +71,9 @@ int main(int argc, char *argv[])
 	free_vector(weight_exponent);
 	free_matrix((void **)connectivity);
 
-	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, 0, NULL);
+
+	zones_destroy(zone);
 
 	return 0;
 }

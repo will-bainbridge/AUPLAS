@@ -8,22 +8,13 @@
 #include "csr.h"
 #include "divergence.h"
 #include "handle.h"
+#include "mesh.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
 //error handlind return values
 #define ALLOCATE_SUCCESS 1
 #define ALLOCATE_ERROR 0
-
-//maximum extents for memory allocation
-#define MAX_CELL_FACES 5
-#define MAX_FACE_NODES 2
-#define MAX_NEIGHBOURS 20
-#define MAX_STENCIL 100
-#define MAX_ZONES 100
-#define MAX_INDICES 100
-#define MAX_STRING_CHARACTERS 128
-#define MAX_INTERPOLANTS 2
 
 //cell order to number of powers
 #define ORDER_TO_POWERS(order) ((order+1.0)*(order+2.0)*0.5)
@@ -37,52 +28,8 @@
 #define ID_TO_INDEX(id) ((id) / MAX_ZONES)
 #define INDEX_AND_ZONE_TO_ID(i,z) ((i)*MAX_ZONES + (z))
 
-////////////////////////////////////////////////////////////////////////////////
-
-struct NODE
-{
-	double x[2];
-};
-
-struct FACE
-{
-	int n_nodes;
-	struct NODE **node;
-
-	int n_borders;
-	struct CELL **border;
-	int *oriented;
-
-	int n_zones;
-	struct ZONE **zone;
-
-	double centroid[2];
-};
-
-struct CELL
-{
-	int n_faces;
-	struct FACE **face;
-	int *oriented;
-
-	int n_zones;
-	struct ZONE **zone;
-
-	double centroid[2];
-
-	int *order;
-	int *n_stencil;
-	int **stencil;
-	double ***matrix;
-};
-
-struct ZONE
-{
-	char location;
-	int variable;
-	char condition[MAX_STRING_CHARACTERS];
-	double value;
-};
+//string length
+#define MAX_STRING_LENGTH 128
 
 ////////////////////////////////////////////////////////////////////////////////
 

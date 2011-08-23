@@ -15,14 +15,14 @@ void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_face
 	int i, j, *index, count, offset;
 	char *line, *temp;
 	handle(1,allocate_integer_vector(&index,MAX(MAX_FACE_NODES,MAX_CELL_FACES)) == ALLOCATE_SUCCESS, "allocating indices");
-	handle(1,allocate_character_vector(&line, MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating line string");
-	handle(1,allocate_character_vector(&temp, MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating temporary string");
+	handle(1,allocate_character_vector(&line, MAX_STRING_LENGTH) == ALLOCATE_SUCCESS, "allocating line string");
+	handle(1,allocate_character_vector(&temp, MAX_STRING_LENGTH) == ALLOCATE_SUCCESS, "allocating temporary string");
 
 	//initialise
 	*n_nodes = *n_faces = *n_cells = 0;
 
 	//read each line in turn
-	while(fgets(line, MAX_STRING_CHARACTERS, file) != NULL)
+	while(fgets(line, MAX_STRING_LENGTH, file) != NULL)
 	{
 		//------------------------------------------------------------//
 
@@ -52,7 +52,7 @@ void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_face
 			for(i = 0; i < *n_faces; i ++)
 			{
 				//read a line
-				handle(1,fgets(line, MAX_STRING_CHARACTERS, file) != NULL, "reading a face line");
+				handle(1,fgets(line, MAX_STRING_LENGTH, file) != NULL, "reading a face line");
 
 				//strip newlines and whitespace off the end of the line
 				for(j = strlen(line)-1; j >= 0; j --) if(line[j] != ' ' && line[j] != '\n') break;
@@ -94,7 +94,7 @@ void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_face
 			for(i = 0; i < *n_cells; i ++)
 			{
 				//same as above but for cells
-				handle(1,fgets(line, MAX_STRING_CHARACTERS, file) != NULL, "reading a cell line");
+				handle(1,fgets(line, MAX_STRING_LENGTH, file) != NULL, "reading a cell line");
 				for(j = strlen(line)-1; j >= 0; j --) if(line[j] != ' ' && line[j] != '\n') break;
 				line[j+1] = '\0';
 				count = offset = 0;
@@ -168,8 +168,8 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	//decode the index ranges
 	char *range, *temp;
 	int offset, index[2];
-	handle(1,allocate_character_vector(&range,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating range string");
-	handle(1,allocate_character_vector(&temp,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS, "allocating temporary string");
+	handle(1,allocate_character_vector(&range,MAX_STRING_LENGTH) == ALLOCATE_SUCCESS, "allocating range string");
+	handle(1,allocate_character_vector(&temp,MAX_STRING_LENGTH) == ALLOCATE_SUCCESS, "allocating temporary string");
 
 	for(i = 0; i < *n_zones; i ++)
 	{

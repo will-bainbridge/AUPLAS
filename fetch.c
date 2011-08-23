@@ -310,6 +310,7 @@ int fetch_vector(FILE *file, char *label, char type, int n, void *value)
 	}
 
 	free(format);
+	fetch_destroy(fetch);
 
 	return FETCH_SUCCESS;
 }

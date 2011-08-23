@@ -60,9 +60,9 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
         struct CELL ***interpolant;
         interpolant = (struct CELL ***)malloc(max_n_polygon * sizeof(struct CELL **));
         handle(1,interpolant != NULL,"allocating the interpolant pointers to pointers");
-        interpolant[0] = (struct CELL **)malloc(max_n_polygon * MAX_INTERPOLANTS * sizeof(struct CELL **));
+        interpolant[0] = (struct CELL **)malloc(max_n_polygon * 2 * sizeof(struct CELL **));
         handle(1,interpolant[0] != NULL,"allocating the interpolant pointers");
-        for(i = 1; i < max_n_polygon; i ++) interpolant[i] = interpolant[i-1] + MAX_INTERPOLANTS;
+        for(i = 1; i < max_n_polygon; i ++) interpolant[i] = interpolant[i-1] + 2;
 
         double *row;
         handle(1,allocate_double_vector(&row,n_unknowns) == ALLOCATE_SUCCESS,"allocating the row");

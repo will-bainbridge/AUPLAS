@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 	char *case_filename;
 	file = fopen(input_filename,"r");
 	handle(1,file != NULL,"opening the input file");
-	handle(1,allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS,"allocating the case filename");
+	handle(1,allocate_character_vector(&case_filename,MAX_STRING_LENGTH) == ALLOCATE_SUCCESS,"allocating the case filename");
 	handle(1,fetch_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
 	fclose(file);
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 		FILE **file;
 		file = (FILE **)malloc(n_zones * sizeof(FILE *));
 		char *filename;
-		allocate_character_vector(&filename,MAX_STRING_CHARACTERS);
+		allocate_character_vector(&filename,MAX_STRING_LENGTH);
 
 		for(z = 0; z < n_zones; z ++) {
 			if(zone[z].condition[0] == 'u') {
