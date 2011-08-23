@@ -130,7 +130,7 @@ void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_face
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone)
+/*void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone)
 {
 	//counters
 	int i, j;
@@ -208,7 +208,7 @@ void read_zones(char *filename, int n_faces, struct FACE *face, int n_cells, str
 	free_vector(range);
 	free_vector(temp);
 	fclose(file);
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -27,7 +27,7 @@ struct ZONE * zones_new(struct ZONE *zone, int n_zones)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void zones_read(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone)
+void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone)
 {
 	//counters
         int i, j, n = 0, info;

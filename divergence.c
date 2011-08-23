@@ -42,7 +42,7 @@ DIVERGENCE * divergences_new(DIVERGENCE *divergence, int n_old, int n_new)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void divergences_read(char *filename, int *n_divergences, DIVERGENCE **divergence)
+void divergences_input(char *filename, int *n_divergences, DIVERGENCE **divergence)
 {
 	//open the file
 	FILE *file = fopen(filename,"r");

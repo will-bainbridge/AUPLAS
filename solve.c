@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 
 	int n_divergences;
 	DIVERGENCE *divergence;
-	divergences_read(input_filename,&n_divergences,&divergence);
+	divergences_input(input_filename,&n_divergences,&divergence);
 
 	int n_variables = 0;
 	int n_nodes = 0, n_faces = 0, n_cells = 0, n_zones = 0;

@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
 	int n_zones;
 	struct ZONE *zone;
-	zones_read(input_filename, n_faces, face, n_cells, cell, &n_zones, &zone);
+	zones_input(input_filename, n_faces, face, n_cells, cell, &n_zones, &zone);
 
 	generate_connectivity(n_variables, connectivity, maximum_order, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 
