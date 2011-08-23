@@ -259,7 +259,7 @@ void fetch_destroy(FETCH fetch)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int fetch_single_value(FILE *file, char *label, char type, void *value)
+int fetch_value(FILE *file, char *label, char type, void *value)
 {
 	char format[2];
 
@@ -274,6 +274,42 @@ int fetch_single_value(FILE *file, char *label, char type, void *value)
 	fetch_get(fetch, 0, 0, value);
 
 	fetch_destroy(fetch);
+
+	return FETCH_SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int fetch_vector(FILE *file, char *label, char type, int n, void *value)
+{
+	char *format = (char *)malloc((n + 1) * sizeof(char));
+	if(format == NULL) return FETCH_MEMORY_ERROR;
+
+	memset(format,type,n);
+	format[n] = '\0';
+
+	FETCH fetch = fetch_new(format,1);
+	if(fetch == NULL) return FETCH_MEMORY_ERROR;
+
+	if(fetch_read(file,label,fetch) != 1) return FETCH_FAIL;
+
+	int i;
+	void *d = fetch->data[0];
+	void *v = value;
+
+	for(i = 0; i < n; i ++)
+	{
+		switch(type)
+		{
+			case 'i': *((int*)v) = *((int*)d); v = (int*)v + 1; d = (int*)d + 1; break;
+			case 'f': *((float*)v) = *((float*)d); v = (float*)v + 1; d = (float*)d + 1; break;
+			case 'd': *((double*)v) = *((double*)d); v = (double*)v + 1; d = (double*)d + 1; break;
+			case 'c': *((char*)v) = *((char*)d); v = (char*)v + 1; d = (char*)d + 1; break;
+			case 's': strcpy(*((char**)v),*((char**)d)); v = (char**)v + 1; d = (char**)d + 1; break;
+		}
+	}
+
+	free(format);
 
 	return FETCH_SUCCESS;
 }

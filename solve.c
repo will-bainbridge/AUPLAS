@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 	file = fopen(input_filename,"r");
 	handle(1,file != NULL,"opening the input file");
 	handle(1,allocate_character_vector(&case_filename,MAX_STRING_CHARACTERS) == ALLOCATE_SUCCESS,"allocating the case filename");
-	handle(1,fetch_single_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
+	handle(1,fetch_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
 	fclose(file);
 
 	int n_divergences;

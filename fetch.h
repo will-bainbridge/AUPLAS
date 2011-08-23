@@ -14,6 +14,7 @@ int fetch_read(FILE *file, char *label, FETCH fetch);
 void fetch_get(FETCH fetch, int line_index, int value_index, void *value);
 void fetch_print(FETCH fetch);
 void fetch_destroy(FETCH fetch);
-int fetch_single_value(FILE *file, char *label, char type, void *value);
+int fetch_value(FILE *file, char *label, char type, void *value);
+int fetch_vector(FILE *file, char *label, char type, int n, void *value);
 
 #endif

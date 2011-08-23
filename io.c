@@ -5,46 +5,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void read_instructions(char *filename, int n_variables, int *maximum_order, double *weight_exponent, char **connectivity)
-{
-	int i;
-
-	FILE *file = fopen(filename,"r");
-	handle(1,file != NULL,"opening input file");
-
-	FETCH fetch;
-
-        char *format;
-	handle(1,allocate_character_vector(&format,n_variables + 1) == ALLOCATE_SUCCESS,"allocating format string");
-        format[n_variables] = '\0';
-
-        memset(format,'i',n_variables);
-	fetch = fetch_new(format,1);
-	handle(1,fetch != NULL,"allocating maximum order input");
-	handle(1,fetch_read(file, "maximum_order", fetch) == 1 ,"reading \"maximum_order\" from the input file");
-	for(i = 0; i < n_variables; i ++) { fetch_get(fetch, 0, i, &maximum_order[i]); maximum_order[i] -= 1; }
-	fetch_destroy(fetch);
-
-        memset(format,'d',n_variables);
-	fetch = fetch_new(format,1);
-	handle(1,fetch != NULL,"allocating weight exponent input");
-	handle(1,fetch_read(file, "weight_exponent", fetch) == 1, "reading \"weight_exponent\" from the input file");
-	for(i = 0; i < n_variables; i ++) fetch_get(fetch, 0, i, &weight_exponent[i]);
-	fetch_destroy(fetch);
-
-        memset(format,'s',n_variables);
-	fetch = fetch_new(format,1);
-	handle(1,fetch != NULL,"allocating connectivity input");
-	handle(1,fetch_read(file, "connectivity", fetch) == 1, "reading \"connectivity\" from the input file");
-	for(i = 0; i < n_variables; i ++) fetch_get(fetch, 0, i, connectivity[i]);
-	fetch_destroy(fetch);
-
-        fclose(file);
-        free_vector(format);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell)
 {
 	//open file
