@@ -101,7 +101,7 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 
 		for(d = 0; d < n_divergences; d ++)
 		{
-			if(divergence[d]->equation != zone[z].variable) continue;
+			if(divergence[d].equation != zone[z].variable) continue;
 			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], row, zone, divergence[d]);
 		}
 
@@ -125,9 +125,9 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 	int max_order = 0, max_stencil = 0;
 	for(p = 0; p < n_polygon; p ++) {
 		for(i = 0; i < n_interpolant[p]; i ++) {
-			for(j = 0; j < divergence->n_variables; j ++) {
-				max_order = MAX(max_order,interpolant[p][i]->order[divergence->variable[j]]);
-				max_stencil = MAX(max_stencil,interpolant[p][i]->n_stencil[divergence->variable[j]]);
+			for(j = 0; j < divergence.n_variables; j ++) {
+				max_order = MAX(max_order,interpolant[p][i]->order[divergence.variable[j]]);
+				max_stencil = MAX(max_stencil,interpolant[p][i]->n_stencil[divergence.variable[j]]);
 			}
 		}
 	}
@@ -146,7 +146,7 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 
 	for(p = 0; p < n_polygon; p ++)
 	{
-		if(divergence->direction == 0) normal = polygon[p][1][1] - polygon[p][0][1];
+		if(divergence.direction == 0) normal = polygon[p][1][1] - polygon[p][0][1];
 		else                           normal = polygon[p][0][0] - polygon[p][1][0];
 
 		for(q = 0; q < max_order; q ++)
@@ -162,18 +162,18 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 					0.5*polygon[p][1][1]*(1.0 + gauss_x[max_order-1][q]) -
 					interpolant[p][i]->centroid[1];
 
-				for(j = divergence->n_variables - 1; j >= 0; j --)
+				for(j = divergence.n_variables - 1; j >= 0; j --)
 				{
-					u = divergence->variable[j];
+					u = divergence.variable[j];
 
 					m = ORDER_TO_POWERS(interpolant[p][i]->order[u]);
 					n = interpolant[p][i]->n_stencil[u];
 
 					for(k = 0; k < m; k ++)
 					{
-						polynomial[k] = polynomial_coefficient[divergence->differential[j]][k] *
-							integer_power(x[0],polynomial_power_x[divergence->differential[j]][k]) *
-							integer_power(x[1],polynomial_power_y[divergence->differential[j]][k]);
+						polynomial[k] = polynomial_coefficient[divergence.differential[j]][k] *
+							integer_power(x[0],polynomial_power_x[divergence.differential[j]][k]) *
+							integer_power(x[1],polynomial_power_y[divergence.differential[j]][k]);
 					}
 
 					//multiply polynomial and matrix
@@ -204,11 +204,11 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 							s = interpolant[p][i]->stencil[u][k];
 
 							if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
-								row[id_to_unknown[s]] += divergence->constant * normal *
+								row[id_to_unknown[s]] += divergence.constant * normal *
 									gauss_w[max_order-1][q] * point_value *
 									interpolation_values[k] / n_interpolant[p];
 							} else {
-								*rhs -= divergence->constant * normal *
+								*rhs -= divergence.constant * normal *
 									gauss_w[max_order-1][q] * point_value *
 									interpolation_values[k] * zone[ID_TO_ZONE(s)].value /
 									n_interpolant[p];

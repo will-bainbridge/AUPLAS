@@ -23,25 +23,18 @@ DIVERGENCE * divergences_new(DIVERGENCE *divergence, int n_old, int n_new)
 	
 	for(i = n_new; i < n_old; i ++)
 	{
-		free(divergence[i]->variable);
-		free(divergence[i]->differential);
+		free(divergence[i].variable);
+		free(divergence[i].differential);
 	}
 
 	divergence = (DIVERGENCE *)realloc(divergence, n_new * sizeof(DIVERGENCE));
 	if(divergence == NULL) return NULL;
 
-	if(n_old == 0) divergence[0] = NULL;
-
-	divergence[0] = (DIVERGENCE)realloc(divergence[0], n_new * sizeof(struct s_DIVERGENCE));
-	if(divergence[0] == NULL) return NULL;
-
-	for(i = 0; i < n_new; i ++) divergence[i] = divergence[0] + i;
-
 	for(i = n_old; i < n_new; i ++)
 	{
-		divergence[i]->n_variables = 0;
-		divergence[i]->variable = NULL;
-		divergence[i]->differential = NULL;
+		divergence[i].n_variables = 0;
+		divergence[i].variable = NULL;
+		divergence[i].differential = NULL;
 	}
 
 	return divergence;
@@ -81,17 +74,17 @@ void divergences_read(char *filename, int *n_divergences, DIVERGENCE **divergenc
 	for(i = 0; i < n_fetch; i ++)
 	{
 		//equation
-		fetch_get(fetch, i, 0, &div[n]->equation);
+		fetch_get(fetch, i, 0, &div[n].equation);
 
 		//constant
-		fetch_get(fetch, i, 4, &div[n]->constant);
+		fetch_get(fetch, i, 4, &div[n].constant);
 
 		//direction
 		fetch_get(fetch, i, 2, &direction);
 		if(direction == 'x') {
-			div[n]->direction = 0;
+			div[n].direction = 0;
 		} else if(direction == 'y') {
-			div[n]->direction = 1;
+			div[n].direction = 1;
 		} else {
 			handle(1,info = 0,"skipping divergence with unrecognised direction");
 			continue;
@@ -102,12 +95,12 @@ void divergences_read(char *filename, int *n_divergences, DIVERGENCE **divergenc
 		//convert comma delimiters to whitespace
 		for(j = 0; j < strlen(piece); j ++) if(piece[j] == ',') piece[j] = ' ';
 		//sequentially read variables
-		offset = div[n]->n_variables = 0;
+		offset = div[n].n_variables = 0;
 		while(offset < strlen(piece))
 		{
 			//read the variable from the string
 			info = sscanf(&piece[offset],"%s",temp);
-			info *= sscanf(temp,"%i",&term[div[n]->n_variables++]);
+			info *= sscanf(temp,"%i",&term[div[n].n_variables++]);
 			handle(0,info,"skipping divergence with unrecognised variable format");
 			if(!info) continue;
 
@@ -143,20 +136,20 @@ void divergences_read(char *filename, int *n_divergences, DIVERGENCE **divergenc
 		}
 
 		//check numbers
-		info = div[n]->n_variables == n_diff;
+		info = div[n].n_variables == n_diff;
 		handle(0,info,"skipping divergence with different numbers of variables and differentials");
 		if(!info) continue;
 
 		//allocate the variable and differential arrays
-		div[n]->variable = (int *)malloc(div[n]->n_variables * sizeof(int));
-		div[n]->differential = (int *)malloc(div[n]->n_variables * sizeof(int));
-		handle(1,div[n]->variable != NULL && div[n]->differential != NULL,"allocating divergence variables and differentials");
+		div[n].variable = (int *)malloc(div[n].n_variables * sizeof(int));
+		div[n].differential = (int *)malloc(div[n].n_variables * sizeof(int));
+		handle(1,div[n].variable != NULL && div[n].differential != NULL,"allocating divergence variables and differentials");
 
 		//copy over
-		for(j = 0; j < div[n]->n_variables; j ++)
+		for(j = 0; j < div[n].n_variables; j ++)
 		{
-			div[n]->variable[j] = term[j];
-			div[n]->differential[j] = differential[j];
+			div[n].variable[j] = term[j];
+			div[n].differential[j] = differential[j];
 		}
 
 		//increment the number of divergences
@@ -190,8 +183,11 @@ void divergences_read(char *filename, int *n_divergences, DIVERGENCE **divergenc
 void divergences_destroy(int n_divergences, DIVERGENCE *divergence)
 {
 	int i;
-	for(i = 0; i < n_divergences; i ++) { free(divergence[i]->variable); free(divergence[i]->differential); }
-	free(divergence[0]);
+	for(i = 0; i < n_divergences; i ++)
+	{
+		free(divergence[i].variable);
+		free(divergence[i].differential);
+	}
 	free(divergence);
 }
 
