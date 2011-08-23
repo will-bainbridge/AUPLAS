@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "mesh.h"
 #include "handle.h"
+#include "mesh.h"
+#include "zone.h"
 
 #define ZONE_LABEL "zone"
 #define ZONE_FORMAT "csisd"
 
-#define MAX_ZONES 100
 #define MAX_STRING_LENGTH 128
 
 #define MAX_ZONES_PER_ELEMENT 10
