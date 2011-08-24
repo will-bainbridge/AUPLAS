@@ -118,7 +118,7 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
 
 	//resize zone list
 	struct ZONE *z_new = zones_new(z, n);
-        handle(1,div != NULL,"re-allocating zones");
+        handle(1,zone != NULL,"re-allocating zones");
 	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[i].n_zones; j ++) face[i].zone[j] += z_new - z;
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) cell[i].zone[j] += z_new - z;
 
