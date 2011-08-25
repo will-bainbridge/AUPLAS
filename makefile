@@ -1,7 +1,16 @@
 CC		= gcc
 CFLAGS		= -O2 -Wall
-INCLS		= -I./thirdparty/CXSparse/Include -I./thirdparty/UFconfig -I./thirdparty/SuperLU_4.1/SRC
-LIBS		= -lm -lblas -llapack -L./thirdparty/CXSparse/Lib/ -lcxsparse -L./thirdparty/SuperLU_4.1/lib -lsuperlu_4.1
+
+INCLS		= -I./thirdparty/UFconfig \
+		  -I./thirdparty/CXSparse/Include \
+		  -I./thirdparty/SuperLU_4.1/SRC \
+		  -I./thirdparty/UMFPACK/Include \
+		  -I./thirdparty/AMD/Include
+LIBS		= -lm -lblas -llapack \
+		  -L./thirdparty/CXSparse/Lib/ -lcxsparse \
+		  -L./thirdparty/SuperLU_4.1/lib -lsuperlu_4.1 \
+		  -L./thirdparty/UMFPACK/Lib -lumfpack \
+		  -L./thirdparty/AMD/Lib -lamd
 
 MAINSRCS	= preprocess.c solve.c
 COMMONSRCS 	= io.c connectivity.c fetch.c geometry.c numerics.c memory.c system.c csr.c divergence.c zone.c cell.c face.c node.c

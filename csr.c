@@ -6,6 +6,7 @@
 
 #include "csr.h"
 
+#include "umfpack.h"
 #include "slu_ddefs.h"
 #include "cs.h"
 
@@ -163,6 +164,30 @@ int csr_solve_csparse(CSR A, double *b)
 	cs_free(MT);
 
 	return info ? CSR_SUCCESS : CSR_SOLVE_ERROR;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int csr_solve_umfpack(CSR A, double *b)
+{
+	void *Symbolic, *Numeric;
+	
+	umfpack_di_symbolic(A->n, A->n, A->row, A->index, A->value, &Symbolic, NULL, NULL);
+	
+	umfpack_di_numeric(A->row, A->index, A->value, Symbolic, &Numeric, NULL, NULL);
+        umfpack_di_free_symbolic(&Symbolic);
+
+	double *x = (double *)malloc(A->n * sizeof(double));
+
+	umfpack_di_solve(UMFPACK_At, A->row, A->index, A->value, x, b, Numeric, NULL, NULL);
+        umfpack_di_free_numeric(&Numeric);
+
+	int i;
+	for(i = 0; i < A->n; i ++) b[i] = x[i];
+
+	free(x);
+
+	return 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

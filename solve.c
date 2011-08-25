@@ -62,7 +62,8 @@ int main(int argc, char *argv[])
 	printf("solving the system\n");
 
 	//handle(1,csr_solve_superlu(matrix, rhs) == CSR_SUCCESS,"solving the system");
-	handle(1,csr_solve_csparse(matrix, rhs) == CSR_SUCCESS,"solving the system");
+	//handle(1,csr_solve_csparse(matrix, rhs) == CSR_SUCCESS,"solving the system");
+	handle(1,csr_solve_umfpack(matrix, rhs) == CSR_SUCCESS,"solving the system");
 
 	{
 		printf("writing out zone data\n");
