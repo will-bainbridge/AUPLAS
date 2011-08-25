@@ -20,6 +20,18 @@ void node_geometry_get(FILE *file, struct NODE *node)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void node_case_write(FILE *file, struct NODE *node)
+{
+	handle(1,fwrite(node->x, sizeof(double), 2, file) == 2, "writing the node location");
+}
+
+void node_case_get(FILE *file, struct NODE *node)
+{
+	handle(1,fread(node->x, sizeof(double), 2, file) == 2, "reading the node location");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void nodes_destroy(struct NODE *node)
 {
 	free(node);

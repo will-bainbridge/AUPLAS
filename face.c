@@ -107,6 +107,56 @@ void face_geometry_get(FILE *file, struct FACE *face, struct NODE *node)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void face_case_write(FILE *file, struct NODE *node, struct FACE *face, struct CELL *cell, struct ZONE *zone)
+{
+	int i, *index;
+
+	index = (int *)malloc(MAX_INDICES * sizeof(int));
+	handle(1,index != NULL,"allocating temporary storage");
+
+	handle(1,fwrite(&(face->n_nodes), sizeof(int), 1, file) == 1, "writing the number of face nodes");
+	for(i = 0; i < face->n_nodes; i ++) index[i] = (int)(face->node[i] - &node[0]);
+	handle(1,fwrite(index, sizeof(int), face->n_nodes, file) == face->n_nodes, "writing the face nodes");
+	handle(1,fwrite(face->centroid, sizeof(double), 2, file) == 2, "writing the face centroid");
+	handle(1,fwrite(&(face->n_borders), sizeof(int), 1, file) == 1, "writing the number of face borders");
+	for(i = 0; i < face->n_borders; i ++) index[i] = (int)(face->border[i] - &cell[0]);
+	handle(1,fwrite(index, sizeof(int), face->n_borders, file) == face->n_borders, "writing the face borders");
+	handle(1,fwrite(face->oriented, sizeof(int), face->n_borders, file) == face->n_borders, "writing the face orientations");
+	handle(1,fwrite(&(face->n_zones), sizeof(int), 1, file) == 1, "writing the number of face zones");
+	for(i = 0; i < face->n_zones; i ++) index[i] = (int)(face->zone[i] - &zone[0]);
+	handle(1,fwrite(index, sizeof(int), face->n_zones, file) == face->n_zones, "writing the face zones");
+
+	free(index);
+}
+
+void face_case_get(FILE *file, struct NODE *node, struct FACE *face, struct CELL *cell, struct ZONE *zone)
+{
+	int i, *index;
+
+	index = (int *)malloc(MAX_INDICES * sizeof(int));
+	handle(1,index != NULL,"allocating temporary storage");
+
+	handle(1,fread(&(face->n_nodes), sizeof(int), 1, file) == 1, "reading the number of face nodes");
+	handle(1,face_node_new(face),"allocating face nodes");
+	handle(1,fread(index, sizeof(int), face->n_nodes, file) == face->n_nodes, "reading face nodes");
+	for(i = 0; i < face->n_nodes; i ++) face->node[i] = &node[index[i]];
+	handle(1,fread(face->centroid, sizeof(double), 2, file) == 2, "reading the face centroid");
+	handle(1,fread(&(face->n_borders), sizeof(int), 1, file) == 1, "reading the number of face borders");
+	handle(1,face_border_new(face),"allocating face borders");
+	handle(1,fread(index, sizeof(int), face->n_borders, file) == face->n_borders, "reading the face borders");
+	for(i = 0; i < face->n_borders; i ++) face->border[i] = &cell[index[i]];
+	handle(1,face_oriented_new(face),"allocating face orientations");
+	handle(1,fread(face->oriented, sizeof(int), face->n_borders, file) == face->n_borders, "reading the face orientations");
+	handle(1,fread(&(face->n_zones), sizeof(int), 1, file) == 1, "reading the number of face zones");
+	handle(1,face_zone_new(face),"allocating face zones");
+	handle(1,fread(index, sizeof(int), face->n_zones, file) == face->n_zones, "reading the face zones");
+	for(i = 0; i < face->n_zones; i ++) face->zone[i] = &zone[index[i]];
+
+	free(index);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void faces_destroy(int n_faces, struct FACE *face)
 {
 	int i;

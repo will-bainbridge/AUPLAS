@@ -28,6 +28,8 @@ int face_border_new(struct FACE *face);
 int face_oriented_new(struct FACE *face);
 int face_zone_new(struct FACE *face);
 void face_geometry_get(FILE *file, struct FACE *face, struct NODE *node);
+void face_case_write(FILE *file, struct NODE *node, struct FACE *face, struct CELL *cell, struct ZONE *zone);
+void face_case_get(FILE *file, struct NODE *node, struct FACE *face, struct CELL *cell, struct ZONE *zone);
 void faces_destroy(int n_faces, struct FACE *face);
 
 #endif

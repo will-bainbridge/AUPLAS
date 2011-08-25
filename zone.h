@@ -17,6 +17,8 @@ struct ZONE
 
 struct ZONE * zones_new(int n_zones, struct ZONE *zone);
 void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
+void zone_case_write(FILE *file, struct ZONE *zone);
+void zone_case_get(FILE *file, struct ZONE *zone);
 void zones_destroy(struct ZONE *zone);
 
 #endif

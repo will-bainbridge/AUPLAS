@@ -12,8 +12,22 @@
 
 struct ZONE * zones_new(int n_zones, struct ZONE *zone)
 {
+	int new = zone == NULL;
+
 	zone = (struct ZONE *)realloc(zone, n_zones * sizeof(struct ZONE));
 	if(zone == NULL) return NULL;
+
+	if(new)
+	{
+		int i;
+		for(i = 0; i < n_zones; i ++)
+		{
+			zone[i].location = '\0';
+			zone[i].variable = -1;
+			memset(zone[i].condition,'\0',MAX_CONDITION_CHARACTERS);
+			zone[i].value = 0.0;
+		}
+	}
 
 	return zone;
 }
@@ -129,6 +143,23 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
 	fetch_destroy(fetch);
 	free(range);
 	free(temp);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void zone_case_write(FILE *file, struct ZONE *zone)
+{
+	handle(1,fwrite(&(zone->location), sizeof(char), 1, file) == 1,"writing the zone location");
+	handle(1,fwrite(&(zone->variable), sizeof(int), 1, file) == 1,"writing the zone variable");
+	handle(1,fwrite(zone->condition, sizeof(char), MAX_CONDITION_CHARACTERS, file) == MAX_CONDITION_CHARACTERS,"writing the zone condition");
+	handle(1,fwrite(&(zone->value), sizeof(double), 1, file) == 1,"writing the zone value");
+}
+void zone_case_get(FILE *file, struct ZONE *zone)
+{
+	handle(1,fread(&(zone->location), sizeof(char), 1, file) == 1,"reading the zone location");
+	handle(1,fread(&(zone->variable), sizeof(int), 1, file) == 1,"reading the zone variable");
+	handle(1,fread(zone->condition, sizeof(char), MAX_CONDITION_CHARACTERS, file) == MAX_CONDITION_CHARACTERS,"reading the zone condition");
+	handle(1,fread(&(zone->value), sizeof(double), 1, file) == 1,"reading the zone value");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

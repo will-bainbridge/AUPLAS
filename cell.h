@@ -34,6 +34,8 @@ int cell_n_stencil_new(int n_variables, struct CELL *cell);
 int cell_stencil_new(int n_variables, struct CELL *cell);
 int cell_matrix_new(int n_variables, struct CELL *cell);
 void cell_geometry_get(FILE *file, struct CELL *cell, struct FACE *face);
+void cell_case_write(FILE *file, int n_variables, struct FACE *face, struct CELL *cell, struct ZONE *zone);
+void cell_case_get(FILE *file, int n_variables, struct FACE *face, struct CELL *cell, struct ZONE *zone);
 void cells_destroy(int n_variables, int n_cells, struct CELL *cell);
 
 #endif
