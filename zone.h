@@ -1,8 +1,6 @@
 #ifndef ZONE_H
 #define ZONE_H
 
-#include "fetch.h"
-
 #define MAX_ZONES 100
 #define MAX_CONDITION_CHARACTERS 8
 
@@ -17,7 +15,7 @@ struct ZONE
 	double value;
 };
 
-struct ZONE * zones_new(struct ZONE *zone, int n_zones);
+struct ZONE * zones_new(int n_zones, struct ZONE *zone);
 void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
 void zones_destroy(struct ZONE *zone);
 

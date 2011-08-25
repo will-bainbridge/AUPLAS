@@ -14,6 +14,8 @@ void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, str
 
 	for(c = 0; c < n_cells; c ++)
 	{
+		handle(1,cell_oriented_new(&cell[c]),"allocating cell orientations");
+
 		for(i = 0; i < cell[c].n_faces; i ++)
 		{
 			i1 = i + 1 - cell[c].n_faces*(i == cell[c].n_faces - 1);
@@ -39,6 +41,8 @@ void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, str
 	//copy the borders generated above into the face structures
 	for(i = 0; i < n_faces; i ++)
 	{
+		handle(1,face_oriented_new(&face[i]),"allocating face orientations");
+
 		for(j = 0; j < face[i].n_borders; j ++)
 		{
 			for(k = 0; k < face[i].border[j]->n_faces; k ++)

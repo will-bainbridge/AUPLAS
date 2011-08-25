@@ -1,8 +1,6 @@
 #ifndef DIVERGENCE_H
 #define DIVERGENCE_H
 
-#include "fetch.h"
-
 #define DIVERGENCE_SUCCESS 1
 #define DIVERGENCE_FETCH_ERROR 0
 #define DIVERGENCE_FORMAT_ERROR -1

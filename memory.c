@@ -131,36 +131,6 @@ int allocate_mesh(int n_variables, int n_nodes, struct NODE **node, int n_faces,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/*int allocate_equations(int n_divergences, struct DIVERGENCE **divergence)
-{
-	int i;
-
-	if(n_divergences > 0 && *divergence == NULL) {
-		*divergence = (struct DIVERGENCE *)malloc(n_divergences * sizeof(struct DIVERGENCE));
-		if(*divergence == NULL) return ALLOCATE_ERROR;
-		for(i = 0; i < n_divergences; i ++) {
-			(*divergence)[i].n_variables = 0;
-			(*divergence)[i].variable = (*divergence)[i].differential = NULL;
-		}
-	}
-
-	for(i = 0; i < n_divergences; i ++)
-	{
-		if((*divergence)[i].n_variables > 0 && (*divergence)[i].variable == NULL) {
-			(*divergence)[i].variable = (int *)malloc((*divergence)[i].n_variables * sizeof(int));
-			if((*divergence)[i].variable == NULL) return ALLOCATE_ERROR;
-		}
-		if((*divergence)[i].n_variables > 0 && (*divergence)[i].differential == NULL) {
-			(*divergence)[i].differential = (int *)malloc((*divergence)[i].n_variables * sizeof(int));
-			if((*divergence)[i].differential == NULL) return ALLOCATE_ERROR;
-		}
-	}
-
-	return ALLOCATE_SUCCESS;
-}*/
-
-////////////////////////////////////////////////////////////////////////////////
-
 void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
 	int i, j;
@@ -192,21 +162,6 @@ void free_mesh(int n_variables, int n_nodes, struct NODE *node, int n_faces, str
 
 	free(zone);
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*void free_equations(int n_divergences, struct DIVERGENCE *divergence)
-{
-	int i;
-
-	for(i = 0; i < n_divergences; i ++)
-	{
-		free(divergence[i].variable);
-		free(divergence[i].differential);
-	}
-
-	free(divergence);
-}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 

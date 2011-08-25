@@ -1,23 +1,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "handle.h"
-#include "mesh.h"
-#include "zone.h"
+#include "auplas.h"
+#include "fetch.h"
 
 #define ZONE_LABEL "zone"
 #define ZONE_FORMAT "csisd"
-
-#define MAX_STRING_LENGTH 128
 
 #define MAX_ZONES_PER_ELEMENT 10
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct ZONE * zones_new(struct ZONE *zone, int n_zones)
+struct ZONE * zones_new(int n_zones, struct ZONE *zone)
 {
 	zone = (struct ZONE *)realloc(zone, n_zones * sizeof(struct ZONE));
 	if(zone == NULL) return NULL;
@@ -44,7 +37,7 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
         handle(0,n_fetch < MAX_ZONES,"maximum number of zones reached");
 
 	//allocate zones
-	struct ZONE *z = zones_new(NULL, n_fetch);
+	struct ZONE *z = zones_new(n_fetch, NULL);
 	handle(1,z != NULL,"allocating zones");
 
         //temporary storage
@@ -117,7 +110,7 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
 	}
 
 	//resize zone list
-	struct ZONE *z_new = zones_new(z, n);
+	struct ZONE *z_new = zones_new(n, z);
         handle(1,zone != NULL,"re-allocating zones");
 	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[i].n_zones; j ++) face[i].zone[j] += z_new - z;
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) cell[i].zone[j] += z_new - z;

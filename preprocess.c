@@ -42,11 +42,11 @@ int main(int argc, char *argv[])
 	fclose(file);
 
 	//--------------------------------------------------------------------//
-
-	int n_nodes = 0, n_faces = 0, n_cells = 0;
-	struct NODE *node = NULL;
-	struct FACE *face = NULL;
-	struct CELL *cell = NULL;
+	
+	int n_nodes, n_faces, n_cells;
+	struct NODE *node;
+	struct FACE *face;
+	struct CELL *cell;
 	read_geometry(geometry_filename, &n_nodes, &node, &n_faces, &face, &n_cells, &cell);
 
 	int n_zones;
@@ -71,8 +71,9 @@ int main(int argc, char *argv[])
 	free_vector(weight_exponent);
 	free_matrix((void **)connectivity);
 
-	free_mesh(n_variables, n_nodes, node, n_faces, face, n_cells, cell, 0, NULL);
-
+	nodes_destroy(node);
+	faces_destroy(n_faces,face);
+	cells_destroy(n_variables,n_cells,cell);
 	zones_destroy(zone);
 
 	return 0;

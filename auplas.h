@@ -8,7 +8,10 @@
 #include "csr.h"
 #include "divergence.h"
 #include "handle.h"
-#include "mesh.h"
+
+#include "node.h"
+#include "face.h"
+#include "cell.h"
 #include "zone.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,6 +34,7 @@
 
 //string length
 #define MAX_STRING_LENGTH 128
+#define MAX_INDICES 100
 
 ////////////////////////////////////////////////////////////////////////////////
 

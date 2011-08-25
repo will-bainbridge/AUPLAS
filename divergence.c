@@ -1,19 +1,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
+#include "auplas.h"
 #include "differential.h"
 #include "divergence.h"
-#include "handle.h"
+#include "fetch.h"
 
 #define DIVERGENCE_LABEL "divergence"
 #define DIVERGENCE_FORMAT "iscsd"
 
 #define MAX_DIVERGENCES 100
-#define MAX_VARIABLES 5
-#define MAX_STRING_LENGTH 128
+#define MAX_DIVERGENCE_VARIABLES 5
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -67,8 +63,8 @@ void divergences_input(char *filename, int *n_divergences, DIVERGENCE **divergen
 	int offset, n_diff, diff[2];
 	char *piece = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
 	char *temp = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
-	int *term = (int *)malloc(MAX_VARIABLES * sizeof(int));
-	int *differential = (int *)malloc(MAX_VARIABLES * sizeof(int));
+	int *term = (int *)malloc(MAX_DIVERGENCE_VARIABLES * sizeof(int));
+	int *differential = (int *)malloc(MAX_DIVERGENCE_VARIABLES * sizeof(int));
 	handle(1,piece != NULL && temp != NULL && term != NULL && differential != NULL,"allocating temporary storage");
 
 	for(i = 0; i < n_fetch; i ++)
