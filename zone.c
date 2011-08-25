@@ -90,7 +90,7 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
                 for(j = 0; j < strlen(range); j ++) if(range[j] == ',') range[j] = ' ';
 
                 //sequentially read ranges
-                offset = 0;
+                offset = info = 0;
                 while(offset < strlen(range))
                 {
                         //read the range from the string

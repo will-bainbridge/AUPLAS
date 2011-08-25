@@ -1,5 +1,5 @@
 CC		= gcc
-CFLAGS		= -g -Wall
+CFLAGS		= -O2 -Wall
 INCLS		= -I./thirdparty/CXSparse/Include -I./thirdparty/UFconfig -I./thirdparty/SuperLU_4.1/SRC
 LIBS		= -lm -lblas -llapack -L./thirdparty/CXSparse/Lib/ -lcxsparse -L./thirdparty/SuperLU_4.1/lib -lsuperlu_4.1
 

@@ -29,7 +29,6 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 	for(u = 0; u < n_variables; u ++) if(maximum_order[u] > maximum_maximum_order) maximum_maximum_order = maximum_order[u];
 
 	//cell structure allocation
-	//handle(1,allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) == ALLOCATE_SUCCESS, "allocating cell matrices");
 	for(c = 0; c < n_cells; c ++) handle(1,cell_matrix_new(n_variables, &cell[c]),"allocating cell matrices");
 
 	//numerics values

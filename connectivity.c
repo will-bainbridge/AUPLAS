@@ -16,7 +16,6 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_faces; j ++) face_borders[(int)(cell[i].face[j] - &face[0])][cell[i].face[j]->n_borders ++] = i;
 
 	//allocate face borders and copy over the data
-	//handle(1,allocate_mesh(0, 0, NULL, n_faces, &face, 0, NULL, 0, NULL) == ALLOCATE_SUCCESS,"allocating face borders");
 	for(i = 0; i < n_faces; i ++)
 	{
 		handle(1,face_border_new(&face[i]),"allocating face borders");
@@ -85,7 +84,6 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 	}
 
 	//allocate the stencil numbers and pointers
-	//handle(1,allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL) == ALLOCATE_SUCCESS,"allocating cell stencils");
 	for(c = 0; c < n_cells; c ++) handle(1,cell_n_stencil_new(n_variables,&cell[c]),"allocating cell stencil numbers");
 	for(c = 0; c < n_cells; c ++) handle(1,cell_order_new(n_variables,&cell[c]),"allocating a cell orders");
 
@@ -189,7 +187,6 @@ void generate_connectivity(int n_variables, char **connectivity, int *maximum_or
 			}
 
 			//allocate and store the stencils in the cell structure
-			//handle(1,allocate_mesh(n_variables, 0, NULL, 0, NULL, n_cells, &cell, 0, NULL),"allocating a cell stencil");
 			handle(1,cell_stencil_new(n_variables,&cell[c]),"allocating a cell stencil");
 			for(i = 0; i < cell[c].n_stencil[u]; i ++) cell[c].stencil[u][i] = stencil[i];
 
