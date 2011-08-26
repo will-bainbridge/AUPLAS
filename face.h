@@ -30,6 +30,9 @@ int face_zone_new(struct FACE *face);
 void face_geometry_get(FILE *file, struct FACE *face, struct NODE *node);
 void face_case_write(FILE *file, struct NODE *node, struct FACE *face, struct CELL *cell, struct ZONE *zone);
 void face_case_get(FILE *file, struct NODE *node, struct FACE *face, struct CELL *cell, struct ZONE *zone);
+void face_generate_border(struct FACE *face, struct CELL *cell);
+struct CELL ** face_add_node_borders_to_list(struct FACE *face, int *n_list, struct CELL **list);
+struct CELL ** face_add_face_borders_to_list(struct FACE *face, int *n_list, struct CELL **list);
 void faces_destroy(int n_faces, struct FACE *face);
 
 #endif

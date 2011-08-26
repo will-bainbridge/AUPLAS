@@ -240,6 +240,143 @@ void cell_case_get(FILE *file, int n_variables, struct FACE *face, struct CELL *
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void cell_generate_border(struct CELL *cell)
+{
+	int i;
+	for(i = 0; i < cell->n_faces; i ++)
+	{
+		face_generate_border(cell->face[i],cell);
+	}
+}
+
+void cell_generate_stencil(struct CELL *cell, int n_variables, int *maximum_order, char **connectivity, struct FACE *face_zero, struct CELL *cell_zero, struct ZONE *zone_zero)
+{
+	int u, z, i, j, k;
+
+	int n_stencil_cells, n_existing_stencil_cells, n_stencil_faces, n_max_stencil_faces;
+	struct CELL **stencil_cell = NULL;
+	struct FACE **stencil_face = NULL;
+	int *stencil = NULL;
+
+	int add;
+	int is_variable, is_unknown, is_in_cell;
+
+	handle(1,cell_n_stencil_new(n_variables,cell),"allocating cell stencil numbers");
+	handle(1,cell_order_new(n_variables,cell),"allocating a cell orders");
+
+	for(u = 0; u < n_variables; u ++)
+	{
+		//initial stencil contains the centre cell only
+		n_stencil_cells = 1;
+		stencil_cell = (struct CELL **)realloc(stencil_cell, 1 * sizeof(struct CELL *));
+		handle(1,stencil_cell != 0,"allocating stencil cell list");
+		stencil_cell[0] = cell;
+
+		//loop over each character in the connectivity string
+		for(i = 0; i < strlen(connectivity[u]); i ++)
+		{
+			//loop over and add the neighbours of all the existing stencil cells
+			n_existing_stencil_cells = n_stencil_cells;
+			for(j = 0; j < n_existing_stencil_cells; j ++)
+			{
+				for(k = 0; k < stencil_cell[j]->n_faces; k ++)
+				{
+					if(connectivity[u][i] == 'n')
+					{
+						stencil_cell = face_add_node_borders_to_list(stencil_cell[j]->face[k],
+								&n_stencil_cells, stencil_cell);
+					}
+					else if(connectivity[u][i] == 'f')
+					{
+						stencil_cell = face_add_face_borders_to_list(stencil_cell[j]->face[k],
+								&n_stencil_cells, stencil_cell);
+					}
+					else { handle(1,0,"reconising the connectivity"); }
+				}
+			}
+		}
+
+		//generate stencil faces from all faces around the current stencil cells
+		n_max_stencil_faces = 0;
+		for(i = 0; i < n_stencil_cells; i ++) for(j = 0; j < stencil_cell[i]->n_faces; j ++) n_max_stencil_faces ++;
+
+		stencil_face = (struct FACE **)realloc(stencil_face, n_max_stencil_faces * sizeof(struct FACE *));
+		handle(1,stencil_face != 0,"allocating stencil face list");
+
+		n_stencil_faces = 0;
+		for(i = 0; i < n_stencil_cells; i ++)
+		{
+			for(j = 0; j < stencil_cell[i]->n_faces; j ++)
+			{
+				add = 1;
+
+				for(k = 0; k < n_stencil_faces; k ++)
+				{
+					if(stencil_cell[i]->face[j] == stencil_face[k])
+					{
+						add = 0;
+						break;
+					}
+				}
+
+				if(add) stencil_face[n_stencil_faces ++] = stencil_cell[i]->face[j];
+			}
+		}
+
+		//generate the stencil identifiers
+		cell->n_stencil[u] = 0;
+
+		stencil = (int *)realloc(stencil, (n_stencil_cells + n_stencil_faces) * sizeof(int));
+		handle(1,stencil != NULL,"allocating temporary stencil");
+
+		for(i = 0; i < n_stencil_cells; i ++)
+		{
+			is_in_cell = cell == stencil_cell[i];
+
+			for(j = 0; j < stencil_cell[i]->n_zones; j ++)
+			{
+				is_variable = stencil_cell[i]->zone[j]->variable == u;
+				is_unknown = stencil_cell[i]->zone[j]->condition[0] == 'u';
+
+				z = (int)(stencil_cell[i]->zone[j] - zone_zero);
+
+				if(is_variable && (is_unknown || is_in_cell))
+					stencil[cell->n_stencil[u]++] = INDEX_AND_ZONE_TO_ID((int)(stencil_cell[i] - cell_zero),z);
+			}
+		}
+
+		for(i = 0; i < n_stencil_faces; i ++)
+		{
+			is_in_cell = 0;
+			for(k = 0; k < cell->n_faces; k ++) is_in_cell = is_in_cell || cell->face[k] == stencil_face[i];
+
+			for(j = 0; j < stencil_face[i]->n_zones; j ++) //FACE NOT ABSTRACTED
+			{
+				is_variable = stencil_face[i]->zone[j]->variable == u;
+				is_unknown = stencil_face[i]->zone[j]->condition[0] == 'u';
+
+				z = (int)(stencil_face[i]->zone[j] - zone_zero);
+
+				if(is_variable && (is_unknown || is_in_cell))
+					stencil[cell->n_stencil[u]++] = INDEX_AND_ZONE_TO_ID((int)(stencil_face[i] - face_zero),z);
+			}
+		}
+
+		//allocate and store the stencils in the cell structure
+		handle(1,cell_stencil_new(n_variables,cell),"allocating a cell stencil");
+		for(i = 0; i < cell->n_stencil[u]; i ++) cell->stencil[u][i] = stencil[i];
+
+		//generate the order
+		cell->order[u] = MIN(maximum_order[u],floor(-1.5 + sqrt(2.0*cell->n_stencil[u] + 0.25)));
+	}
+
+	free(stencil_cell);
+	free(stencil_face);
+	free(stencil);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void cells_destroy(int n_variables, int n_cells, struct CELL *cell)
 {
 	int i, j;
@@ -250,9 +387,29 @@ void cells_destroy(int n_variables, int n_cells, struct CELL *cell)
 		free(cell[i].zone);
 		free(cell[i].order);
 		free(cell[i].n_stencil);
-		if(cell[i].stencil != NULL) for(j = 0; j < n_variables; j ++) free(cell[i].stencil[j]);
+
+		if(cell[i].stencil != NULL)
+		{
+			for(j = 0; j < n_variables; j ++)
+			{
+				free(cell[i].stencil[j]);
+			}
+		}
+
 		free(cell[i].stencil);
-		if(cell[i].matrix != NULL) for(j = 0; j < n_variables; j ++) { free(cell[i].matrix[j][0]); free(cell[i].matrix[j]); }
+
+		if(cell[i].matrix != NULL)
+		{
+			for(j = 0; j < n_variables; j ++)
+			{
+				if(cell[i].matrix[j] != NULL)
+				{
+					free(cell[i].matrix[j][0]);
+					free(cell[i].matrix[j]);
+				}
+			}
+		}
+
 		free(cell[i].matrix);
 	}
 	free(cell);

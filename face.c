@@ -157,6 +157,70 @@ void face_case_get(FILE *file, struct NODE *node, struct FACE *face, struct CELL
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void face_generate_border(struct FACE *face, struct CELL *cell)
+{
+	int i;
+	for(i = 0; i < face->n_borders; i ++) if(face->border[i] == cell) return;
+
+	face->n_borders ++;
+	handle(1,face_border_new(face),"allocating face border");
+
+	face->border[face->n_borders - 1] = cell;
+
+	for(i = 0; i < face->n_nodes; i ++) node_generate_border(face->node[i],cell);
+}
+
+struct CELL ** face_add_node_borders_to_list(struct FACE *face, int *n_list, struct CELL **list)
+{
+	int i;
+	for(i = 0; i < face->n_nodes; i ++) list = node_add_borders_to_list(face->node[i], n_list, list);
+	return list;
+}
+
+struct CELL ** face_add_face_borders_to_list(struct FACE *face, int *n_list, struct CELL **list)
+{
+	int i, j, n_add = 0;
+
+	int *add = (int *)malloc(face->n_borders * sizeof(int));
+	handle(1,add != NULL,"allocating temporary storage");
+
+	for(i = 0; i < face->n_borders; i ++)
+	{
+		add[i] = 1;
+
+		for(j = 0; j < *n_list; j ++)
+		{
+			if(face->border[i] == list[j])
+			{
+				add[i] = 0;
+				break;
+			}
+		}
+
+		n_add += add[i];
+	}
+
+	if(n_add > 0)
+	{
+		list = (struct CELL **)realloc(list, (*n_list + n_add) * sizeof(struct CELL *));
+		handle(1,list != NULL,"re-allocating list");
+
+		for(i = 0; i < face->n_borders; i ++)
+		{
+			if(add[i])
+			{
+				list[(*n_list) ++] = face->border[i];
+			}
+		}
+	}
+
+	free(add);
+
+	return list;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void faces_destroy(int n_faces, struct FACE *face)
 {
 	int i;

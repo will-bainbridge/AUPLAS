@@ -53,8 +53,17 @@ int main(int argc, char *argv[])
 	struct ZONE *zone;
 	zones_input(input_filename, n_faces, face, n_cells, cell, &n_zones, &zone);
 
-	generate_connectivity(n_variables, connectivity, maximum_order, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+	{
+		int i;
 
+		for(i = 0; i < n_cells; i ++) cell_generate_border(&cell[i]);
+
+		for(i = 0; i < n_cells; i ++)
+			cell_generate_stencil(&cell[i], n_variables, maximum_order, connectivity, &face[0], &cell[0], &zone[0]);
+	}
+
+	//generate_connectivity(n_variables, connectivity, maximum_order, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+	
 	generate_face_orientations(n_faces, face, n_cells, cell);
 
 	calculate_control_volume_geometry(n_faces, face, n_cells, cell);
@@ -71,7 +80,7 @@ int main(int argc, char *argv[])
 	free_vector(weight_exponent);
 	free_matrix((void **)connectivity);
 
-	nodes_destroy(node);
+	nodes_destroy(n_nodes,node);
 	faces_destroy(n_faces,face);
 	cells_destroy(n_variables,n_cells,cell);
 	zones_destroy(zone);

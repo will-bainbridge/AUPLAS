@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 	free_vector(lhs);
 	free_vector(rhs);
 
-	nodes_destroy(node);
+	nodes_destroy(n_nodes,node);
 	faces_destroy(n_faces,face);
 	cells_destroy(n_variables,n_cells,cell);
 	zones_destroy(zone);
