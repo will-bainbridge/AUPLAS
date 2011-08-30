@@ -4,8 +4,7 @@
 #include "differential.h"
 #include "fetch.h"
 
-#define MAX_FACE_NODES 2
-#define MAX_CELL_FACES 5
+#define MAX_INDICES 100
 
 #define ZONE_LABEL "zone"
 #define ZONE_FORMAT "csisd"
