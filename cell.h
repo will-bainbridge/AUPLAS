@@ -29,6 +29,7 @@ struct CELL * cells_new(int n_cells, struct CELL *cell);
 int cell_face_new(struct CELL *cell);
 int cell_oriented_new(struct CELL *cell);
 int cell_zone_new(struct CELL *cell);
+int cell_zone_add(struct CELL *cell, struct ZONE *zone);
 int cell_order_new(int n_variables, struct CELL *cell);
 int cell_n_stencil_new(int n_variables, struct CELL *cell);
 int cell_stencil_new(int n_variables, struct CELL *cell);

@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 	{
 		printf("writing out zone data\n");
 
-		int u, id, z, i, j;
+		int u, id, z, i;
 		int n_polygon;
 		double ***polygon;
 		handle(1,allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
@@ -95,8 +95,14 @@ int main(int argc, char *argv[])
 			n_polygon = (zone[z].location == 'f') ? 2 + face[i].n_borders : cell[i].n_faces;
 			generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
 
-			for(j = 0; j < n_polygon; j ++) fprintf(file[z],"%lf %lf %lf\n",polygon[j][0][0],polygon[j][0][1],rhs[u]);
-			fprintf(file[z],"%lf %lf %lf\n\n\n",polygon[j-1][1][0],polygon[j-1][1][1],rhs[u]);
+			//for(j = 0; j < n_polygon; j ++) fprintf(file[z],"%lf %lf %lf\n",polygon[j][0][0],polygon[j][0][1],rhs[u]);
+			//fprintf(file[z],"%lf %lf %lf\n\n\n",polygon[j-1][1][0],polygon[j-1][1][1],rhs[u]);
+
+			//good for triangles or quads
+			fprintf(file[z],"%lf %lf %lf\n",polygon[0][0][0],polygon[0][0][1],rhs[u]);
+			fprintf(file[z],"%lf %lf %lf\n\n",polygon[0][1][0],polygon[0][1][1],rhs[u]);
+			fprintf(file[z],"%lf %lf %lf\n",polygon[2][1][0],polygon[2][1][1],rhs[u]);
+			fprintf(file[z],"%lf %lf %lf\n\n\n",polygon[2][0][0],polygon[2][0][1],rhs[u]);
 		}
 
 		for(z = 0; z < n_zones; z ++) if(zone[z].condition[0] == 'u') fclose(file[z]);

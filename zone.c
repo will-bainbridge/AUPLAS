@@ -6,8 +6,6 @@
 #define ZONE_LABEL "zone"
 #define ZONE_FORMAT "csisd"
 
-#define MAX_ZONES_PER_ELEMENT 10
-
 ////////////////////////////////////////////////////////////////////////////////
 
 struct ZONE * zones_new(int n_zones, struct ZONE *zone)
@@ -60,20 +58,6 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
 	char *temp = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
 	handle(1,range != NULL && temp != NULL,"allocating temporary storage");
 
-	//allocate face and cell zones
-	for(i = 0; i < n_faces; i ++)
-	{
-		face[i].n_zones = 0;
-		face[i].zone = (struct ZONE **)malloc(MAX_ZONES_PER_ELEMENT * sizeof(struct ZONE *));
-		handle(1,face[i].zone != NULL,"allocating face zone");
-	}
-	for(i = 0; i < n_cells; i ++)
-	{
-		cell[i].n_zones = 0;
-		cell[i].zone = (struct ZONE **)malloc(MAX_ZONES_PER_ELEMENT * sizeof(struct ZONE *));
-		handle(1,cell[i].zone != NULL,"allocating cell zone");
-	}
-
 	//consider each feteched line
 	for(i = 0; i < n_fetch; i ++)
 	{
@@ -100,8 +84,8 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
 			if(!info) break;
 
                         //store zone in the elements in the range
-                        if(z[n].location == 'f') for(j = index[0]; j <= index[1]; j ++) face[j].zone[face[j].n_zones++] = &z[n];
-                        if(z[n].location == 'c') for(j = index[0]; j <= index[1]; j ++) cell[j].zone[cell[j].n_zones++] = &z[n];
+			if(z[n].location == 'f') for(j = index[0]; j <= index[1]; j ++) handle(1,face_zone_add(&face[j],&z[n]),"adding a face zone");
+			if(z[n].location == 'c') for(j = index[0]; j <= index[1]; j ++) handle(1,cell_zone_add(&cell[j],&z[n]),"adding a cell zone");
 
                         //move to the next range in the string
                         offset += strlen(temp) + 1;
@@ -111,24 +95,6 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
 		n += info;
 	}
 
-	//re-allocate face and cell zones
-	for(i = 0; i < n_faces; i ++)
-	{
-		face[i].zone = (struct ZONE **)realloc(face[i].zone, face[i].n_zones * sizeof(struct ZONE *));
-		handle(1,face[i].zone != NULL,"re-allocating face zone");
-	}
-	for(i = 0; i < n_cells; i ++)
-	{
-		cell[i].zone = (struct ZONE **)realloc(cell[i].zone, cell[i].n_zones * sizeof(struct ZONE *));
-		handle(1,cell[i].zone != NULL,"re-allocating cell zone");
-	}
-
-	//resize zone list
-	struct ZONE *z_new = zones_new(n, z);
-        handle(1,zone != NULL,"re-allocating zones");
-	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[i].n_zones; j ++) face[i].zone[j] += z_new - z;
-	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) cell[i].zone[j] += z_new - z;
-
 	//check numbers
         fetch_destroy(fetch);
         fetch = fetch_new("",MAX_ZONES);
@@ -136,7 +102,7 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
 
 	//copy over
         *n_zones = n;
-        *zone = z_new;
+        *zone = z;
 
 	//clean up
 	fclose(file);
@@ -160,6 +126,13 @@ void zone_case_get(FILE *file, struct ZONE *zone)
 	handle(1,fread(&(zone->variable), sizeof(int), 1, file) == 1,"reading the zone variable");
 	handle(1,fread(zone->condition, sizeof(char), MAX_CONDITION_CHARACTERS, file) == MAX_CONDITION_CHARACTERS,"reading the zone condition");
 	handle(1,fread(&(zone->value), sizeof(double), 1, file) == 1,"reading the zone value");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int zone_include_in_stencil(struct ZONE *zone, int variable, int known)
+{
+	return (zone->variable == variable) && ( (zone->condition[0] == 'u') || known );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

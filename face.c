@@ -58,6 +58,16 @@ int face_zone_new(struct FACE *face)
 	return 1;
 }
 
+int face_zone_add(struct FACE *face, struct ZONE *zone)
+{
+	face->zone = (struct ZONE **)realloc(face->zone, (face->n_zones + 1) * sizeof(struct ZONE *));
+	if(face->zone == NULL) return 0;
+
+	face->zone[face->n_zones ++] = zone;
+
+	return 1;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void face_geometry_get(FILE *file, struct FACE *face, struct NODE *node)
@@ -210,6 +220,48 @@ struct CELL ** face_add_face_borders_to_list(struct FACE *face, int *n_list, str
 			if(add[i])
 			{
 				list[(*n_list) ++] = face->border[i];
+			}
+		}
+	}
+
+	free(add);
+
+	return list;
+}
+
+struct ZONE ** face_add_face_zones_to_list(struct FACE *face, int *n_list, struct ZONE **list)
+{
+	int i, j, n_add = 0;
+
+	int *add = (int *)malloc(face->n_zones * sizeof(int));
+	handle(1,add != NULL,"allocating temporary storage");
+
+	for(i = 0; i < face->n_zones; i ++)
+	{
+		add[i] = 1;
+
+		for(j = 0; j < *n_list; j ++)
+		{
+			if(face->zone[i] == list[j])
+			{
+				add[i] = 0;
+				break;
+			}
+		}
+
+		n_add += add[i];
+	}
+
+	if(n_add > 0)
+	{
+		list = (struct ZONE **)realloc(list, (*n_list + n_add) * sizeof(struct ZONE *));
+		handle(1,list != NULL,"re-allocating list");
+
+		for(i = 0; i < face->n_zones; i ++)
+		{
+			if(add[i])
+			{
+				list[(*n_list) ++] = face->zone[i];
 			}
 		}
 	}

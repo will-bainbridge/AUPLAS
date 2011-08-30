@@ -52,6 +52,16 @@ int cell_zone_new(struct CELL *cell)
 	return 1;
 }
 
+int cell_zone_add(struct CELL *cell, struct ZONE *zone)
+{
+	cell->zone = (struct ZONE **)realloc(cell->zone, (cell->n_zones + 1) * sizeof(struct ZONE *));
+	if(cell->zone == NULL) return 0;
+
+	cell->zone[cell->n_zones ++] = zone;
+
+	return 1;
+}
+
 int cell_order_new(int n_variables, struct CELL *cell)
 {
 	cell->order = (int *)realloc(cell->order, n_variables * sizeof(int));
@@ -251,15 +261,17 @@ void cell_generate_border(struct CELL *cell)
 
 void cell_generate_stencil(struct CELL *cell, int n_variables, int *maximum_order, char **connectivity, struct FACE *face_zero, struct CELL *cell_zero, struct ZONE *zone_zero)
 {
-	int u, z, i, j, k;
+	int u, i, j, k;
 
 	int n_stencil_cells, n_existing_stencil_cells, n_stencil_faces, n_max_stencil_faces;
 	struct CELL **stencil_cell = NULL;
 	struct FACE **stencil_face = NULL;
 	int *stencil = NULL;
 
-	int add;
-	int is_variable, is_unknown, is_in_cell;
+	int n_face_zones, n_cell_zones;
+	struct ZONE **face_zone = NULL, **cell_zone = NULL;
+
+	int add, is_in_cell;
 
 	handle(1,cell_n_stencil_new(n_variables,cell),"allocating cell stencil numbers");
 	handle(1,cell_order_new(n_variables,cell),"allocating a cell orders");
@@ -333,15 +345,15 @@ void cell_generate_stencil(struct CELL *cell, int n_variables, int *maximum_orde
 		{
 			is_in_cell = cell == stencil_cell[i];
 
-			for(j = 0; j < stencil_cell[i]->n_zones; j ++)
+			n_cell_zones = stencil_cell[i]->n_zones;
+			cell_zone = stencil_cell[i]->zone;
+
+			for(j = 0; j < n_cell_zones; j ++)
 			{
-				is_variable = stencil_cell[i]->zone[j]->variable == u;
-				is_unknown = stencil_cell[i]->zone[j]->condition[0] == 'u';
-
-				z = (int)(stencil_cell[i]->zone[j] - zone_zero);
-
-				if(is_variable && (is_unknown || is_in_cell))
-					stencil[cell->n_stencil[u]++] = INDEX_AND_ZONE_TO_ID((int)(stencil_cell[i] - cell_zero),z);
+				if(zone_include_in_stencil(cell_zone[j], u, is_in_cell))
+				{
+					stencil[cell->n_stencil[u]++] = INDEX_AND_ZONE_TO_ID((int)(stencil_cell[i] - cell_zero),(int)(cell_zone[j] - zone_zero));
+				}
 			}
 		}
 
@@ -350,15 +362,15 @@ void cell_generate_stencil(struct CELL *cell, int n_variables, int *maximum_orde
 			is_in_cell = 0;
 			for(k = 0; k < cell->n_faces; k ++) is_in_cell = is_in_cell || cell->face[k] == stencil_face[i];
 
-			for(j = 0; j < stencil_face[i]->n_zones; j ++) //FACE NOT ABSTRACTED
+			n_face_zones = 0;
+			face_zone = face_add_face_zones_to_list(stencil_face[i], &n_face_zones, face_zone);
+
+			for(j = 0; j < n_face_zones; j ++)
 			{
-				is_variable = stencil_face[i]->zone[j]->variable == u;
-				is_unknown = stencil_face[i]->zone[j]->condition[0] == 'u';
-
-				z = (int)(stencil_face[i]->zone[j] - zone_zero);
-
-				if(is_variable && (is_unknown || is_in_cell))
-					stencil[cell->n_stencil[u]++] = INDEX_AND_ZONE_TO_ID((int)(stencil_face[i] - face_zero),z);
+				if(zone_include_in_stencil(face_zone[j], u, is_in_cell))
+				{
+					stencil[cell->n_stencil[u]++] = INDEX_AND_ZONE_TO_ID((int)(stencil_face[i] - face_zero),(int)(face_zone[j] - zone_zero));
+				}     
 			}
 		}
 
@@ -373,6 +385,7 @@ void cell_generate_stencil(struct CELL *cell, int n_variables, int *maximum_orde
 	free(stencil_cell);
 	free(stencil_face);
 	free(stencil);
+	free(face_zone);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
