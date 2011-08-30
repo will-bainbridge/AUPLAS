@@ -2,7 +2,6 @@
 
 #include "auplas.h"
 #include "fetch.h"
-#include "divergence.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -23,7 +22,7 @@ int main(int argc, char *argv[])
 	printf("reading divergences from the input file\n");
 
 	int n_divergences;
-	DIVERGENCE *divergence;
+	struct DIVERGENCE *divergence;
 	divergences_input(input_filename,&n_divergences,&divergence);
 
 	printf("reading the mesh and zones from the case file\n");
@@ -69,7 +68,6 @@ int main(int argc, char *argv[])
 		printf("writing out zone data\n");
 
 		int u, id, z, i;
-		int n_polygon;
 		double ***polygon;
 		handle(1,allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
 
@@ -92,7 +90,7 @@ int main(int argc, char *argv[])
 			i = ID_TO_INDEX(id);
 			z = ID_TO_ZONE(id);
 
-			n_polygon = (zone[z].location == 'f') ? 2 + face[i].n_borders : cell[i].n_faces;
+			//n_polygon = (zone[z].location == 'f') ? 2 + face[i].n_borders : cell[i].n_faces;
 			generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
 
 			//for(j = 0; j < n_polygon; j ++) fprintf(file[z],"%lf %lf %lf\n",polygon[j][0][0],polygon[j][0][1],rhs[u]);

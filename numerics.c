@@ -34,9 +34,9 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 	//numerics values
 	double **matrix, *weight;
 	int n_constraints, *constraint;
-	handle(1,allocate_double_matrix(&matrix,ORDER_TO_POWERS(maximum_maximum_order),MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating matrix");
-	handle(1,allocate_integer_vector(&constraint,MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating constraints");
-	handle(1,allocate_double_vector(&weight,MAX_STENCIL) == ALLOCATE_SUCCESS, "allocating weights");
+	handle(1,allocate_double_matrix(&matrix,ORDER_TO_POWERS(maximum_maximum_order),MAX_STENCIL),"allocating matrix");
+	handle(1,allocate_integer_vector(&constraint,MAX_STENCIL),"allocating constraints");
+	handle(1,allocate_double_vector(&weight,MAX_STENCIL),"allocating weights");
 
 	//stencil element properties
 	int s_id, s_index;

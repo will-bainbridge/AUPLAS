@@ -13,7 +13,7 @@ LIBS		= -lm -lblas -llapack \
 		  -L./thirdparty/AMD/Lib -lamd
 
 MAINSRCS	= preprocess.c solve.c
-COMMONSRCS 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c divergence.c zone.c cell.c face.c node.c
+COMMONSRCS 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)
 

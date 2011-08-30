@@ -66,7 +66,7 @@ void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cel
 	int i;
 	double ***polygon;
 
-	handle(1,allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2) == ALLOCATE_SUCCESS,"allocating polygon memory");
+	handle(1,allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
 
 	for(i = 0; i < n_cells; i ++)
 	{

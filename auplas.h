@@ -1,21 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-
-#include "csr.h"
-#include "divergence.h"
-#include "handle.h"
-
-#include "node.h"
-#include "face.h"
-#include "cell.h"
-#include "zone.h"
-
-////////////////////////////////////////////////////////////////////////////////
-
 //error handlind return values
 #define ALLOCATE_SUCCESS 1
 #define ALLOCATE_ERROR 0
@@ -32,9 +16,88 @@
 #define ID_TO_INDEX(id) ((id) / MAX_ZONES)
 #define INDEX_AND_ZONE_TO_ID(i,z) ((i)*MAX_ZONES + (z))
 
-//string length
+//maximums
 #define MAX_STRING_LENGTH 128
 #define MAX_INDICES 100
+
+#define MAX_ZONES 100
+#define MAX_CONDITION_LENGTH 8
+
+#define MAX_FACE_NODES 2
+#define MAX_CELL_FACES 5
+
+#define MAX_STENCIL 100
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct NODE
+{
+	double x[2];
+
+	int n_borders;
+	struct CELL **border;
+};
+
+struct FACE
+{
+	int n_nodes;
+	struct NODE **node;
+
+	int n_borders;
+	struct CELL **border;
+	int *oriented;
+
+	int n_zones;
+	struct ZONE **zone;
+
+	double centroid[2];
+};
+
+struct CELL
+{
+	int n_faces;
+	struct FACE **face;
+	int *oriented;
+
+	int n_zones;
+	struct ZONE **zone;
+
+	double centroid[2];
+
+	int *order;
+	int *n_stencil;
+	int **stencil;
+	double ***matrix;
+};
+
+struct ZONE
+{
+	char location;
+	int variable;
+	char condition[MAX_CONDITION_LENGTH];
+	double value;
+};
+
+struct DIVERGENCE
+{
+	int equation;
+	int n_variables;
+	int *variable;
+	int *differential;
+	int direction;
+	double constant;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+
+#include "csr.h"
+#include "handle.h"
+#include "memory.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -42,22 +105,12 @@
 void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell);
 void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell, int *n_zones, struct ZONE **zone);
+void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
+void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **divergence);
 
 //connectivity.c
-void generate_connectivity(int n_variables, char **connectivity, int *maximum_order, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
-
-//memory.c
-int allocate_integer_vector(int **vector, int length);
-int allocate_integer_zero_vector(int **vector, int length);
-int allocate_double_vector(double **vector, int length);
-int allocate_character_vector(char **vector, int length);
-int allocate_integer_matrix(int ***matrix, int height, int width);
-int allocate_integer_zero_matrix(int ***matrix, int height, int width);
-int allocate_double_matrix(double ***matrix, int height, int width);
-int allocate_double_pointer_matrix(double ****matrix, int height, int width);
-int allocate_character_matrix(char ***matrix, int height, int width);
-void free_vector(void *vector);
-void free_matrix(void **matrix);
+void generate_borders(int n_cells, struct CELL *cell);
+void generate_stencils(int n_variables, char **connectivity, int *maximum_order, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 //geometry.c
 void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
@@ -73,7 +126,7 @@ double integer_power(double base, int exp);
 
 //system.c
 void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
-void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, DIVERGENCE *divergence);
-void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, DIVERGENCE divergence);
+void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE divergence);
 
 ////////////////////////////////////////////////////////////////////////////////

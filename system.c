@@ -19,7 +19,7 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) *n_ids = MAX(*n_ids,INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0])));
 	(*n_ids) ++;
 
-	handle(1,allocate_integer_vector(id_to_unknown,*n_ids) == ALLOCATE_SUCCESS,"allocating id to system indices");
+	handle(1,allocate_integer_vector(id_to_unknown,*n_ids),"allocating id to system indices");
 
 	for(i = 0; i < *n_ids; i ++) (*id_to_unknown)[i] = -1;
 
@@ -38,24 +38,24 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 		}
 	}
 
-	handle(1,allocate_integer_vector(unknown_to_id,*n_unknowns) == ALLOCATE_SUCCESS,"allocating system indices to ids");
+	handle(1,allocate_integer_vector(unknown_to_id,*n_unknowns),"allocating system indices to ids");
 
 	for(i = 0; i < *n_ids; i ++) if((*id_to_unknown)[i] >= 0) (*unknown_to_id)[(*id_to_unknown)[i]] = i;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, DIVERGENCE *divergence)
+void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
         int i, j, k, id, z, d, u;
 
         int n_polygon, max_n_polygon = MAX(MAX_CELL_FACES,4);
 
         double ***polygon;
-        handle(1,allocate_double_pointer_matrix(&polygon,max_n_polygon,2) == ALLOCATE_SUCCESS,"allocating polygon memory");
+        handle(1,allocate_double_pointer_matrix(&polygon,max_n_polygon,2),"allocating polygon memory");
 
         int *n_interpolant;
-        handle(1,allocate_integer_vector(&n_interpolant,max_n_polygon) == ALLOCATE_SUCCESS,"allocating the number of interpolants");
+        handle(1,allocate_integer_vector(&n_interpolant,max_n_polygon),"allocating the number of interpolants");
 
         struct CELL ***interpolant;
         interpolant = (struct CELL ***)malloc(max_n_polygon * sizeof(struct CELL **));
@@ -65,7 +65,7 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
         for(i = 1; i < max_n_polygon; i ++) interpolant[i] = interpolant[i-1] + 2;
 
         double *row;
-        handle(1,allocate_double_vector(&row,n_unknowns) == ALLOCATE_SUCCESS,"allocating the row");
+        handle(1,allocate_double_vector(&row,n_unknowns),"allocating the row");
 
 	//zero the right hand size
 	for(i = 0; i < n_unknowns; i ++) rhs[i] = 0.0;
@@ -118,7 +118,7 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, DIVERGENCE divergence)
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE divergence)
 {
 	int i, j, k, p, q, s, u;
 
@@ -133,10 +133,10 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 	}
 
 	double *interpolation_values, point_value, value;
-	handle(1,allocate_double_vector(&interpolation_values,max_stencil) == ALLOCATE_SUCCESS,"allocating interpolation values");
+	handle(1,allocate_double_vector(&interpolation_values,max_stencil),"allocating interpolation values");
 
 	double *polynomial;
-	handle(1,allocate_double_vector(&polynomial,ORDER_TO_POWERS(max_order)) == ALLOCATE_SUCCESS,"allocating polynomial");
+	handle(1,allocate_double_vector(&polynomial,ORDER_TO_POWERS(max_order)),"allocating polynomial");
 
 	double x[2], normal;
 
