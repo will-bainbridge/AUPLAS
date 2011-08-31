@@ -66,6 +66,8 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 
         double *row;
         exit_if_false(allocate_double_vector(&row,n_unknowns),"allocating the row");
+	int n_row, *row_index;
+	exit_if_false(allocate_integer_vector(&row_index,n_unknowns),"allocating the row");
 
 	//clear the matrix
 	csr_empty(matrix);
@@ -100,15 +102,21 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 		}
 		else exit_if_false(0,"recognising the location");
 
-		for(j = 0; j < n_unknowns; j ++) row[j] = 0.0;
+		//for(j = 0; j < n_unknowns; j ++) row[j] = 0.0; //EXPENSIVE
+		//csr_append_empty_row(matrix);
+		n_row = 0;
 
 		for(d = 0; d < n_divergences; d ++)
 		{
 			if(divergence[d].equation != zone[z].variable) continue;
-			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], row, zone, divergence[d]);
+			//calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], row, zone, divergence[d]);
+			//calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], matrix, zone, divergence[d]);
+			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], &n_row, row_index, row, zone, divergence[d]);
 		}
 
-		exit_if_false(csr_append_row(matrix, n_unknowns, row) == CSR_SUCCESS,"appending row to system");
+		//exit_if_false(csr_append_dense_row(matrix, n_unknowns, row) == CSR_SUCCESS,"appending row to system"); //EXPENSIVE
+		heap_sort(row_index, row, n_row);
+		exit_if_false(csr_append_sparse_row(matrix, n_row, row_index, row) == CSR_SUCCESS,"appending row to system");
 	}
 
 	//clean up
@@ -121,7 +129,9 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE divergence)
+//void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE divergence)
+//void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, CSR matrix, struct ZONE *zone, struct DIVERGENCE divergence)
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, int *n_row, int *row_index, double *row, struct ZONE *zone, struct DIVERGENCE divergence)
 {
 	int i, j, k, p, q, s, u;
 
@@ -207,9 +217,21 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 							s = interpolant[p][i]->stencil[u][k];
 
 							if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
-								row[id_to_unknown[s]] += divergence.constant * normal *
+
+								/*row[id_to_unknown[s]] += divergence.constant * normal *
+									gauss_w[max_order-1][q] * point_value *
+									interpolation_values[k] / n_interpolant[p];*/
+
+								/*csr_add_value_to_last_row(matrix, id_to_unknown[s],
+										divergence.constant * normal *
+										gauss_w[max_order-1][q] * point_value *
+										interpolation_values[k] / n_interpolant[p]);*/
+
+								row[(*n_row)] = divergence.constant * normal *
 									gauss_w[max_order-1][q] * point_value *
 									interpolation_values[k] / n_interpolant[p];
+								row_index[(*n_row)++] = id_to_unknown[s];
+
 							} else {
 								*rhs -= divergence.constant * normal *
 									gauss_w[max_order-1][q] * point_value *

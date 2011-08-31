@@ -28,11 +28,15 @@ CSR csr_new()
 	CSR A;
 
 	A = (CSR)malloc(sizeof(struct s_CSR));
-	if(A == NULL) return NULL;;
+	if(A == NULL) return NULL;
 
-	A->n = A->n_space = 0;
+	A->n = 0;
+	A->n_space = 1;
 	A->nnz = A->nnz_space = 0;
-	A->row = NULL;
+
+	A->row = (int *)malloc(sizeof(int));
+	A->row[0] = 0;
+
 	A->index = NULL;
 	A->value = NULL;
 
@@ -41,7 +45,71 @@ CSR csr_new()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_append_row(CSR A, int n, double *row)
+int csr_add_value_to_last_row(CSR A, int index, double value)
+{
+	int i;
+
+	for(i = A->row[A->n-1]; i < A->row[A->n]; i ++)
+	{
+		if(A->index[i] == index)
+		{
+			A->value[i] += value;
+			return CSR_SUCCESS;
+		}
+
+		if(A->index[i] > index) break;
+	}
+
+	if(A->nnz + 1 > A->nnz_space)
+	{
+		A->nnz_space = 2*A->nnz_space + 1;
+
+		A->index = (int *)realloc(A->index, A->nnz_space * sizeof(int));
+		if(A->index == NULL) return CSR_MEMORY_ERROR;
+
+		A->value = (double *)realloc(A->value, A->nnz_space * sizeof(double));
+		if(A->value == NULL) return CSR_MEMORY_ERROR;
+	}
+
+	int insert = i;
+
+	for(i = A->row[A->n]; i > insert; i --)
+	{
+		A->index[i] = A->index[i-1];
+		A->value[i] = A->value[i-1];
+	}
+
+	A->index[insert] = index;
+	A->value[insert] = value;
+
+	A->row[A->n] ++;
+	A->nnz ++;
+
+	return CSR_SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int csr_append_empty_row(CSR A)
+{
+	if(A->n + 2 > A->n_space)
+	{
+		A->n_space = 2*A->n_space + 2;
+
+		A->row = (int *)realloc(A->row, A->n_space * sizeof(int));
+		if(A->row == NULL) return CSR_MEMORY_ERROR;
+	}
+
+	A->n += 1;
+
+	A->row[A->n] = A->row[A->n-1];
+
+	return CSR_SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int csr_append_sparse_row(CSR A, int n, int *index, double *value)
 {
 	if(A->n + 2 > A->n_space)
 	{
@@ -69,10 +137,56 @@ int csr_append_row(CSR A, int n, double *row)
 	int i;
 	for(i = 0; i < n; i ++)
 	{
-		if(fabs(row[i]) > 0.0)
+		if(A->index[A->nnz-1] == index[i])
+		{
+			A->value[A->nnz-1] += value[i];
+		}
+		else
+		{
+			A->index[A->nnz] = index[i];
+			A->value[A->nnz ++] = value[i];
+		}
+	}
+
+	A->row[A->n] = A->nnz;
+
+	return CSR_SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+int csr_append_dense_row(CSR A, int n, double *value)
+{
+	if(A->n + 2 > A->n_space)
+	{
+		A->n_space = 2*A->n_space + 2;
+
+		A->row = (int *)realloc(A->row, A->n_space * sizeof(int));
+		if(A->row == NULL) return CSR_MEMORY_ERROR;
+	}
+
+	if(A->nnz + n > A->nnz_space)
+	{
+		A->nnz_space = 2*A->nnz_space + n;
+
+		A->index = (int *)realloc(A->index, A->nnz_space*sizeof(int));
+		if(A->index == NULL) return CSR_MEMORY_ERROR;
+
+		A->value = (double *)realloc(A->value, A->nnz_space*sizeof(double));
+		if(A->value == NULL) return CSR_MEMORY_ERROR;
+	}
+
+	A->row[A->n] = A->nnz;
+
+	A->n += 1;
+
+	int i;
+	for(i = 0; i < n; i ++)
+	{
+		if(fabs(value[i]) > 0.0)
 		{
 			A->index[A->nnz] = i;
-			A->value[A->nnz++] = row[i];
+			A->value[A->nnz++] = value[i];
 		}
 	}
 

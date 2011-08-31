@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	generate_borders(n_cells, cell);
 
 	generate_stencils(n_variables, connectivity, maximum_order, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
-	
+
 	generate_face_orientations(n_faces, face, n_cells, cell);
 
 	calculate_control_volume_geometry(n_faces, face, n_cells, cell);

@@ -1,4 +1,5 @@
 CC		= gcc
+#CFLAGS		= -g -Wall -pg
 CFLAGS		= -O2 -Wall
 
 INCLS		= -I./thirdparty/UFconfig \
@@ -13,7 +14,7 @@ LIBS		= -lm -lrt -lblas -llapack \
 		  -L./thirdparty/AMD/Lib -lamd
 
 MAINSRCS	= preprocess.c solve.c
-COMMONSRCS 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c
+COMMONSRCS 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c sort.c
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)
 
@@ -29,7 +30,7 @@ all: $(EFILE)
 
 .SECONDEXPANSION:
 $(EFILE): $$@.o $(COMMONOBJS)
-	$(CC) -o $@ $@.o $(COMMONOBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $@.o $(COMMONOBJS) $(LIBS)
 
 $(OBJS): makefile
 	$(CC) $(CFLAGS) $(INCLS) -c $*.c

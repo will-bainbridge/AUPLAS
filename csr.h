@@ -4,7 +4,10 @@
 typedef struct s_CSR * CSR;
 
 CSR csr_new();
-int csr_append_row(CSR A, int n, double *row);
+int csr_add_value_to_last_row(CSR A, int index, double value);
+int csr_append_empty_row(CSR A);
+int csr_append_sparse_row(CSR A, int n, int *index, double *value);
+int csr_append_dense_row(CSR A, int n, double *value);
 void csr_empty(CSR A);
 void csr_print(CSR A);
 int csr_solve_superlu(CSR A, double *b);
