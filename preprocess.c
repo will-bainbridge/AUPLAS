@@ -7,37 +7,37 @@
 
 int main(int argc, char *argv[])
 {
-	handle(1,argc == 2, "checking the input arguments");
+	exit_if_false(argc == 2, "checking the input arguments");
 	char *input_filename = argv[1];
 
 	//--------------------------------------------------------------------//
 
 	FILE *file = fopen(input_filename,"r");
-	handle(1,file != NULL,"opening the input file");
+	exit_if_false(file != NULL,"opening the input file");
 
 	int n_variables;
-	handle(1,fetch_value(file, "number_of_variables", 'i', &n_variables) == FETCH_SUCCESS,"reading \"number_of_variables\" from the input file");
+	exit_if_false(fetch_value(file, "number_of_variables", 'i', &n_variables) == FETCH_SUCCESS,"reading \"number_of_variables\" from the input file");
 
 	char *geometry_filename;
-	handle(1,allocate_character_vector(&geometry_filename,MAX_STRING_LENGTH),"allocating the geometry filename");
-	handle(1,fetch_value(file, "geometry_filename", 's', geometry_filename) == FETCH_SUCCESS,"reading \"geometry_filename\" from the input file");
+	exit_if_false(allocate_character_vector(&geometry_filename,MAX_STRING_LENGTH),"allocating the geometry filename");
+	exit_if_false(fetch_value(file, "geometry_filename", 's', geometry_filename) == FETCH_SUCCESS,"reading \"geometry_filename\" from the input file");
 	
 	char *case_filename;
-	handle(1,allocate_character_vector(&case_filename,MAX_STRING_LENGTH),"allocating the case filename");
-	handle(1,fetch_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
+	exit_if_false(allocate_character_vector(&case_filename,MAX_STRING_LENGTH),"allocating the case filename");
+	exit_if_false(fetch_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
 
 	int *maximum_order;
-	handle(1,allocate_integer_vector(&maximum_order,n_variables),"allocating the maximum orders");
-	handle(1,fetch_vector(file,"maximum_order",'i',n_variables,maximum_order) == FETCH_SUCCESS,"reading \"maximum_order\" from the input file");
+	exit_if_false(allocate_integer_vector(&maximum_order,n_variables),"allocating the maximum orders");
+	exit_if_false(fetch_vector(file,"maximum_order",'i',n_variables,maximum_order) == FETCH_SUCCESS,"reading \"maximum_order\" from the input file");
 	{ int i; for(i = 0; i < n_variables; i ++) maximum_order[i] -= 1; }
 
 	char **connectivity;
-	handle(1,allocate_character_matrix(&connectivity,n_variables,MAX_STRING_LENGTH),"allocating the connectivity");
-	handle(1,fetch_vector(file,"connectivity",'s',n_variables,connectivity) == FETCH_SUCCESS,"reading \"connectivity\" from the input file");
+	exit_if_false(allocate_character_matrix(&connectivity,n_variables,MAX_STRING_LENGTH),"allocating the connectivity");
+	exit_if_false(fetch_vector(file,"connectivity",'s',n_variables,connectivity) == FETCH_SUCCESS,"reading \"connectivity\" from the input file");
 
 	double *weight_exponent;
-	handle(1,allocate_double_vector(&weight_exponent,n_variables),"allocating the weight exponents");
-	handle(1,fetch_vector(file,"weight_exponent",'d',n_variables,weight_exponent) == FETCH_SUCCESS,"reading \"weight_exponent\" from the input file");
+	exit_if_false(allocate_double_vector(&weight_exponent,n_variables),"allocating the weight exponents");
+	exit_if_false(fetch_vector(file,"weight_exponent",'d',n_variables,weight_exponent) == FETCH_SUCCESS,"reading \"weight_exponent\" from the input file");
 
 	fclose(file);
 

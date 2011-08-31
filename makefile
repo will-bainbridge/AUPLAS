@@ -6,7 +6,7 @@ INCLS		= -I./thirdparty/UFconfig \
 		  -I./thirdparty/SuperLU_4.1/SRC \
 		  -I./thirdparty/UMFPACK/Include \
 		  -I./thirdparty/AMD/Include
-LIBS		= -lm -lblas -llapack \
+LIBS		= -lm -lrt -lblas -llapack \
 		  -L./thirdparty/CXSparse/Lib/ -lcxsparse \
 		  -L./thirdparty/SuperLU_4.1/lib -lsuperlu_4.1 \
 		  -L./thirdparty/UMFPACK/Lib -lumfpack \

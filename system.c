@@ -19,7 +19,7 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) *n_ids = MAX(*n_ids,INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0])));
 	(*n_ids) ++;
 
-	handle(1,allocate_integer_vector(id_to_unknown,*n_ids),"allocating id to system indices");
+	exit_if_false(allocate_integer_vector(id_to_unknown,*n_ids),"allocating id to system indices");
 
 	for(i = 0; i < *n_ids; i ++) (*id_to_unknown)[i] = -1;
 
@@ -38,7 +38,7 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 		}
 	}
 
-	handle(1,allocate_integer_vector(unknown_to_id,*n_unknowns),"allocating system indices to ids");
+	exit_if_false(allocate_integer_vector(unknown_to_id,*n_unknowns),"allocating system indices to ids");
 
 	for(i = 0; i < *n_ids; i ++) if((*id_to_unknown)[i] >= 0) (*unknown_to_id)[(*id_to_unknown)[i]] = i;
 }
@@ -52,20 +52,20 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
         int n_polygon, max_n_polygon = MAX(MAX_CELL_FACES,4);
 
         double ***polygon;
-        handle(1,allocate_double_pointer_matrix(&polygon,max_n_polygon,2),"allocating polygon memory");
+        exit_if_false(allocate_double_pointer_matrix(&polygon,max_n_polygon,2),"allocating polygon memory");
 
         int *n_interpolant;
-        handle(1,allocate_integer_vector(&n_interpolant,max_n_polygon),"allocating the number of interpolants");
+        exit_if_false(allocate_integer_vector(&n_interpolant,max_n_polygon),"allocating the number of interpolants");
 
         struct CELL ***interpolant;
         interpolant = (struct CELL ***)malloc(max_n_polygon * sizeof(struct CELL **));
-        handle(1,interpolant != NULL,"allocating the interpolant pointers to pointers");
+        exit_if_false(interpolant != NULL,"allocating the interpolant pointers to pointers");
         interpolant[0] = (struct CELL **)malloc(max_n_polygon * 2 * sizeof(struct CELL **));
-        handle(1,interpolant[0] != NULL,"allocating the interpolant pointers");
+        exit_if_false(interpolant[0] != NULL,"allocating the interpolant pointers");
         for(i = 1; i < max_n_polygon; i ++) interpolant[i] = interpolant[i-1] + 2;
 
         double *row;
-        handle(1,allocate_double_vector(&row,n_unknowns),"allocating the row");
+        exit_if_false(allocate_double_vector(&row,n_unknowns),"allocating the row");
 
 	//clear the matrix
 	csr_empty(matrix);
@@ -98,7 +98,7 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 				for(k = 0; k < n_interpolant[j]; k ++) interpolant[j][k] = cell[i].face[j]->border[k];
 			}
 		}
-		else handle(1,0,"recognising the location");
+		else exit_if_false(0,"recognising the location");
 
 		for(j = 0; j < n_unknowns; j ++) row[j] = 0.0;
 
@@ -108,7 +108,7 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], row, zone, divergence[d]);
 		}
 
-		handle(1,csr_append_row(matrix, n_unknowns, row) == CSR_SUCCESS,"appending row to system");
+		exit_if_false(csr_append_row(matrix, n_unknowns, row) == CSR_SUCCESS,"appending row to system");
 	}
 
 	//clean up
@@ -136,10 +136,10 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 	}
 
 	double *interpolation_values, point_value, value;
-	handle(1,allocate_double_vector(&interpolation_values,max_stencil),"allocating interpolation values");
+	exit_if_false(allocate_double_vector(&interpolation_values,max_stencil),"allocating interpolation values");
 
 	double *polynomial;
-	handle(1,allocate_double_vector(&polynomial,ORDER_TO_POWERS(max_order)),"allocating polynomial");
+	exit_if_false(allocate_double_vector(&polynomial,ORDER_TO_POWERS(max_order)),"allocating polynomial");
 
 	double x[2], normal;
 
@@ -250,9 +250,9 @@ void calculate_residuals(int n_variables, int n_unknowns, int *unknown_to_id, do
 	double r;
 
 	double *max = (double *)malloc(n_variables * sizeof(double));
-	handle(1,max != NULL,"allocating variable maximums");
+	exit_if_false(max != NULL,"allocating variable maximums");
 	double *min = (double *)malloc(n_variables * sizeof(double));
-	handle(1,min != NULL,"allocating variable minimums");
+	exit_if_false(min != NULL,"allocating variable minimums");
 
 	for(i = 0; i < n_variables; i ++) residual[i] = 0.0;
 

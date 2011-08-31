@@ -17,14 +17,14 @@ void generate_borders(int n_cells, struct CELL *cell)
 		{
 			face = cell[i].face[j];
 			face->n_borders ++;
-			handle(1,face_border_new(face),"allocating face border");
+			exit_if_false(face_border_new(face),"allocating face border");
 			face->border[face->n_borders - 1] = &cell[i];
 			
 			/*for(k = 0; k < face->n_nodes; k ++)
 			{
 				node = face->node[k];
 				node->n_borders ++;
-				handle(1,node_border_new(node),"allocating node border");
+				exit_if_false(node_border_new(node),"allocating node border");
 				node->border[node->n_borders - 1] = cell;
 			}*/
 		}
@@ -41,8 +41,8 @@ void generate_stencils(int n_variables, char **connectivity, int *maximum_order,
 	//generate list of cells surrounding each node
 	int index;
 	int *n_node_surround, **node_surround;
-	handle(1,allocate_integer_zero_vector(&n_node_surround,n_nodes),"allocating list of the numbers of nodes surrounding cells");
-	handle(1,allocate_integer_matrix(&node_surround,n_nodes,MAX_NEIGHBOURS),"allocating list of the nodes surrounding cells");
+	exit_if_false(allocate_integer_zero_vector(&n_node_surround,n_nodes),"allocating list of the numbers of nodes surrounding cells");
+	exit_if_false(allocate_integer_matrix(&node_surround,n_nodes,MAX_NEIGHBOURS),"allocating list of the nodes surrounding cells");
 
 	for(c = 0; c < n_cells; c ++)
 	{
@@ -63,10 +63,10 @@ void generate_stencils(int n_variables, char **connectivity, int *maximum_order,
 
 	//generate lists of cells surrounding each cell
 	int *n_cell_face_neighbours, **cell_face_neighbours, *n_cell_node_neighbours, **cell_node_neighbours;
-	handle(1,allocate_integer_zero_vector(&n_cell_face_neighbours,n_cells),"allocating list of the numbers of cell face neighbours");
-	handle(1,allocate_integer_matrix(&cell_face_neighbours,n_cells,MAX_NEIGHBOURS),"allocating list of cell face neighbours");
-	handle(1,allocate_integer_zero_vector(&n_cell_node_neighbours,n_cells),"allocating list of the numbers of cell node neighbours");
-	handle(1,allocate_integer_matrix(&cell_node_neighbours,n_cells,MAX_NEIGHBOURS),"allocating list of cell node neighbours");
+	exit_if_false(allocate_integer_zero_vector(&n_cell_face_neighbours,n_cells),"allocating list of the numbers of cell face neighbours");
+	exit_if_false(allocate_integer_matrix(&cell_face_neighbours,n_cells,MAX_NEIGHBOURS),"allocating list of cell face neighbours");
+	exit_if_false(allocate_integer_zero_vector(&n_cell_node_neighbours,n_cells),"allocating list of the numbers of cell node neighbours");
+	exit_if_false(allocate_integer_matrix(&cell_node_neighbours,n_cells,MAX_NEIGHBOURS),"allocating list of cell node neighbours");
 
 	for(c = 0; c < n_cells; c ++)
 	{
@@ -97,8 +97,8 @@ void generate_stencils(int n_variables, char **connectivity, int *maximum_order,
 	}
 
 	//allocate the stencil numbers and pointers
-	for(c = 0; c < n_cells; c ++) handle(1,cell_n_stencil_new(n_variables,&cell[c]),"allocating cell stencil numbers");
-	for(c = 0; c < n_cells; c ++) handle(1,cell_order_new(n_variables,&cell[c]),"allocating a cell orders");
+	for(c = 0; c < n_cells; c ++) exit_if_false(cell_n_stencil_new(n_variables,&cell[c]),"allocating cell stencil numbers");
+	for(c = 0; c < n_cells; c ++) exit_if_false(cell_order_new(n_variables,&cell[c]),"allocating a cell orders");
 
 	//generate the stencils
 	int *n_cell_neighbours, **cell_neighbours;
@@ -106,9 +106,9 @@ void generate_stencils(int n_variables, char **connectivity, int *maximum_order,
 	int is_variable, is_unknown, is_in_cell;
 	int *stencil_cells, *stencil_faces, *stencil;
 
-	handle(1,allocate_integer_vector(&stencil_cells,MAX_STENCIL),"allocating stencil cells");
-	handle(1,allocate_integer_vector(&stencil_faces,MAX_STENCIL),"allocating stencil faces");
-	handle(1,allocate_integer_vector(&stencil,MAX_STENCIL),"allocating stencil ids");
+	exit_if_false(allocate_integer_vector(&stencil_cells,MAX_STENCIL),"allocating stencil cells");
+	exit_if_false(allocate_integer_vector(&stencil_faces,MAX_STENCIL),"allocating stencil faces");
+	exit_if_false(allocate_integer_vector(&stencil,MAX_STENCIL),"allocating stencil ids");
 
 	for(c = 0; c < n_cells; c ++)
 	{
@@ -130,7 +130,7 @@ void generate_stencils(int n_variables, char **connectivity, int *maximum_order,
 				} else if(connectivity[u][i] == 'f') {
 					cell_neighbours = cell_face_neighbours;
 					n_cell_neighbours = n_cell_face_neighbours;
-				} else { handle(1,0,"reconising the connectivity"); }
+				} else { exit_if_false(0,"reconising the connectivity"); }
 
 				//loop over and add the neighbours of all the existing stencil cells
 				for(j = 0; j < n_old_stencil_cells; j ++)
@@ -200,7 +200,7 @@ void generate_stencils(int n_variables, char **connectivity, int *maximum_order,
 			}
 
 			//allocate and store the stencils in the cell structure
-			handle(1,cell_stencil_new(n_variables,&cell[c]),"allocating a cell stencil");
+			exit_if_false(cell_stencil_new(n_variables,&cell[c]),"allocating a cell stencil");
 			for(i = 0; i < cell[c].n_stencil[u]; i ++) cell[c].stencil[u][i] = stencil[i];
 
 			//generate the order

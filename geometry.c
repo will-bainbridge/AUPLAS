@@ -14,7 +14,7 @@ void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, str
 
 	for(c = 0; c < n_cells; c ++)
 	{
-		handle(1,cell_oriented_new(&cell[c]),"allocating cell orientations");
+		exit_if_false(cell_oriented_new(&cell[c]),"allocating cell orientations");
 
 		for(i = 0; i < cell[c].n_faces; i ++)
 		{
@@ -41,7 +41,7 @@ void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, str
 	//copy the borders generated above into the face structures
 	for(i = 0; i < n_faces; i ++)
 	{
-		handle(1,face_oriented_new(&face[i]),"allocating face orientations");
+		exit_if_false(face_oriented_new(&face[i]),"allocating face orientations");
 
 		for(j = 0; j < face[i].n_borders; j ++)
 		{
@@ -54,7 +54,7 @@ void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, str
 				}
 			}
 
-			handle(1,k < face[i].border[j]->n_faces,"finding corresponding face");
+			exit_if_false(k < face[i].border[j]->n_faces,"finding corresponding face");
 		}
 	}
 }
@@ -66,7 +66,7 @@ void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cel
 	int i;
 	double ***polygon;
 
-	handle(1,allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
+	exit_if_false(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
 
 	for(i = 0; i < n_cells; i ++)
 	{
@@ -111,7 +111,7 @@ void generate_control_volume_polygon(double ***polygon, int index, int location,
 			polygon[i][1] = cell[index].face[i]->node[o]->x;
 		}
 	}
-	else handle(1,0,"recognising the location");
+	else exit_if_false(0,"recognising the location");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
