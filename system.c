@@ -67,6 +67,9 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
         double *row;
         handle(1,allocate_double_vector(&row,n_unknowns),"allocating the row");
 
+	//clear the matrix
+	csr_empty(matrix);
+
 	//zero the right hand size
 	for(i = 0; i < n_unknowns; i ++) rhs[i] = 0.0;
 
@@ -222,6 +225,53 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 
 	free_vector(interpolation_values);
 	free_vector(polynomial);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void initialise_unknowns(int n_ids, int *id_to_unknown, struct ZONE *zone, double *x)
+{
+	int i;
+	for(i = 0; i < n_ids; i ++)
+	{
+		if(id_to_unknown[i] >= 0)
+		{
+			x[id_to_unknown[i]] = zone[ID_TO_ZONE(i)].value;
+		}
+	}
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void calculate_residuals(int n_variables, int n_unknowns, int *unknown_to_id, double *x, double *x1, double *residual, int n_zones, struct ZONE *zone)
+{
+	int i, u;
+	double r;
+
+	double *max = (double *)malloc(n_variables * sizeof(double));
+	handle(1,max != NULL,"allocating variable maximums");
+	double *min = (double *)malloc(n_variables * sizeof(double));
+	handle(1,min != NULL,"allocating variable minimums");
+
+	for(i = 0; i < n_variables; i ++) residual[i] = 0.0;
+
+	for(i = 0; i < n_zones; i ++) if(zone[i].variable == i && zone[i].condition[0] == 'u') max[i] = min[i] = zone[i].value;
+
+	for(i = 0; i < n_unknowns; i ++)
+	{
+		u = zone[ID_TO_ZONE(unknown_to_id[i])].variable;
+		r = fabs(x1[i] - x[i]);
+		residual[u] = MAX(r,residual[u]);
+
+		max[u] = MAX(x1[i],max[u]);
+		min[u] = MIN(x1[i],min[u]);
+	}
+
+	for(i = 0; i < n_variables; i ++) residual[i] /= max[i] - min[i];
+
+	free(max);
+	free(min);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

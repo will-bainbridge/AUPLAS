@@ -177,13 +177,13 @@ int least_squares(int m, int n, double **matrix)
 	int i, j;
 
 	int info, lwork = m*m;
-	double *work; if(allocate_double_vector(&work, lwork) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
+	double *work; if(!allocate_double_vector(&work, lwork)) { return LS_MEMORY_ERROR; }
 	char transa = 'N';
 
-	double **a_matrix; if(allocate_double_matrix(&a_matrix, n, m) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
+	double **a_matrix; if(!allocate_double_matrix(&a_matrix, n, m)) { return LS_MEMORY_ERROR; }
 	for(i = 0; i < m; i ++) for(j = 0; j < n; j ++) a_matrix[j][i] = matrix[j][i];
 
-	double **b_matrix; if(allocate_double_matrix(&b_matrix, m, m) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
+	double **b_matrix; if(!allocate_double_matrix(&b_matrix, m, m)) { return LS_MEMORY_ERROR; }
 	for(i = 0; i < m; i ++) for(j = 0; j < m; j ++) b_matrix[i][j] = (i == j);
 
 	dgels_(&transa, &m, &n, &m, a_matrix[0], &m, b_matrix[0], &m, work, &lwork, &info);
@@ -218,25 +218,25 @@ int constrained_least_squares(int m, int n, double **matrix, int c, int *constra
 
 	//lapack workspace
 	int lwork = m*m;
-	double *work; if(allocate_double_vector(&work, lwork) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
+	double *work; if(!allocate_double_vector(&work, lwork)) { return LS_MEMORY_ERROR; }
 
 	//lapack LU pivot indices
-	int *ipiv; if(allocate_integer_vector(&ipiv,c) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
+	int *ipiv; if(!allocate_integer_vector(&ipiv,c)) { return LS_MEMORY_ERROR; }
 
 	//lapack coefficients of QR elementary reflectors
-	double *tau; if(allocate_double_vector(&tau,c) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
+	double *tau; if(!allocate_double_vector(&tau,c)) { return LS_MEMORY_ERROR; }
 
 	//matrices used
-	double **t_matrix; if(allocate_double_matrix(&t_matrix, m, m) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
-	double **c_matrix; if(allocate_double_matrix(&c_matrix, n, n) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
-	double **r_matrix; if(allocate_double_matrix(&r_matrix, c, c) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
-	double **a_matrix; if(allocate_double_matrix(&a_matrix, n, f) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
-	double **d_matrix; if(allocate_double_matrix(&d_matrix, f, f) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
+	double **t_matrix; if(!allocate_double_matrix(&t_matrix, m, m)) { return LS_MEMORY_ERROR; }
+	double **c_matrix; if(!allocate_double_matrix(&c_matrix, n, n)) { return LS_MEMORY_ERROR; }
+	double **r_matrix; if(!allocate_double_matrix(&r_matrix, c, c)) { return LS_MEMORY_ERROR; }
+	double **a_matrix; if(!allocate_double_matrix(&a_matrix, n, f)) { return LS_MEMORY_ERROR; }
+	double **d_matrix; if(!allocate_double_matrix(&d_matrix, f, f)) { return LS_MEMORY_ERROR; }
 
 	//indices of unconstrained equations
 	int *temp, *unconstrained;
-	if(allocate_integer_vector(&temp,m) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
-	if(allocate_integer_vector(&unconstrained,f) != ALLOCATE_SUCCESS) { return LS_MEMORY_ERROR; }
+	if(!allocate_integer_vector(&temp,m)) { return LS_MEMORY_ERROR; }
+	if(!allocate_integer_vector(&unconstrained,f)) { return LS_MEMORY_ERROR; }
 
 	//create vector of unconstrained indices
 	for(i = 0; i < m; i ++) temp[i] = 0;

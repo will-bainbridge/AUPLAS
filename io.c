@@ -616,3 +616,47 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+void write_gnuplot(int n_unknowns, int *unknown_to_id, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+{
+	int u, id, z, i;
+	double ***polygon;
+	handle(1,allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
+
+	FILE **file;
+	file = (FILE **)malloc(n_zones * sizeof(FILE *));
+	char *filename;
+	allocate_character_vector(&filename,MAX_STRING_LENGTH);
+
+	for(z = 0; z < n_zones; z ++)
+	{
+		if(zone[z].condition[0] == 'u')
+		{
+			sprintf(filename,"zone-%i.gnuplot",z);
+			file[z] = fopen(filename,"w");
+		}
+	}
+
+	for(u = 0; u < n_unknowns; u ++)
+	{
+		id = unknown_to_id[u];
+
+		i = ID_TO_INDEX(id);
+		z = ID_TO_ZONE(id);
+
+		generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
+
+		fprintf(file[z],"%lf %lf %lf\n",polygon[0][0][0],polygon[0][0][1],x[u]);
+		fprintf(file[z],"%lf %lf %lf\n\n",polygon[0][1][0],polygon[0][1][1],x[u]);
+		fprintf(file[z],"%lf %lf %lf\n",polygon[2][1][0],polygon[2][1][1],x[u]);
+		fprintf(file[z],"%lf %lf %lf\n\n\n",polygon[2][0][0],polygon[2][0][1],x[u]);
+	}
+
+	for(z = 0; z < n_zones; z ++) if(zone[z].condition[0] == 'u') fclose(file[z]);
+
+	free_matrix((void **)polygon);
+	free(file);
+	free_vector(filename);
+}
+
+////////////////////////////////////////////////////////////////////////////////
