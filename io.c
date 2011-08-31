@@ -524,7 +524,7 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 		} else if(direction == 'y') {
 			d[n].direction = 1;
 		} else {
-			exit_if_false(info = 0,"skipping divergence with unrecognised direction");
+			warn_if_false(info = 0,"skipping divergence with unrecognised direction");
 			continue;
 		}
 

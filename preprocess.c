@@ -53,15 +53,6 @@ int main(int argc, char *argv[])
 	struct ZONE *zone;
 	zones_input(input_filename, n_faces, face, n_cells, cell, &n_zones, &zone);
 
-	/*{
-		int i;
-
-		for(i = 0; i < n_cells; i ++) cell_generate_border(&cell[i]);
-
-		for(i = 0; i < n_cells; i ++)
-			cell_generate_stencil(&cell[i], n_variables, maximum_order, connectivity, &face[0], &cell[0], &zone[0]);
-	}*/
-
 	generate_borders(n_cells, cell);
 
 	generate_stencils(n_variables, connectivity, maximum_order, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);

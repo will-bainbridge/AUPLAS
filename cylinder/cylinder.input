@@ -19,7 +19,8 @@ case_filename cylinder.case
 #timestep 0.02
 #number_of_steps 400
 #number_of_steps_per_output 10
-#iterations_per_step 5
+
+iterations_per_step 40
 
 #-------------------------------------------------------------------------#
 

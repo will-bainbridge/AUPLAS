@@ -20,11 +20,6 @@ int main(int argc, char *argv[])
 	exit_if_false(fetch_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
 	fclose(file);
 
-	printf("\nreading divergences from the input file ...");
-	int n_divergences;
-	struct DIVERGENCE *divergence;
-	print_time(" done in %lf seconds",divergences_input(input_filename,&n_divergences,&divergence));
-
 	printf("\nreading the mesh and zones from the case file ...");
 	int n_variables, n_nodes, n_faces, n_cells, n_zones;
 	struct NODE *node;
@@ -32,6 +27,21 @@ int main(int argc, char *argv[])
 	struct CELL *cell;
 	struct ZONE *zone;
 	print_time(" done in %lf seconds",read_case(case_filename, &n_variables, &n_nodes, &node, &n_faces, &face, &n_cells, &cell, &n_zones, &zone));
+
+	printf("\nreading control from the input file");
+	file = fopen(input_filename,"r");
+	exit_if_false(file != NULL,"opening the input file");
+	int n_iterations_per_step;
+	exit_if_false(fetch_value(file,"iterations_per_step",'i',&n_iterations_per_step) == FETCH_SUCCESS,"reading \"iterations_per_step\" from the input file");
+	char **variable_name;
+	exit_if_false(allocate_character_matrix(&variable_name,n_variables,MAX_STRING_LENGTH),"allocating variable names");
+	warn_if_false(fetch_vector(file,"variable_names",'s',n_variables,variable_name) == FETCH_SUCCESS,"reading \"variable_names\" from the input file");
+	fclose(file);
+
+	printf("\nreading divergences from the input file ...");
+	int n_divergences;
+	struct DIVERGENCE *divergence;
+	print_time(" done in %lf seconds",divergences_input(input_filename,&n_divergences,&divergence));
 
 	printf("\ngenerating lists of unknowns ...");
 	int n_ids, *id_to_unknown, n_unknowns, *unknown_to_id;
@@ -46,33 +56,36 @@ int main(int argc, char *argv[])
 	print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x));
 
 	{
-		int i, j, iterations_per_step = 20;
+		int i, j;
 
-		printf("\niteration > assembly solution >");
-		for(i = 0; i < n_variables; i ++) printf(" variable-%-2i     ",i);
+		printf("\n\niteration > assembly solution >");
+		for(i = 0; i < n_variables; i ++) printf(" %-15s",variable_name[i]);
 
-		for(i = 0; i < iterations_per_step; i ++)
+		for(i = 1; i <= n_iterations_per_step; i ++)
 		{
-			printf("\n%9i >",i); fflush(stdout);
+			printf("\n%9i >",i);
 
 			print_time(" %7.3lfs", assemble_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, x1,
 						n_faces, face, n_cells, cell, n_zones, zone, n_divergences, divergence));
 
-			print_time(" %7.3lfs >", exit_if_false(csr_solve_umfpack(matrix, x1) == CSR_SUCCESS,"solving the system"));
+			print_time(" %7.3lfs", exit_if_false(csr_solve_umfpack(matrix, x1) == CSR_SUCCESS,"solving the system"));
+
+			printf(" >");
 
 			calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
 
-			for(j = 0; j < n_variables; j ++) printf(" %15.10e",residual[j]);
+			for(j = 0; j < n_variables; j ++) printf(" %15.9e",residual[j]);
 
 			for(j = 0; j < n_unknowns; j ++) x[j] = x1[j];
 		}
 	}
 
-	printf("\nwriting out plot data ...");
+	printf("\n\nwriting out plot data ...");
 	print_time(" done in %lf seconds",write_gnuplot(n_unknowns, unknown_to_id, x, n_faces, face, n_cells, cell, n_zones, zone));
 
 	printf("\ncleaning up");
 	free_vector(case_filename);
+	free_matrix((void**)variable_name);
 	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
 	free_vector(x);

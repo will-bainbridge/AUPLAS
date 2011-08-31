@@ -15,7 +15,8 @@ case_filename cavity.case
 
 #-------------------------------------------------------------------------#
 
-#iterations_per_step 5
+iterations_per_step 5
+
 #timestep 1.0
 #number_of_steps 2
 #number_of_steps_per_output 1
