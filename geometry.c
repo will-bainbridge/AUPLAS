@@ -63,20 +63,20 @@ void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, str
 
 void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell)
 {
-	int i;
+	int i, n_polygon;
 	double ***polygon;
 
 	exit_if_false(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
 
 	for(i = 0; i < n_cells; i ++)
 	{
-		generate_control_volume_polygon(polygon, i, 'c', face, cell);
-		calculate_polygon_centroid(cell[i].n_faces, polygon, cell[i].centroid);
+		n_polygon = generate_control_volume_polygon(polygon, i, 'c', face, cell);
+		calculate_polygon_centroid(n_polygon, polygon, cell[i].centroid);
 	}
 	for(i = 0; i < n_faces; i ++)
 	{
-		generate_control_volume_polygon(polygon, i, 'f', face, cell);
-		calculate_polygon_centroid(2 + face[i].n_borders, polygon, face[i].centroid);
+		n_polygon = generate_control_volume_polygon(polygon, i, 'f', face, cell);
+		calculate_polygon_centroid(n_polygon, polygon, face[i].centroid);
 	}
 
 	free_matrix((void**)polygon);
@@ -84,7 +84,7 @@ void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cel
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void generate_control_volume_polygon(double ***polygon, int index, int location, struct FACE *face, struct CELL *cell)
+int generate_control_volume_polygon(double ***polygon, int index, int location, struct FACE *face, struct CELL *cell)
 {
 	int i;
 
@@ -99,6 +99,8 @@ void generate_control_volume_polygon(double ***polygon, int index, int location,
 		polygon[1][1] = polygon[2][0] = face[index].oriented[0] ? face[index].node[0]->x : face[index].node[1]->x;
 
 		if(face[index].n_borders == 2) polygon[2][1] = polygon[3][0] = face[index].border[1]->centroid;
+
+		return i + 1;
 	}
 	else if(location == 'c')
 	{
@@ -110,6 +112,8 @@ void generate_control_volume_polygon(double ***polygon, int index, int location,
 			polygon[i][0] = cell[index].face[i]->node[!o]->x;
 			polygon[i][1] = cell[index].face[i]->node[o]->x;
 		}
+
+		return cell[index].n_faces;
 	}
 	else exit_if_false(0,"recognising the location");
 }

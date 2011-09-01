@@ -4,8 +4,36 @@
 #include "quadrature.h"
 #include "polynomial.h"
 
+int generate_control_volume_interpolant(struct CELL ***interpolant, int *n_interpolant, int index, char location, struct FACE *face, struct CELL *cell);
+
 void dgemv_(char *, int *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
-double ddot_(int *, double *, int *, double *, int *);
+
+////////////////////////////////////////////////////////////////////////////////
+
+int generate_control_volume_interpolant(struct CELL ***interpolant, int *n_interpolant, int index, char location, struct FACE *face, struct CELL *cell)
+{
+	int i, j;
+
+	if(location == 'f')
+	{
+		for(i = 0; i < 2 + face[index].n_borders; i ++) n_interpolant[i] = 1;
+		interpolant[0][0] = interpolant[1][0] = interpolant[2][0] = face[index].border[0];
+		if(face[index].n_borders == 2) interpolant[2][0] = interpolant[3][0] = face[index].border[1];
+
+		return 2 + face[index].n_borders;
+	}
+	else if(location == 'c')
+	{
+		for(i = 0; i < cell[index].n_faces; i ++)
+		{
+			n_interpolant[i] = cell[index].face[i]->n_borders;
+			for(j = 0; j < n_interpolant[i]; j ++) interpolant[i][j] = cell[index].face[i]->border[j];
+		}
+
+		return cell[index].n_faces;;
+	}
+	else exit_if_false(0,"recognising the location");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -64,23 +92,7 @@ void form_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns
 		i = ID_TO_INDEX(id);
 		z = ID_TO_ZONE(id);
 
-		if(zone[z].location == 'f')
-		{
-			n_polygon = 2 + face[i].n_borders;
-			for(j = 0; j < n_polygon; j ++) n_interpolant[j] = 1;
-			interpolant[0][0] = interpolant[1][0] = interpolant[2][0] = face[i].border[0];
-			if(face[i].n_borders == 2) interpolant[2][0] = interpolant[3][0] = face[i].border[1];
-		}
-		else if(zone[z].location == 'c')
-		{
-			n_polygon = cell[i].n_faces;
-			for(j = 0; j < n_polygon; j ++)
-			{
-				n_interpolant[j] = cell[i].face[j]->n_borders;
-				for(k = 0; k < n_interpolant[j]; k ++) interpolant[j][k] = cell[i].face[j]->border[k];
-			}
-		}
-		else exit_if_false(0,"recognising the location");
+		n_polygon = generate_control_volume_interpolant(interpolant, n_interpolant, i, zone[z].location, face, cell);
 
 		for(p = 0; p < n_polygon; p ++)
 		{
@@ -105,9 +117,9 @@ void form_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
+void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, struct FACE *face, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
-        int i, j, k, id, z, d, u;
+        int i, id, z, d, u;
 
         int n_polygon, max_n_polygon = MAX(MAX_CELL_FACES,4);
 
@@ -132,9 +144,10 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
                 i = ID_TO_INDEX(id);
                 z = ID_TO_ZONE(id);
 
-		generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
+		n_polygon = generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
+		n_polygon = generate_control_volume_interpolant(interpolant, n_interpolant, i, zone[z].location, face, cell);
 
-		if(zone[z].location == 'f')
+		/*if(zone[z].location == 'f')
 		{
 			n_polygon = 2 + face[i].n_borders;
 			for(j = 0; j < n_polygon; j ++) n_interpolant[j] = 1;
@@ -150,7 +163,7 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 				for(k = 0; k < n_interpolant[j]; k ++) interpolant[j][k] = cell[i].face[j]->border[k];
 			}
 		}
-		else exit_if_false(0,"recognising the location");
+		else exit_if_false(0,"recognising the location");*/
 
 		for(d = 0; d < n_divergences; d ++)
 		{
