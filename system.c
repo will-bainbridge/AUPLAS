@@ -45,6 +45,66 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void form_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, struct CELL *cell, struct ZONE *zone)
+{
+	int i, j, k, l, p, u, v, z, id;
+
+        int n_polygon, max_n_polygon = MAX(MAX_CELL_FACES,4);
+
+	int *n_interpolant;
+	exit_if_false(allocate_integer_vector(&n_interpolant,max_n_polygon),"allocating the number of interpolants");
+
+	struct CELL ***interpolant;
+	exit_if_false(allocate_cell_pointer_matrix(&interpolant,max_n_polygon,2),"allocating the interpolant pointers");
+
+	for(u = 0; u < n_unknowns; u ++)
+	{
+		id = unknown_to_id[u];
+
+		i = ID_TO_INDEX(id);
+		z = ID_TO_ZONE(id);
+
+		if(zone[z].location == 'f')
+		{
+			n_polygon = 2 + face[i].n_borders;
+			for(j = 0; j < n_polygon; j ++) n_interpolant[j] = 1;
+			interpolant[0][0] = interpolant[1][0] = interpolant[2][0] = face[i].border[0];
+			if(face[i].n_borders == 2) interpolant[2][0] = interpolant[3][0] = face[i].border[1];
+		}
+		else if(zone[z].location == 'c')
+		{
+			n_polygon = cell[i].n_faces;
+			for(j = 0; j < n_polygon; j ++)
+			{
+				n_interpolant[j] = cell[i].face[j]->n_borders;
+				for(k = 0; k < n_interpolant[j]; k ++) interpolant[j][k] = cell[i].face[j]->border[k];
+			}
+		}
+		else exit_if_false(0,"recognising the location");
+
+		for(p = 0; p < n_polygon; p ++)
+		{
+			for(j = 0; j < n_interpolant[p]; j ++)
+			{
+				for(k = 0; k < n_variables; k ++)
+				{
+					for(l = 0; l < interpolant[p][j]->n_stencil[k]; l ++)
+					{
+						v = id_to_unknown[interpolant[p][j]->stencil[k][l]];
+
+						if(v >= 0) csr_create_nonzero(matrix, u, v);
+					}
+				}
+			}
+		}
+	}
+
+	free_vector(n_interpolant);
+	free_matrix((void **)interpolant);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
         int i, j, k, id, z, d, u;
@@ -58,17 +118,12 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
         exit_if_false(allocate_integer_vector(&n_interpolant,max_n_polygon),"allocating the number of interpolants");
 
         struct CELL ***interpolant;
-        interpolant = (struct CELL ***)malloc(max_n_polygon * sizeof(struct CELL **));
-        exit_if_false(interpolant != NULL,"allocating the interpolant pointers to pointers");
-        interpolant[0] = (struct CELL **)malloc(max_n_polygon * 2 * sizeof(struct CELL **));
-        exit_if_false(interpolant[0] != NULL,"allocating the interpolant pointers");
-        for(i = 1; i < max_n_polygon; i ++) interpolant[i] = interpolant[i-1] + 2;
+	exit_if_false(allocate_cell_pointer_matrix(&interpolant,max_n_polygon,2),"allocating the interpolant pointers");
 
-	//clear the matrix
-	csr_empty(matrix);
+	double *row;
+	exit_if_false(allocate_double_vector(&row,n_unknowns),"allocating the dense row");
 
-	//zero the right hand size
-	for(i = 0; i < n_unknowns; i ++) rhs[i] = 0.0;
+	for(i = 0; i < n_unknowns; i ++) rhs[i] = row[i] = 0.0;
 
 	for(u = 0; u < n_unknowns; u ++)
         {
@@ -97,25 +152,25 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 		}
 		else exit_if_false(0,"recognising the location");
 
-		csr_append_empty_row(matrix);
-
 		for(d = 0; d < n_divergences; d ++)
 		{
 			if(divergence[d].equation != zone[z].variable) continue;
-			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], matrix, zone, divergence[d]);
+			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], row, zone, divergence[d]);
 		}
+
+		csr_set_row(matrix, u, row);
 	}
 
 	//clean up
 	free_matrix((void **)polygon);
 	free_vector(n_interpolant);
-	free(interpolant[0]);
-	free(interpolant);
+	free_matrix((void **)interpolant);
+	free_vector(row);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, CSR matrix, struct ZONE *zone, struct DIVERGENCE divergence)
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE divergence)
 {
 	int i, j, k, p, q, s, u;
 
@@ -144,7 +199,7 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 	for(p = 0; p < n_polygon; p ++)
 	{
 		if(divergence.direction == 0) normal = polygon[p][1][1] - polygon[p][0][1];
-		else                           normal = polygon[p][0][0] - polygon[p][1][0];
+		else                          normal = polygon[p][0][0] - polygon[p][1][0];
 
 		for(q = 0; q < max_order; q ++)
 		{
@@ -201,10 +256,13 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 							s = interpolant[p][i]->stencil[u][k];
 
 							if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
-								csr_add_value_to_last_row(matrix, id_to_unknown[s],
+								row[id_to_unknown[s]] += divergence.constant * normal *
+									gauss_w[max_order-1][q] * point_value *
+									interpolation_values[k] / n_interpolant[p];
+								/*csr_add_value_to_last_row(matrix, id_to_unknown[s],
 										divergence.constant * normal *
 										gauss_w[max_order-1][q] * point_value *
-										interpolation_values[k] / n_interpolant[p]);
+										interpolation_values[k] / n_interpolant[p]);*/
 							} else {
 								*rhs -= divergence.constant * normal *
 									gauss_w[max_order-1][q] * point_value *

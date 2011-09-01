@@ -442,6 +442,17 @@ int allocate_character_matrix(char ***matrix, int height, int width)
 	return 1;
 }
 
+int allocate_cell_pointer_matrix(struct CELL ****matrix, int height, int width)
+{
+	*matrix = (struct CELL ***)malloc(height * sizeof(struct CELL **));
+	if(*matrix == NULL) return 0;
+	(*matrix)[0] = (struct CELL **)malloc(height * width * sizeof(struct CELL *));
+	if((*matrix)[0] == NULL) return 0;
+	int i;
+	for (i = 1; i < height; i++) { (*matrix)[i] = (*matrix)[i-1] + width; }
+	return 1;
+}
+
 void free_matrix(void **matrix)
 {
 	free(matrix[0]);

@@ -45,21 +45,37 @@ CSR csr_new()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_add_value_to_last_row(CSR A, int index, double value)
+int csr_create_nonzero(CSR A, int row, int index)
 {
+	//allocate row space as necessary
+	if(row + 2 > A->n_space)
+	{
+		A->n_space = 2*A->n_space + row + 2;
+
+		A->row = (int *)realloc(A->row, A->n_space * sizeof(int));
+		if(A->row == NULL) return CSR_MEMORY_ERROR;
+	}
+
 	int i;
 
-	for(i = A->row[A->n-1]; i < A->row[A->n]; i ++)
+	//increase the number of rows as necessary
+	if(A->n < row + 1)
 	{
-		if(A->index[i] == index)
-		{
-			A->value[i] += value;
-			return CSR_SUCCESS;
-		}
+		for(i = A->n + 1; i <= row + 1; i ++) A->row[i] = A->row[A->n];
+		A->n = row + 1;
+	}
 
+	//move along the row to find the insert point
+	for(i = A->row[row]; i < A->row[row + 1]; i ++)
+	{
+		if(A->index[i] == index) return CSR_SUCCESS;
 		if(A->index[i] > index) break;
 	}
 
+	//insert point
+	int insert = i;
+
+	//allocate index/value space as necessary
 	if(A->nnz + 1 > A->nnz_space)
 	{
 		A->nnz_space = 2*A->nnz_space + 1;
@@ -71,18 +87,21 @@ int csr_add_value_to_last_row(CSR A, int index, double value)
 		if(A->value == NULL) return CSR_MEMORY_ERROR;
 	}
 
-	int insert = i;
-
+	//shift all values past the insert point back by one
 	for(i = A->row[A->n]; i > insert; i --)
 	{
 		A->index[i] = A->index[i-1];
 		A->value[i] = A->value[i-1];
 	}
 
+	//insert the index and a zero value
 	A->index[insert] = index;
-	A->value[insert] = value;
+	A->value[insert] = 0.0;
 
-	A->row[A->n] ++;
+	//increment the pointers to rows past the value
+	for(i = row + 1; i <= A->n; i ++) A->row[i] ++;
+
+	//increment the total number of nonzeros
 	A->nnz ++;
 
 	return CSR_SUCCESS;
@@ -90,109 +109,14 @@ int csr_add_value_to_last_row(CSR A, int index, double value)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_append_empty_row(CSR A)
+void csr_set_row(CSR A, int row, double *value)
 {
-	if(A->n + 2 > A->n_space)
-	{
-		A->n_space = 2*A->n_space + 2;
-
-		A->row = (int *)realloc(A->row, A->n_space * sizeof(int));
-		if(A->row == NULL) return CSR_MEMORY_ERROR;
-	}
-
-	A->n += 1;
-
-	A->row[A->n] = A->row[A->n-1];
-
-	return CSR_SUCCESS;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int csr_append_sparse_row(CSR A, int n, int *index, double *value)
-{
-	if(A->n + 2 > A->n_space)
-	{
-		A->n_space = 2*A->n_space + 2;
-
-		A->row = (int *)realloc(A->row, A->n_space * sizeof(int));
-		if(A->row == NULL) return CSR_MEMORY_ERROR;
-	}
-
-	if(A->nnz + n > A->nnz_space)
-	{
-		A->nnz_space = 2*A->nnz_space + n;
-
-		A->index = (int *)realloc(A->index, A->nnz_space*sizeof(int));
-		if(A->index == NULL) return CSR_MEMORY_ERROR;
-
-		A->value = (double *)realloc(A->value, A->nnz_space*sizeof(double));
-		if(A->value == NULL) return CSR_MEMORY_ERROR;
-	}
-
-	A->row[A->n] = A->nnz;
-
-	A->n += 1;
-
 	int i;
-	for(i = 0; i < n; i ++)
+	for(i = A->row[row]; i < A->row[row+1]; i ++)
 	{
-		if(A->index[A->nnz-1] == index[i])
-		{
-			A->value[A->nnz-1] += value[i];
-		}
-		else
-		{
-			A->index[A->nnz] = index[i];
-			A->value[A->nnz ++] = value[i];
-		}
+		A->value[i] = value[A->index[i]];
+		value[A->index[i]] = 0.0;
 	}
-
-	A->row[A->n] = A->nnz;
-
-	return CSR_SUCCESS;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int csr_append_dense_row(CSR A, int n, double *value)
-{
-	if(A->n + 2 > A->n_space)
-	{
-		A->n_space = 2*A->n_space + 2;
-
-		A->row = (int *)realloc(A->row, A->n_space * sizeof(int));
-		if(A->row == NULL) return CSR_MEMORY_ERROR;
-	}
-
-	if(A->nnz + n > A->nnz_space)
-	{
-		A->nnz_space = 2*A->nnz_space + n;
-
-		A->index = (int *)realloc(A->index, A->nnz_space*sizeof(int));
-		if(A->index == NULL) return CSR_MEMORY_ERROR;
-
-		A->value = (double *)realloc(A->value, A->nnz_space*sizeof(double));
-		if(A->value == NULL) return CSR_MEMORY_ERROR;
-	}
-
-	A->row[A->n] = A->nnz;
-
-	A->n += 1;
-
-	int i;
-	for(i = 0; i < n; i ++)
-	{
-		if(fabs(value[i]) > 0.0)
-		{
-			A->index[A->nnz] = i;
-			A->value[A->nnz++] = value[i];
-		}
-	}
-
-	A->row[A->n] = A->nnz;
-
-	return CSR_SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

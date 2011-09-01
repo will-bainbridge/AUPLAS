@@ -47,13 +47,16 @@ int main(int argc, char *argv[])
 	int n_ids, *id_to_unknown, n_unknowns, *unknown_to_id;
 	print_time(" done in %lf seconds",generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
 
-	printf("\nallocating and initialising the system ...");
+	printf("\nallocating and initialising the unknowns ...");
 	double *x, *x1, *residual;
-	CSR matrix = csr_new();
 	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating system left hand side vector");
 	exit_if_false(allocate_double_vector(&x1,n_unknowns),"allocating system right hand side vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
 	print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x));
+
+	printf("\nallocating the system matrix ... ");
+	CSR matrix = csr_new();
+	print_time(" done in %lf seconds",form_matrix(matrix, n_variables, id_to_unknown, n_unknowns, unknown_to_id, face, cell, zone));
 
 	{
 		int i, j;

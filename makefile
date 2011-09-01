@@ -1,6 +1,7 @@
 CC		= gcc
-#CFLAGS		= -g -Wall -pg
 CFLAGS		= -O2 -Wall
+#CFLAGS		= -g -Wall
+#CFLAGS		= -g -Wall -pg
 
 INCLS		= -I./thirdparty/UFconfig \
 		  -I./thirdparty/CXSparse/Include \

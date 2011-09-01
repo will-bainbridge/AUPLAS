@@ -38,6 +38,7 @@ int allocate_integer_zero_matrix(int ***matrix, int height, int width);
 int allocate_double_matrix(double ***matrix, int height, int width);
 int allocate_double_pointer_matrix(double ****matrix, int height, int width);
 int allocate_character_matrix(char ***matrix, int height, int width);
+int allocate_cell_pointer_matrix(struct CELL ****matrix, int height, int width);
 void free_vector(void *vector);
 void free_matrix(void **matrix);
 
