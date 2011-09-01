@@ -7,8 +7,6 @@
 #include "csr.h"
 
 #include "umfpack.h"
-#include "slu_ddefs.h"
-#include "cs.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -142,70 +140,6 @@ void csr_print(CSR A)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_solve_superlu(CSR A, double *b)
-{
-	SuperMatrix M, L, U, X;
-	superlu_options_t options;
-	SuperLUStat_t stat;
-	int *perm_c, *perm_r;
-	int info;
-
-	perm_c = (int *)malloc(A->n * sizeof(int));
-	if(perm_c == NULL) return CSR_MEMORY_ERROR;
-	perm_r = (int *)malloc(A->n * sizeof(int));
-	if(perm_r == NULL) return CSR_MEMORY_ERROR;
-
-	dCreate_CompRow_Matrix(&M, A->n, A->n, A->nnz, A->value, A->index, A->row, SLU_NR, SLU_D, SLU_GE);
-
-	dCreate_Dense_Matrix(&X, A->n, 1, b, A->n, SLU_DN, SLU_D, SLU_GE);
-
-	set_default_options(&options);
-	options.ColPerm = NATURAL;
-
-	StatInit(&stat);
-
-	dgssv(&options, &M, perm_c, perm_r, &L, &U, &X, &stat, &info);
-
-	free(perm_c);
-	free(perm_r);
-
-	Destroy_SuperMatrix_Store(&M);
-	Destroy_SuperMatrix_Store(&X);
-	Destroy_SuperNode_Matrix(&L);
-	Destroy_CompCol_Matrix(&U);
-
-	StatFree(&stat);
-
-	return info ? CSR_SOLVE_ERROR : CSR_SUCCESS;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-int csr_solve_csparse(CSR A, double *b)
-{
-	cs *MT, *M;
-	MT = cs_calloc(1,sizeof(cs));
-
-	MT->nzmax = A->nnz;
-	MT->m = A->n;
-	MT->n = A->n;
-	MT->p = A->row;
-	MT->i = A->index;
-	MT->x = A->value;
-	MT->nz = -1;
-
-	M = cs_transpose(MT,1);
-
-	int info = cs_lusol(1, M, b, 1e-10);
-
-	cs_spfree(M);
-	cs_free(MT);
-
-	return info ? CSR_SUCCESS : CSR_SOLVE_ERROR;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 int csr_solve_umfpack(CSR A, double *b)
 {
 	void *Symbolic, *Numeric;
@@ -216,6 +150,7 @@ int csr_solve_umfpack(CSR A, double *b)
         umfpack_di_free_symbolic(&Symbolic);
 
 	double *x = (double *)malloc(A->n * sizeof(double));
+	if(x == NULL) return CSR_MEMORY_ERROR;
 
 	umfpack_di_solve(UMFPACK_At, A->row, A->index, A->value, x, b, Numeric, NULL, NULL);
         umfpack_di_free_numeric(&Numeric);
@@ -225,7 +160,7 @@ int csr_solve_umfpack(CSR A, double *b)
 
 	free(x);
 
-	return 1;
+	return CSR_SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
