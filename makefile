@@ -1,7 +1,7 @@
 CC		= gcc
 CFLAGS		= -O2 -Wall
-#CFLAGS		= -g -Wall
-#CFLAGS		= -g -Wall -pg
+FC		= gfortran
+FFLAGS		= -O2 -Wall
 
 INCLS		= -I./thirdparty/UFconfig \
 		  -I./thirdparty/UMFPACK/Include \
@@ -27,7 +27,7 @@ all: $(EFILE)
 
 .SECONDEXPANSION:
 $(EFILE): $$@.o $(COMMONOBJS)
-	$(CC) $(CFLAGS) -o $@ $@.o $(COMMONOBJS) $(LIBS)
+	$(FC) $(FFLAGS) -o $@ $@.o $(COMMONOBJS) $(LIBS)
 
 $(OBJS): makefile
 	$(CC) $(CFLAGS) $(INCLS) -c $*.c
