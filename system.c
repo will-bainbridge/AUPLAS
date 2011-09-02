@@ -104,7 +104,7 @@ void form_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns
 					{
 						v = id_to_unknown[interpolant[p][j]->stencil[k][l]];
 
-						if(v >= 0) csr_create_nonzero(matrix, u, v);
+						if(v >= 0) csr_insert_value(matrix, u, v, 0.0);
 					}
 				}
 			}

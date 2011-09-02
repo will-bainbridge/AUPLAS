@@ -6,6 +6,7 @@
 
 #include "csr.h"
 
+#include "ilupack.h"
 #include "umfpack.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +44,7 @@ CSR csr_new()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_create_nonzero(CSR A, int row, int index)
+int csr_insert_value(CSR A, int row, int index, double value)
 {
 	//allocate row space as necessary
 	if(row + 2 > A->n_space)
@@ -66,7 +67,7 @@ int csr_create_nonzero(CSR A, int row, int index)
 	//move along the row to find the insert point
 	for(i = A->row[row]; i < A->row[row + 1]; i ++)
 	{
-		if(A->index[i] == index) return CSR_SUCCESS;
+		if(A->index[i] == index) { A->value[i] += value; return CSR_SUCCESS; }
 		if(A->index[i] > index) break;
 	}
 
@@ -94,7 +95,7 @@ int csr_create_nonzero(CSR A, int row, int index)
 
 	//insert the index and a zero value
 	A->index[insert] = index;
-	A->value[insert] = 0.0;
+	A->value[insert] = value;
 
 	//increment the pointers to rows past the value
 	for(i = row + 1; i <= A->n; i ++) A->row[i] ++;
@@ -140,7 +141,7 @@ void csr_print(CSR A)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int csr_solve_umfpack(CSR A, double *b)
+int csr_solve_umfpack(CSR A, double *x, double *b)
 {
 	void *Symbolic, *Numeric;
 	
@@ -149,16 +150,51 @@ int csr_solve_umfpack(CSR A, double *b)
 	umfpack_di_numeric(A->row, A->index, A->value, Symbolic, &Numeric, NULL, NULL);
         umfpack_di_free_symbolic(&Symbolic);
 
-	double *x = (double *)malloc(A->n * sizeof(double));
-	if(x == NULL) return CSR_MEMORY_ERROR;
-
 	umfpack_di_solve(UMFPACK_At, A->row, A->index, A->value, x, b, Numeric, NULL, NULL);
         umfpack_di_free_numeric(&Numeric);
 
-	int i;
-	for(i = 0; i < A->n; i ++) b[i] = x[i];
+	return CSR_SUCCESS;
+}
 
-	free(x);
+////////////////////////////////////////////////////////////////////////////////
+
+int csr_solve_ilupack(CSR A, double *x, double *b)
+{
+	int i;
+
+	//convert to numbering from 1
+	for(i = 0; i <= A->n; i ++) A->row[i] ++;
+	for(i = 0; i < A->nnz; i ++) A->index[i] ++;
+
+	Dmat M;
+	DAMGlevelmat P;
+	DILUPACKparam param;
+
+	M.nr = M.nc = A->n;
+	M.nnz = A->nnz;
+	M.ia = A->row;
+	M.ja = A->index;
+	M.a = A->value;
+
+	DGNLAMGinit(&M, &param);
+
+	param.matching = 0;
+	param.ordering = "amd";
+	param.droptol = 1.0;
+	param.droptolS = 0.1;
+	param.condest = 5;
+
+	if(DGNLAMGfactor(&M, &P, &param) != 0) return CSR_SOLVE_ERROR;
+
+	DGNLAMGsol(&P, &param, b, x);
+
+	if(DGNLAMGsolver(&M, &P, &param, b, x) != 0) return CSR_SOLVE_ERROR;
+
+	DGNLAMGdelete(&M,&P,&param);
+
+	//convert back to numbering from 0
+	for(i = 0; i <= A->n; i ++) A->row[i] --;
+	for(i = 0; i < A->nnz; i ++) A->index[i] --;
 
 	return CSR_SUCCESS;
 }

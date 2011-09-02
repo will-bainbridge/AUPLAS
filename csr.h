@@ -4,11 +4,12 @@
 typedef struct s_CSR * CSR;
 
 CSR csr_new();
-int csr_create_nonzero(CSR A, int row, int index);
+int csr_insert_value(CSR A, int row, int index, double value);
 void csr_set_row(CSR A, int row, double *value);
 void csr_empty(CSR A);
 void csr_print(CSR A);
-int csr_solve_umfpack(CSR A, double *b);
+int csr_solve_umfpack(CSR A, double *x, double *b);
+int csr_solve_ilupack(CSR A, double *x, double *b);
 void csr_destroy(CSR A);
 
 #define CSR_SUCCESS 1

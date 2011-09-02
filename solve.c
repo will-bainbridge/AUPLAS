@@ -48,11 +48,12 @@ int main(int argc, char *argv[])
 	print_time(" done in %lf seconds",generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
 
 	printf("\nallocating and initialising the unknowns ...");
-	double *x, *x1, *residual;
-	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating system left hand side vector");
-	exit_if_false(allocate_double_vector(&x1,n_unknowns),"allocating system right hand side vector");
+	double *x, *x1, *b, *residual;
+	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating system old unknown vector");
+	exit_if_false(allocate_double_vector(&x1,n_unknowns),"allocating system new unknownvector");
+	exit_if_false(allocate_double_vector(&b,n_unknowns),"allocating system right hand side vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
-	print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x));
+	print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
 
 	printf("\nallocating the system matrix ...");
 	CSR matrix = csr_new();
@@ -66,20 +67,20 @@ int main(int argc, char *argv[])
 
 		for(i = 1; i <= n_iterations_per_step; i ++)
 		{
+			for(j = 0; j < n_unknowns; j ++) x[j] = x1[j];
+
 			printf("\n%9i >",i);
 
-			print_time(" %7.3lfs", assemble_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, x1,
+			print_time(" %7.3lfs", assemble_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
 						face, cell, zone, n_divergences, divergence));
 
-			print_time(" %7.3lfs", exit_if_false(csr_solve_umfpack(matrix, x1) == CSR_SUCCESS,"solving the system"));
+			print_time(" %7.3lfs", exit_if_false(csr_solve_ilupack(matrix, x1, b) == CSR_SUCCESS,"solving the system"));
 
 			printf(" >");
 
 			calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
 
 			for(j = 0; j < n_variables; j ++) printf(" %15.9e",residual[j]);
-
-			for(j = 0; j < n_unknowns; j ++) x[j] = x1[j];
 		}
 	}
 
@@ -93,6 +94,7 @@ int main(int argc, char *argv[])
 	free_vector(unknown_to_id);
 	free_vector(x);
 	free_vector(x1);
+	free_vector(b);
 	free_vector(residual);
 	nodes_destroy(n_nodes,node);
 	faces_destroy(n_faces,face);

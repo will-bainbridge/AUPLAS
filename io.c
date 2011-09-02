@@ -619,7 +619,7 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 
 void write_gnuplot(int n_unknowns, int *unknown_to_id, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
-	int u, id, z, i, n_polygon;
+	int u, id, z, i;
 	double ***polygon;
 	exit_if_false(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
 
@@ -644,7 +644,7 @@ void write_gnuplot(int n_unknowns, int *unknown_to_id, double *x, int n_faces, s
 		i = ID_TO_INDEX(id);
 		z = ID_TO_ZONE(id);
 
-		n_polygon = generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
+		generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
 
 		fprintf(file[z],"%lf %lf %lf\n",polygon[0][0][0],polygon[0][0][1],x[u]);
 		fprintf(file[z],"%lf %lf %lf\n\n",polygon[0][1][0],polygon[0][1][1],x[u]);
