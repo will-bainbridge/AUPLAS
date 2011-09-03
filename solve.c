@@ -53,10 +53,11 @@ int main(int argc, char *argv[])
 	print_time(" done in %lf seconds",generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
 
 	printf("\nallocating and initialising the unknowns ...");
-	double *x, *x1, *b, *residual;
-	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating system old unknown vector");
-	exit_if_false(allocate_double_vector(&x1,n_unknowns),"allocating system new unknownvector");
-	exit_if_false(allocate_double_vector(&b,n_unknowns),"allocating system right hand side vector");
+	double *xn, *x, *x1, *b, *residual;
+	exit_if_false(allocate_double_vector(&xn,n_unknowns),"allocating last timestep vector");
+	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating old unknown vector");
+	exit_if_false(allocate_double_vector(&x1,n_unknowns),"allocating new unknown vector");
+	exit_if_false(allocate_double_vector(&b,n_unknowns),"allocating right hand side vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
 	print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
 
@@ -64,28 +65,65 @@ int main(int argc, char *argv[])
 	CSR matrix = csr_new();
 	print_time(" done in %lf seconds",assemble_matrix(matrix, n_variables, id_to_unknown, n_unknowns, unknown_to_id, face, cell, zone));
 
+	double *implicit, *mass;
+	exit_if_false(allocate_double_vector(&implicit,n_unknowns),"allocating implicit vector");
+	exit_if_false(allocate_double_vector(&mass,n_unknowns),"allocating mass vector");
+
+	double timestep = 1.0e-2;
+
 	{
-		int i, j;
+		int a, u, z;
 
-		printf("\n\niteration > assembly solution >");
-		for(i = 0; i < n_variables; i ++) printf(" %-15s",variable_name[i]);
-
-		for(i = 1; i <= n_iterations_per_step; i ++)
+		for(u = 0; u < n_unknowns; u ++)
 		{
-			for(j = 0; j < n_unknowns; j ++) x[j] = x1[j];
+			z = ID_TO_ZONE(unknown_to_id[u]);
 
-			printf("\n%9i >",i);
+			implicit[u] = mass[u] = 0.0;
+			for(a = 0; a < n_accumulations; a ++)
+			{
+				if(accumulation[a].variable == zone[z].variable)
+				{
+					implicit[u] = - timestep * accumulation[a].implicit;
+					mass[u] = accumulation[a].constant;
+					if(zone[z].location == 'f')      mass[u] *= face[ID_TO_INDEX(u)].area;
+					else if(zone[z].location == 'c') mass[u] *= cell[ID_TO_INDEX(u)].area;
+					else exit_if_false(0,"recognising location");
+				}
+			}
+		}
+	}
 
-			print_time(" %7.3lfs", calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
-						face, cell, zone, n_divergences, divergence));
 
-			print_time(" %7.3lfs", exit_if_false(csr_solve_umfpack(matrix, x1, b) == CSR_SUCCESS,"solving the system"));
+	{
+		int s, i, v, u;
 
-			printf(" >");
+		int n_steps = 1;
+		
+		for(s = 0; s < n_steps; s ++)
+		{
+			for(u = 0; u < n_unknowns; u ++) xn[u] = x1[u];
 
-			calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
+			printf("\n\niteration > assembly solution >");
+			for(v = 0; v < n_variables; v ++) printf(" %-15s",variable_name[v]);
 
-			for(j = 0; j < n_variables; j ++) printf(" %15.9e",residual[j]);
+			for(i = 1; i <= n_iterations_per_step; i ++)
+			{
+				for(u = 0; u < n_unknowns; u ++) x[u] = x1[u];
+
+				printf("\n%9i >",i);
+
+				print_time(" %7.3lfs",calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
+							face, cell, zone, n_divergences, divergence));
+
+				print_time(" %7.3lfs",exit_if_false(csr_solve_umfpack(matrix,x1,b) == CSR_SUCCESS,"solving the system"));
+
+				printf(" >");
+
+				calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
+
+				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
+			}
+
 		}
 	}
 
@@ -97,10 +135,13 @@ int main(int argc, char *argv[])
 	free_matrix((void**)variable_name);
 	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
+	free_vector(xn);
 	free_vector(x);
 	free_vector(x1);
 	free_vector(b);
 	free_vector(residual);
+	free_vector(implicit);
+	free_vector(mass);
 	nodes_destroy(n_nodes,node);
 	faces_destroy(n_faces,face);
 	cells_destroy(n_variables,n_cells,cell);
