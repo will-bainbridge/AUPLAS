@@ -7,6 +7,7 @@ CSR csr_new();
 int csr_insert_value(CSR A, int row, int index, double value);
 void csr_set_row(CSR A, int row, double *value);
 void csr_add_to_diagonal(CSR A, double *value);
+void csr_multiply_vector(CSR A, double *b, double *c);
 void csr_empty(CSR A);
 void csr_print(CSR A);
 void csr_print_diagonal(CSR A);

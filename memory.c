@@ -318,20 +318,14 @@ void zones_destroy(struct ZONE *zone)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct DIVERGENCE * divergences_new(struct DIVERGENCE *divergence, int n_old, int n_new)
+struct DIVERGENCE * divergences_new(int n_divergences, struct DIVERGENCE *divergence)
 {
         int i;
 
-        for(i = n_new; i < n_old; i ++)
-        {
-                free(divergence[i].variable);
-                free(divergence[i].differential);
-        }
-
-        divergence = (struct DIVERGENCE *)realloc(divergence, n_new * sizeof(struct DIVERGENCE));
+        divergence = (struct DIVERGENCE *)realloc(divergence, n_divergences * sizeof(struct DIVERGENCE));
         if(divergence == NULL) return NULL;
 
-        for(i = n_old; i < n_new; i ++)
+        for(i = 0; i < n_divergences; i ++)
         {
                 divergence[i].n_variables = 0;
                 divergence[i].variable = NULL;
@@ -350,6 +344,21 @@ void divergences_destroy(int n_divergences, struct DIVERGENCE *divergence)
                 free(divergence[i].differential);
         }
         free(divergence);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct ACCUMULATION * accumulations_new(int n_accumulations, struct ACCUMULATION *accumulation)
+{
+	accumulation = (struct ACCUMULATION *)realloc(accumulation, n_accumulations * sizeof(struct ACCUMULATION));
+	if(accumulation == NULL) return NULL;
+
+	return accumulation;
+}
+
+void accumulations_destroy(int n_accumulations, struct ACCUMULATION *accumulation)
+{
+	free(accumulation);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

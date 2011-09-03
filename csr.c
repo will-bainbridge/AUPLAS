@@ -140,6 +140,20 @@ void csr_add_to_diagonal(CSR A, double *value)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void csr_multiply_vector(CSR A, double *b, double *c)
+{
+	int i, j;
+	for(i = 0; i < A->n; i ++)
+	{
+		for(j = A->row[i]; j < A->row[i+1]; j ++)
+		{
+			c[i] += A->value[j]*b[A->index[j]];
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void csr_empty(CSR A)
 {
 	A->n = A->nnz = 0;

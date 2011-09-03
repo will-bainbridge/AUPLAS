@@ -86,6 +86,13 @@ struct DIVERGENCE
 	double constant;
 };
 
+struct ACCUMULATION
+{
+	int variable;
+	double implicit;
+	double constant;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
@@ -105,6 +112,7 @@ void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node,
 void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell, int *n_zones, struct ZONE **zone);
 void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
 void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **divergence);
+void accumulations_input(char *filename, int *n_accumulations, struct ACCUMULATION **accumulation);
 void write_gnuplot(int n_unknowns, int *unknown_to_id, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 //connectivity.c

@@ -43,6 +43,11 @@ int main(int argc, char *argv[])
 	struct DIVERGENCE *divergence;
 	print_time(" done in %lf seconds",divergences_input(input_filename,&n_divergences,&divergence));
 
+	printf("\nreading accumulations from the input file ...");
+	int n_accumulations;
+	struct ACCUMULATION *accumulation;
+	print_time(" done in %lf seconds",accumulations_input(input_filename,&n_accumulations,&accumulation));
+
 	printf("\ngenerating lists of unknowns ...");
 	int n_ids, *id_to_unknown, n_unknowns, *unknown_to_id;
 	print_time(" done in %lf seconds",generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
@@ -101,6 +106,7 @@ int main(int argc, char *argv[])
 	cells_destroy(n_variables,n_cells,cell);
 	zones_destroy(zone);
 	divergences_destroy(n_divergences, divergence);
+	accumulations_destroy(n_accumulations, accumulation);
 	csr_destroy(matrix);
 
 	print_end();

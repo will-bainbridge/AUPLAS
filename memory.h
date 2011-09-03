@@ -26,8 +26,11 @@ void cells_destroy(int n_variables, int n_cells, struct CELL *cell);
 struct ZONE * zones_new(int n_zones, struct ZONE *zone);
 void zones_destroy(struct ZONE *zone);
 
-struct DIVERGENCE * divergences_new(struct DIVERGENCE *divergence, int n_old, int n_new);
+struct DIVERGENCE * divergences_new(int n_divergences, struct DIVERGENCE *divergence);
 void divergences_destroy(int n_divergences, struct DIVERGENCE *divergence);
+
+struct ACCUMULATION * accumulations_new(int n_accumulations, struct ACCUMULATION *accumulation);
+void accumulations_destroy(int n_accumulations, struct ACCUMULATION *accumulation);
 
 int allocate_integer_vector(int **vector, int length);
 int allocate_integer_zero_vector(int **vector, int length);
