@@ -46,6 +46,7 @@ struct FACE
 	int n_zones;
 	struct ZONE **zone;
 
+	double area;
 	double centroid[2];
 };
 
@@ -58,6 +59,7 @@ struct CELL
 	int n_zones;
 	struct ZONE **zone;
 
+	double area;
 	double centroid[2];
 
 	int *order;
@@ -113,7 +115,7 @@ void generate_stencils(int n_variables, char **connectivity, int *maximum_order,
 void generate_face_orientations(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cells, struct CELL *cell);
 int generate_control_volume_polygon(double ***polygon, int index, int location, struct FACE *face, struct CELL *cell);
-void calculate_polygon_centroid(int n, double ***polygon, double *centroid);
+void calculate_polygon_area_and_centroid(int n, double ***polygon, double *area, double *centroid);
 
 //numerics.c
 void calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone);

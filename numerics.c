@@ -20,7 +20,7 @@ void dgels_(char *, int *, int *, int *, double *, int *, double *, int *, doubl
 
 void calculate_cell_reconstruction_matrices(int n_variables, double *weight_exponent, int *maximum_order, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone)
 {
-	int c, u, i, j, k;
+	int c, u, i, j, k, l;
 
 	int order, n_powers, n_stencil;
 
@@ -42,11 +42,16 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 	int s_id, s_index;
 	struct ZONE *s_zone;
 	char s_location, *s_condition;
-	double *s_centroid, s_weight;
+	double s_area, *s_centroid, s_weight;
 
 	//integration
 	double x[2];
 	int differential[2], d;
+
+	//CV polygon
+	int n_polygon;
+	double ***polygon;
+	exit_if_false(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
 
 	for(c = 0; c < n_cells; c ++)
 	{
@@ -69,8 +74,10 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 
 				if(s_location == 'f') {
 					s_centroid = face[s_index].centroid;
+					s_area = face[s_index].area;
 				} else if(s_location == 'c') {
 					s_centroid = cell[s_index].centroid;
+					s_area = cell[s_index].area;
 				} else exit_if_false(0,"recognising zone location");
 
 				s_weight  = (s_centroid[0] - cell[c].centroid[0])*(s_centroid[0] - cell[c].centroid[0]);
@@ -82,7 +89,7 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 
 				//unknown and dirichlet conditions have zero differentiation
 				differential[0] = differential[1] = 0;
-				//other conditions have differentiation  determmmined from the numbers of x and y characters in the condition string
+				//other conditions have differential determined from numbers of x and y-s in the condition string
 				if(s_condition[0] != 'u' && s_condition[0] != 'd')
 				{
 					j = 0;
@@ -97,11 +104,11 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 				//index for the determined differential
 				d = differential_index[differential[0]][differential[1]];
 
-				//unknowns fit to centroid points
-				//change to fit to CV average instead???
+				//unknowns
 				if(s_condition[0] == 'u')
 				{
-					x[0] = s_centroid[0] - cell[c].centroid[0];
+					//fit unknowns to centroid points
+					/*x[0] = s_centroid[0] - cell[c].centroid[0];
 					x[1] = s_centroid[1] - cell[c].centroid[1];
 
 					for(j = 0; j < n_powers; j ++)
@@ -110,12 +117,43 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 							integer_power(x[0],polynomial_power_x[d][j])*
 							integer_power(x[1],polynomial_power_y[d][j])*
 							s_weight;
+					}*/
+
+					//fit unknowns to CV average
+					n_polygon = generate_control_volume_polygon(polygon, s_index, s_location, face, cell);
+
+					for(j = 0; j < n_powers; j ++) matrix[j][i] = 0.0;
+
+					for(j = 0; j < order; j ++) 
+					{
+						for(k = 0; k < n_polygon; k ++)
+						{
+							x[0] =  0.5*polygon[k][0][0]*(1.0 - gauss_x[order-1][j]) +
+								0.5*polygon[k][1][0]*(1.0 + gauss_x[order-1][j]) -
+								cell[c].centroid[0];
+							x[1] =  0.5*polygon[k][0][1]*(1.0 - gauss_x[order-1][j]) +
+								0.5*polygon[k][1][1]*(1.0 + gauss_x[order-1][j]) -
+								cell[c].centroid[1];
+
+							for(l = 0; l < n_powers; l ++)
+							{
+								//[face integral of polynomial integrated wrt x] * [x normal] / [CV area]
+								
+								matrix[l][i] += polynomial_coefficient[d][l] *
+									(1.0 / (polynomial_power_x[d][l] + 1.0)) *
+									integer_power(x[0],polynomial_power_x[d][l]+1) *
+									integer_power(x[1],polynomial_power_y[d][l]) *
+									s_weight * gauss_w[order-1][j] * 0.5 *
+									(polygon[k][1][1] - polygon[k][0][1]) / s_area;
+							}
+						}
 					}
 				}
-				//known faces fit to face average
-				//cells need implementing
+
+				//knowns
 				else
 				{
+					//known faces fit to face average
 					if(s_location == 'f')
 					{
 						for(j = 0; j < n_powers; j ++) matrix[j][i] = 0.0;
@@ -131,14 +169,15 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 
 							for(k = 0; k < n_powers; k ++)
 							{
-								matrix[k][i] += polynomial_coefficient[d][k]*
-									integer_power(x[0],polynomial_power_x[d][k])*
-									integer_power(x[1],polynomial_power_y[d][k])*
+								matrix[k][i] += polynomial_coefficient[d][k] *
+									integer_power(x[0],polynomial_power_x[d][k]) *
+									integer_power(x[1],polynomial_power_y[d][k]) *
 									s_weight*gauss_w[order-1][j]*0.5;
 							}
 						}
 					}
 
+					//cells need implementing
 					//if(s_location == 'c')
 					//{
 					//}
@@ -166,6 +205,7 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 	free_matrix((void**)matrix);
 	free_vector(constraint);
 	free_vector(weight);
+	free_matrix((void**)polygon);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

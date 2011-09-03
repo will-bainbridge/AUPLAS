@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 			print_time(" %7.3lfs", calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
 						face, cell, zone, n_divergences, divergence));
 
-			print_time(" %7.3lfs", exit_if_false(csr_solve_ilupack(matrix, x1, b) == CSR_SUCCESS,"solving the system"));
+			print_time(" %7.3lfs", exit_if_false(csr_solve_umfpack(matrix, x1, b) == CSR_SUCCESS,"solving the system"));
 
 			printf(" >");
 

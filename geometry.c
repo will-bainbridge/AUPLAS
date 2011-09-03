@@ -71,12 +71,12 @@ void calculate_control_volume_geometry(int n_faces, struct FACE *face, int n_cel
 	for(i = 0; i < n_cells; i ++)
 	{
 		n_polygon = generate_control_volume_polygon(polygon, i, 'c', face, cell);
-		calculate_polygon_centroid(n_polygon, polygon, cell[i].centroid);
+		calculate_polygon_area_and_centroid(n_polygon, polygon, &cell[i].area, cell[i].centroid);
 	}
 	for(i = 0; i < n_faces; i ++)
 	{
 		n_polygon = generate_control_volume_polygon(polygon, i, 'f', face, cell);
-		calculate_polygon_centroid(n_polygon, polygon, face[i].centroid);
+		calculate_polygon_area_and_centroid(n_polygon, polygon, &face[i].area, face[i].centroid);
 	}
 
 	free_matrix((void**)polygon);
@@ -120,12 +120,12 @@ int generate_control_volume_polygon(double ***polygon, int index, int location, 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_polygon_centroid(int n, double ***polygon, double *centroid)
+void calculate_polygon_area_and_centroid(int n, double ***polygon, double *area, double *centroid)
 {
-	double x[2], nx[2], area;
+	double x[2], nx[2];
 	int i, j;
 
-	area = 0;
+	*area = 0;
 	centroid[0] = 0;
 	centroid[1] = 0;
 
@@ -139,15 +139,15 @@ void calculate_polygon_centroid(int n, double ***polygon, double *centroid)
 			x[0] = 0.5*polygon[i][0][0]*(1.0 - gauss_x[1][j]) + 0.5*polygon[i][1][0]*(1.0 + gauss_x[1][j]);
 			x[1] = 0.5*polygon[i][0][1]*(1.0 - gauss_x[1][j]) + 0.5*polygon[i][1][1]*(1.0 + gauss_x[1][j]);
 
-			area += x[0]*nx[0]*gauss_w[1][j]*0.5;
+			(*area) += x[0]*nx[0]*gauss_w[1][j]*0.5;
 
 			centroid[0] += x[0]*x[1]*nx[1]*gauss_w[1][j]*0.5;
 			centroid[1] += x[0]*x[1]*nx[0]*gauss_w[1][j]*0.5;
 		}
 	}
 
-	centroid[0] /= area;
-	centroid[1] /= area;
+	centroid[0] /= *area;
+	centroid[1] /= *area;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
