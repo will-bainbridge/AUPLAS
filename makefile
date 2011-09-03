@@ -9,7 +9,7 @@ INCLS		= -I./thirdparty/UFconfig \
 		  -I./thirdparty/ilupackV2.4_GNU64_MUMPS/include
 LIBS		= -L./thirdparty/UMFPACK/Lib \
 		  -L./thirdparty/AMD/Lib \
-		  -L./thirdparty/ilupackV2.4_GNU64_MUMPS/lib/GNU64/ \
+		  -L./thirdparty/ilupackV2.4_GNU64_MUMPS/lib/GNU64 \
 		  -lumfpack -lilupack -lmumps -lamd -lmetis -lsparspak -lblaslike -lm -lrt -llapack -lblas
 
 MAINSRCS	= preprocess.c solve.c
