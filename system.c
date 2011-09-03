@@ -30,7 +30,7 @@ int generate_control_volume_interpolant(struct CELL ***interpolant, int *n_inter
 			for(j = 0; j < n_interpolant[i]; j ++) interpolant[i][j] = cell[index].face[i]->border[j];
 		}
 
-		return cell[index].n_faces;;
+		return cell[index].n_faces;
 	}
 	else exit_if_false(0,"recognising the location");
 }
@@ -73,7 +73,7 @@ void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void form_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, struct CELL *cell, struct ZONE *zone)
+void assemble_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, struct CELL *cell, struct ZONE *zone)
 {
 	int i, j, k, l, p, u, v, z, id;
 
@@ -117,7 +117,7 @@ void form_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, struct FACE *face, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
+void calculate_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, struct FACE *face, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
         int i, id, z, d, u;
 
@@ -146,24 +146,6 @@ void assemble_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, 
 
 		n_polygon = generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
 		n_polygon = generate_control_volume_interpolant(interpolant, n_interpolant, i, zone[z].location, face, cell);
-
-		/*if(zone[z].location == 'f')
-		{
-			n_polygon = 2 + face[i].n_borders;
-			for(j = 0; j < n_polygon; j ++) n_interpolant[j] = 1;
-			interpolant[0][0] = interpolant[1][0] = interpolant[2][0] = face[i].border[0];
-			if(face[i].n_borders == 2) interpolant[2][0] = interpolant[3][0] = face[i].border[1];
-		}
-		else if(zone[z].location == 'c')
-		{
-			n_polygon = cell[i].n_faces;
-			for(j = 0; j < n_polygon; j ++)
-			{
-				n_interpolant[j] = cell[i].face[j]->n_borders;
-				for(k = 0; k < n_interpolant[j]; k ++) interpolant[j][k] = cell[i].face[j]->border[k];
-			}
-		}
-		else exit_if_false(0,"recognising the location");*/
 
 		for(d = 0; d < n_divergences; d ++)
 		{
@@ -253,9 +235,12 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 						{
 							s = interpolant[p][i]->stencil[u][k];
 
-							if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
+							if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
+							{
 								value += interpolation_values[k] * lhs[id_to_unknown[s]];
-							} else {
+							}
+							else
+							{
 								value += interpolation_values[k] * zone[ID_TO_ZONE(s)].value;
 							}
 						}
@@ -268,15 +253,14 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 						{
 							s = interpolant[p][i]->stencil[u][k];
 
-							if(zone[ID_TO_ZONE(s)].condition[0] == 'u') {
+							if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
+							{
 								row[id_to_unknown[s]] += divergence.constant * normal *
 									gauss_w[max_order-1][q] * point_value *
 									interpolation_values[k] / n_interpolant[p];
-								/*csr_add_value_to_last_row(matrix, id_to_unknown[s],
-										divergence.constant * normal *
-										gauss_w[max_order-1][q] * point_value *
-										interpolation_values[k] / n_interpolant[p]);*/
-							} else {
+							}
+							else
+							{
 								*rhs -= divergence.constant * normal *
 									gauss_w[max_order-1][q] * point_value *
 									interpolation_values[k] * zone[ID_TO_ZONE(s)].value /
@@ -305,7 +289,6 @@ void initialise_unknowns(int n_ids, int *id_to_unknown, struct ZONE *zone, doubl
 			x[id_to_unknown[i]] = zone[ID_TO_ZONE(i)].value;
 		}
 	}
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -55,9 +55,9 @@ int main(int argc, char *argv[])
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
 	print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
 
-	printf("\nallocating the system matrix ...");
+	printf("\nassembling the system matrix ...");
 	CSR matrix = csr_new();
-	print_time(" done in %lf seconds",form_matrix(matrix, n_variables, id_to_unknown, n_unknowns, unknown_to_id, face, cell, zone));
+	print_time(" done in %lf seconds",assemble_matrix(matrix, n_variables, id_to_unknown, n_unknowns, unknown_to_id, face, cell, zone));
 
 	{
 		int i, j;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
 			printf("\n%9i >",i);
 
-			print_time(" %7.3lfs", assemble_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
+			print_time(" %7.3lfs", calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
 						face, cell, zone, n_divergences, divergence));
 
 			print_time(" %7.3lfs", exit_if_false(csr_solve_ilupack(matrix, x1, b) == CSR_SUCCESS,"solving the system"));
