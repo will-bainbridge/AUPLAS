@@ -53,11 +53,11 @@ int main(int argc, char *argv[])
 	print_time(" done in %lf seconds",generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
 
 	printf("\nallocating and initialising the unknowns ...");
-	double *xn, *x, *x1, *b, *residual;
-	exit_if_false(allocate_double_vector(&xn,n_unknowns),"allocating last timestep vector");
+	double *x, *x1, *b, *bn, *residual;
 	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating old unknown vector");
 	exit_if_false(allocate_double_vector(&x1,n_unknowns),"allocating new unknown vector");
 	exit_if_false(allocate_double_vector(&b,n_unknowns),"allocating right hand side vector");
+	exit_if_false(allocate_double_vector(&bn,n_unknowns),"allocating last timestep right hand side vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
 	print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	exit_if_false(allocate_double_vector(&implicit,n_unknowns),"allocating implicit vector");
 	exit_if_false(allocate_double_vector(&mass,n_unknowns),"allocating mass vector");
 
-	double timestep = 1.0e-2;
+	double timestep = 1.0e-1;
 
 	{
 		int a, u, z;
@@ -78,32 +78,33 @@ int main(int argc, char *argv[])
 		{
 			z = ID_TO_ZONE(unknown_to_id[u]);
 
-			implicit[u] = mass[u] = 0.0;
+			implicit[u] = - timestep;
+			mass[u] = 0.0;
 			for(a = 0; a < n_accumulations; a ++)
 			{
 				if(accumulation[a].variable == zone[z].variable)
 				{
 					implicit[u] = - timestep * accumulation[a].implicit;
 					mass[u] = accumulation[a].constant;
-					if(zone[z].location == 'f')      mass[u] *= face[ID_TO_INDEX(u)].area;
-					else if(zone[z].location == 'c') mass[u] *= cell[ID_TO_INDEX(u)].area;
+					if(zone[z].location == 'f')      mass[u] *= face[ID_TO_INDEX(unknown_to_id[u])].area;
+					else if(zone[z].location == 'c') mass[u] *= cell[ID_TO_INDEX(unknown_to_id[u])].area;
 					else exit_if_false(0,"recognising location");
 				}
 			}
 		}
 	}
 
-
 	{
 		int s, i, v, u;
 
-		int n_steps = 1;
+		int n_steps = 5;
 		
-		for(s = 0; s < n_steps; s ++)
+		for(s = 1; s <= n_steps; s ++)
 		{
-			for(u = 0; u < n_unknowns; u ++) xn[u] = x1[u];
-
-			printf("\n\niteration > assembly solution >");
+			printf("\n");
+			printf("\n timestep > %i",s);
+			printf("\n     time > %8.2e",timestep*(s-1));
+			printf("\niteration > assembly solution >");
 			for(v = 0; v < n_variables; v ++) printf(" %-15s",variable_name[v]);
 
 			for(i = 1; i <= n_iterations_per_step; i ++)
@@ -112,15 +113,29 @@ int main(int argc, char *argv[])
 
 				printf("\n%9i >",i);
 
-				print_time(" %7.3lfs",calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
+				//calculate the divergences
+				print_time(" %7.1es",calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
 							face, cell, zone, n_divergences, divergence));
 
-				print_time(" %7.3lfs",exit_if_false(csr_solve_umfpack(matrix,x1,b) == CSR_SUCCESS,"solving the system"));
+				//explicit and old timestep part of RHS calculated on 1st iteration only
+				if(i == 1)
+				{
+					for(u = 0; u < n_unknowns; u ++) bn[u] = b[u];
+					csr_multiply_vector(matrix,x,bn);
+					for(u = 0; u < n_unknowns; u ++) bn[u] = mass[u] * x[u] + (timestep + implicit[u]) * bn[u];
+				}
+
+				//implicit part of the RHS calculated every iteration
+				for(u = 0; u < n_unknowns; u ++) b[u] = bn[u] - implicit[u] * b[u];
+				csr_multiply_diagonal(matrix,implicit);
+				csr_add_to_diagonal(matrix,mass);
+
+				//solve the system
+				print_time(" %7.1es",exit_if_false(csr_solve_umfpack(matrix,x1,b) == CSR_SUCCESS,"solving the system"));
 
 				printf(" >");
 
 				calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
-
 				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
 			}
 
@@ -135,10 +150,10 @@ int main(int argc, char *argv[])
 	free_matrix((void**)variable_name);
 	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
-	free_vector(xn);
 	free_vector(x);
 	free_vector(x1);
 	free_vector(b);
+	free_vector(bn);
 	free_vector(residual);
 	free_vector(implicit);
 	free_vector(mass);

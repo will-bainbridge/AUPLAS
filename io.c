@@ -269,6 +269,7 @@ void face_case_write(FILE *file, struct NODE *node, struct FACE *face, struct CE
 	exit_if_false(fwrite(&(face->n_nodes), sizeof(int), 1, file) == 1, "writing the number of face nodes");
 	for(i = 0; i < face->n_nodes; i ++) index[i] = (int)(face->node[i] - &node[0]);
 	exit_if_false(fwrite(index, sizeof(int), face->n_nodes, file) == face->n_nodes, "writing the face nodes");
+	exit_if_false(fwrite(&(face->area), sizeof(double), 1, file) == 1, "writing the face area");
 	exit_if_false(fwrite(face->centroid, sizeof(double), 2, file) == 2, "writing the face centroid");
 	exit_if_false(fwrite(&(face->n_borders), sizeof(int), 1, file) == 1, "writing the number of face borders");
 	for(i = 0; i < face->n_borders; i ++) index[i] = (int)(face->border[i] - &cell[0]);
@@ -294,6 +295,7 @@ void face_case_get(FILE *file, struct NODE *node, struct FACE *face, struct CELL
 	exit_if_false(face_node_new(face),"allocating face nodes");
 	exit_if_false(fread(index, sizeof(int), face->n_nodes, file) == face->n_nodes, "reading face nodes");
 	for(i = 0; i < face->n_nodes; i ++) face->node[i] = &node[index[i]];
+	exit_if_false(fread(&(face->area), sizeof(double), 1, file) == 1, "reading the face area");
 	exit_if_false(fread(face->centroid, sizeof(double), 2, file) == 2, "reading the face centroid");
 	exit_if_false(fread(&(face->n_borders), sizeof(int), 1, file) == 1, "reading the number of face borders");
 	exit_if_false(face_border_new(face),"allocating face borders");
@@ -322,6 +324,7 @@ void cell_case_write(FILE *file, int n_variables, struct FACE *face, struct CELL
         for(i = 0; i < cell->n_faces; i ++) index[i] = (int)(cell->face[i] - &face[0]);
         exit_if_false(fwrite(index, sizeof(int), cell->n_faces, file) == cell->n_faces, "writing the cell faces");
         exit_if_false(fwrite(cell->oriented, sizeof(int), cell->n_faces, file) == cell->n_faces, "writing the cell orientations");
+        exit_if_false(fwrite(&(cell->area), sizeof(double), 1, file) == 1, "writing the cell area");
         exit_if_false(fwrite(cell->centroid, sizeof(double), 2, file) == 2, "writing the cell centroid");
         exit_if_false(fwrite(&(cell->n_zones), sizeof(int), 1, file) == 1, "writing the number of cell zones");
         for(i = 0; i < cell->n_zones; i ++) index[i] = (int)(cell->zone[i] - &zone[0]);
@@ -353,6 +356,7 @@ void cell_case_get(FILE *file, int n_variables, struct FACE *face, struct CELL *
         for(i = 0; i < cell->n_faces; i ++) cell->face[i] = &face[index[i]];
         exit_if_false(cell_oriented_new(cell),"allocating cell orientations");
         exit_if_false(fread(cell->oriented, sizeof(int), cell->n_faces, file) == cell->n_faces, "reading cell orientations");
+        exit_if_false(fread(&(cell->area), sizeof(double), 1, file) == 1, "reading the cell area");
         exit_if_false(fread(cell->centroid, sizeof(double), 2, file) == 2, "reading the cell centroid");
         exit_if_false(fread(&(cell->n_zones), sizeof(int), 1, file) == 1, "reading the number of cell zones");
         exit_if_false(cell_zone_new(cell),"allocating cell zones");

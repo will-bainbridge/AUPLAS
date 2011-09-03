@@ -261,7 +261,7 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 							}
 							else
 							{
-								*rhs -= divergence.constant * normal *
+								*rhs += divergence.constant * normal *
 									gauss_w[max_order-1][q] * point_value *
 									interpolation_values[k] * zone[ID_TO_ZONE(s)].value /
 									n_interpolant[p];
