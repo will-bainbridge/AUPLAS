@@ -12,7 +12,7 @@ LIBS		= -L./thirdparty/UMFPACK/Lib \
 		  -L./thirdparty/ilupackV2.4_GNU64_MUMPS/lib/GNU64 \
 		  -lumfpack -lilupack -lmumps -lamd -lmetis -lsparspak -lblaslike -lm -lrt -llapack -lblas
 
-MAINSRCS	= preprocess.c solve.c
+MAINSRCS	= preprocess.c solve.c postprocess.c
 COMMONSRCS 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c
 
 SRCS		= $(MAINSRCS) $(COMMONSRCS)

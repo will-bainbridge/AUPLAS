@@ -617,50 +617,6 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void write_gnuplot(int n_unknowns, int *unknown_to_id, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
-{
-	int u, id, z, i;
-	double ***polygon;
-	exit_if_false(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
-
-	FILE **file;
-	file = (FILE **)malloc(n_zones * sizeof(FILE *));
-	char *filename;
-	allocate_character_vector(&filename,MAX_STRING_LENGTH);
-
-	for(z = 0; z < n_zones; z ++)
-	{
-		if(zone[z].condition[0] == 'u')
-		{
-			sprintf(filename,"zone-%i.gnuplot",z);
-			file[z] = fopen(filename,"w");
-		}
-	}
-
-	for(u = 0; u < n_unknowns; u ++)
-	{
-		id = unknown_to_id[u];
-
-		i = ID_TO_INDEX(id);
-		z = ID_TO_ZONE(id);
-
-		generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
-
-		fprintf(file[z],"%lf %lf %lf\n",polygon[0][0][0],polygon[0][0][1],x[u]);
-		fprintf(file[z],"%lf %lf %lf\n\n",polygon[0][1][0],polygon[0][1][1],x[u]);
-		fprintf(file[z],"%lf %lf %lf\n",polygon[2][1][0],polygon[2][1][1],x[u]);
-		fprintf(file[z],"%lf %lf %lf\n\n\n",polygon[2][0][0],polygon[2][0][1],x[u]);
-	}
-
-	for(z = 0; z < n_zones; z ++) if(zone[z].condition[0] == 'u') fclose(file[z]);
-
-	free_matrix((void **)polygon);
-	free(file);
-	free_vector(filename);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 char * generate_timed_filename(char *filename, double time)
 {
 	char *sub = strchr(filename, '?');
@@ -685,6 +641,7 @@ void write_data(char *filename, double time, int n_data, double *data)
 	FILE *file = fopen(timed_filename,"w");
 	exit_if_false(file != NULL,"opening data file");
 
+	exit_if_false(fwrite(&time, sizeof(double), 1, file) == 1,"writing the time");
 	exit_if_false(fwrite(data, sizeof(double), n_data, file) == n_data,"writing the data");
 
 	free_vector(timed_filename);
@@ -693,17 +650,94 @@ void write_data(char *filename, double time, int n_data, double *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void read_data(char *filename, double time, int n_data, double *data)
+void read_data(char *filename, double *time, int n_data, double *data)
 {
-	char *timed_filename = generate_timed_filename(filename, time);
-
-	FILE *file = fopen(timed_filename,"r");
+	FILE *file = fopen(filename,"r");
 	exit_if_false(file != NULL,"opening data file");
 
+	exit_if_false(fread(time, sizeof(double), 1, file) == 1,"reading the time");
 	exit_if_false(fread(data, sizeof(double), n_data, file) == n_data,"reading the data");
 
-	free_vector(timed_filename);
 	fclose(file);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unknown, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+{
+        int n_polygon;
+        double ***polygon;
+        exit_if_false(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
+
+	char *timed_filename = generate_timed_filename(filename, time);
+
+        char *temp;
+        exit_if_false(allocate_character_vector(&temp, MAX_STRING_LENGTH),"allocating temporary string");
+
+        double *data;
+        exit_if_false(allocate_double_vector(&data,n_variables),"allocating data");
+        int *is_data;
+        exit_if_false(allocate_integer_vector(&is_data,n_variables),"allocating no data indicator");
+
+        FILE *file = fopen(timed_filename,"w");
+        exit_if_false(file != NULL,"opening file");
+
+        int e, i, j, u, v;
+
+        int nz;
+        struct ZONE **z;
+
+        for(e = 0; e < n_faces + n_cells; e ++)
+        {
+                i = e % n_faces;
+
+                n_polygon = generate_control_volume_polygon(polygon, i, (e < n_faces ? 'f' : 'c'), face, cell);
+
+                for(v = 0; v < n_variables; v ++) is_data[v] = 0;
+
+                if(e < n_faces)
+                {
+                        nz = face[i].n_zones;
+                        z = face[i].zone;
+                }
+                else
+                {
+                        nz = cell[i].n_zones;
+                        z = cell[i].zone;
+                }
+
+                for(j = 0; j < nz; j ++)
+                {
+                        u = id_to_unknown[INDEX_AND_ZONE_TO_ID(i,z[j] - &zone[0])];
+                        v = z[j]->variable;
+                        if(u >= 0) data[v] = x[u];
+                        else       data[v] = z[j]->value;
+                        is_data[v] = 1;
+                }
+
+                temp[0] = '\0';
+                for(v = 0; v < n_variables; v ++)
+                {
+                        if(is_data[v]) sprintf(&temp[strlen(temp)]," %lf",data[v]);
+                        else           sprintf(&temp[strlen(temp)]," NaN");
+                }
+
+                for(j = 1; j < n_polygon - 1; j ++)
+                {
+                        fprintf(file,"%lf %lf %s\n",polygon[0][0][0],polygon[0][0][1],temp);
+                        fprintf(file,"%lf %lf %s\n\n",polygon[j][0][0],polygon[j][0][1],temp);
+                        fprintf(file,"%lf %lf %s\n",polygon[0][0][0],polygon[0][0][1],temp);
+                        fprintf(file,"%lf %lf %s\n\n\n",polygon[j][1][0],polygon[j][1][1],temp);
+                }
+        }
+
+        fclose(file);
+
+        free_matrix((void **)polygon);
+        free_vector(timed_filename);
+        free_vector(temp);
+        free_vector(data);
+        free_vector(is_data);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

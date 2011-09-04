@@ -9,8 +9,8 @@ int main(int argc, char *argv[])
 {
 	setbuf(stdout, NULL);
 
-	exit_if_false(argc == 2,"wrong number of input arguments");
-	char *input_filename = argv[1];
+	exit_if_false(argc != 2 || argc != 3,"wrong number of input arguments");
+	char *input_filename = argv[1], *initial_filename = (argc == 3) ? argv[2] : NULL;
 
 	printf("\nreading case and data filenames from the input file");
 	FILE *file = fopen(input_filename,"r");
@@ -49,8 +49,8 @@ int main(int argc, char *argv[])
 	exit_if_false(fetch_vector(file,"implicit",'d',n_variables,implicit) == FETCH_SUCCESS,"reading \"implicit\" from the input file");
 	double timestep;
 	exit_if_false(fetch_value(file,"timestep",'d',&timestep) == FETCH_SUCCESS,"reading \"timestep\" from the input file");
-	int step[2];
-	exit_if_false(fetch_vector(file,"step_range",'i',2,&step) == FETCH_SUCCESS,"reading \"step_range\" from the input file");
+	int n_steps;
+	exit_if_false(fetch_value(file,"number_of_steps",'i',&n_steps) == FETCH_SUCCESS,"reading \"number_of_steps\" from the input file");
 	int n_steps_per_output;
 	exit_if_false(fetch_value(file,"number_of_steps_per_output",'i',&n_steps_per_output) == FETCH_SUCCESS,"reading \"number_of_steps_per_output\" from the input file");
 	int n_iterations_per_step;
@@ -76,8 +76,9 @@ int main(int argc, char *argv[])
 	exit_if_false(allocate_double_vector(&b,n_unknowns),"allocating right hand side vector");
 	exit_if_false(allocate_double_vector(&bn,n_unknowns),"allocating last timestep right hand side vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
-	if(step[0] == 0) print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
-	else             print_time(" done in %lf seconds",read_data(data_filename, step[0]*timestep, n_unknowns, x1));
+	double time = 0.0;
+	if(initial_filename == NULL) print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
+	else                         print_time(" done in %lf seconds",read_data(initial_filename, &time, n_unknowns, x1));
 
 	printf("\nassembling the system matrix ...");
 	CSR matrix = csr_new();
@@ -107,11 +108,11 @@ int main(int argc, char *argv[])
 	{
 		int i, s, u, v;
 		
-		for(s = step[0] + 1; s <= step[1]; s ++)
+		for(s = 1; s <= n_steps; s ++)
 		{
 			printf("\n");
 			printf("\n timestep > %i",s);
-			printf("\n     time > %8.2e",timestep*(s-1));
+			printf("\n    times > %7.1es %7.1es",time,time+timestep);
 			printf("\niteration > assembly solution >");
 			for(v = 0; v < n_variables; v ++) printf(" %-15s",variable_name[v]);
 
@@ -148,11 +149,13 @@ int main(int argc, char *argv[])
 				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
 			}
 
+			time += timestep;
+
 			//output
-			if((s - step[0]) % n_steps_per_output == 0)
+			if(s % n_steps_per_output == 0 || s == n_steps)
 			{
 				printf("\n\nwriting data ...");
-				print_time(" done in %lf seconds",write_data(data_filename, s*timestep, n_unknowns, x1));
+				print_time(" done in %lf seconds",write_data(data_filename, time, n_unknowns, x1));
 			}
 		}
 	}
@@ -160,12 +163,6 @@ int main(int argc, char *argv[])
 	//printf("\n\nwriting out plot data ...");
 	//print_time(" done in %lf seconds",write_gnuplot(n_unknowns, unknown_to_id, x, n_faces, face, n_cells, cell, n_zones, zone));
 	
-	if((step[1] - step[0]) % n_steps_per_output != 0)
-	{
-		printf("\n\nwriting data ...");
-		print_time(" done in %lf seconds",write_data(data_filename, step[1]*timestep, n_unknowns, x1));
-	}
-
 	printf("\ncleaning up");
 	free_vector(case_filename);
 	free_vector(data_filename);
