@@ -14,10 +14,6 @@
 #define MAX_DIVERGENCES 100
 #define MAX_DIVERGENCE_VARIABLES 5
 
-#define ACCUMULATION_LABEL "accumulation"
-#define ACCUMULATION_FORMAT "idd"
-#define MAX_ACCUMULATIONS 10
-
 void node_geometry_get(FILE *file, struct NODE *node);
 void node_case_write(FILE *file, struct NODE *node);
 void node_case_get(FILE *file, struct NODE *node);
@@ -32,7 +28,6 @@ void cell_case_get(FILE *file, int n_variables, struct FACE *face, struct CELL *
 
 void zone_case_write(FILE *file, struct ZONE *zone);
 void zone_case_get(FILE *file, struct ZONE *zone);
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -616,49 +611,6 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 	free(temp);
 	free(term);
 	free(differential);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void accumulations_input(char *filename, int *n_accumulations, struct ACCUMULATION **accumulation)
-{
-	int i;
-
-	//open the file
-        FILE *file = fopen(filename,"r");
-        exit_if_false(file != NULL,"opening input file");
-
-        //fetch the data
-        FETCH fetch = fetch_new(ACCUMULATION_FORMAT,MAX_ACCUMULATIONS);
-        exit_if_false(fetch != NULL,"allocating fetch");
-        int n = fetch_read(file,ACCUMULATION_LABEL,fetch);
-        exit_if_false(n > 1,"no accumulations found in input file");
-        warn_if_false(n < MAX_ACCUMULATIONS,"maximum number of accumulations reached");
-
-        //allocate pointers
-        struct ACCUMULATION *a = accumulations_new(n,NULL);
-        exit_if_false(a != NULL,"allocating accumulations");
-
-	//get data
-	for(i = 0; i < n; i ++)
-        {
-		fetch_get(fetch, i, 0, &a[i].variable);
-		fetch_get(fetch, i, 1, &a[i].implicit);
-		fetch_get(fetch, i, 2, &a[i].constant);
-	}
-
-	//check numbers
-        fetch_destroy(fetch);
-        fetch = fetch_new("",MAX_ACCUMULATIONS);
-        warn_if_false(fetch_read(file,ACCUMULATION_LABEL,fetch) == n,"skipping accumulations with unrecognised formats");
-
-	//copy over
-        *n_accumulations = n;
-        *accumulation = a;
-
-	//clean up
-	fclose(file);
-	fetch_destroy(fetch);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

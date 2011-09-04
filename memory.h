@@ -29,9 +29,6 @@ void zones_destroy(struct ZONE *zone);
 struct DIVERGENCE * divergences_new(int n_divergences, struct DIVERGENCE *divergence);
 void divergences_destroy(int n_divergences, struct DIVERGENCE *divergence);
 
-struct ACCUMULATION * accumulations_new(int n_accumulations, struct ACCUMULATION *accumulation);
-void accumulations_destroy(int n_accumulations, struct ACCUMULATION *accumulation);
-
 int allocate_integer_vector(int **vector, int length);
 int allocate_integer_zero_vector(int **vector, int length);
 int allocate_double_vector(double **vector, int length);

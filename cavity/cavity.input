@@ -15,11 +15,13 @@ case_filename cavity.case
 
 #-------------------------------------------------------------------------#
 
-iterations_per_step 5
+timestep 0.1
 
-#timestep 1.0
-#number_of_steps 2
-#number_of_steps_per_output 1
+number_of_steps 5
+
+number_of_steps_per_output 10
+
+number_of_iterations_per_step 5
 
 #-------------------------------------------------------------------------#
 
@@ -89,10 +91,8 @@ zone        f 646:659        2         d   0.0
 # d_dt( rhou ) = d_dx( -p ) + d_dx( - u*rhou ) + d_dy( - v*rhou ) + d_dx( 2.0*mu*du_dx ) + d_dy( mu*du_dy ) + d_dy( mu*dv_dx )
 # d_dt( rhov ) = d_dy( -p ) + d_dx( - u*rhov ) + d_dy( - v*rhov ) + d_dx( mu*du_dy ) + d_dx( mu*dv_dx ) + d_dy( 2.0*mu*dv_dy )
 
-# variable implicit constant
-
-accumulation 1 1.0 1.0
-accumulation 2 1.0 1.0
+accumulation 0.0 1.0 1.0
+implicit 1.0 1.0 1.0
 
 # equation variable direction differential constant
 

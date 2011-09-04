@@ -28,25 +28,47 @@ int main(int argc, char *argv[])
 	struct ZONE *zone;
 	print_time(" done in %lf seconds",read_case(case_filename, &n_variables, &n_nodes, &node, &n_faces, &face, &n_cells, &cell, &n_zones, &zone));
 
+	//--------------------------------------------------------------------//
+
 	printf("\nreading control from the input file");
 	file = fopen(input_filename,"r");
 	exit_if_false(file != NULL,"opening the input file");
-	int n_iterations_per_step;
-	exit_if_false(fetch_value(file,"iterations_per_step",'i',&n_iterations_per_step) == FETCH_SUCCESS,"reading \"iterations_per_step\" from the input file");
+
 	char **variable_name;
 	exit_if_false(allocate_character_matrix(&variable_name,n_variables,MAX_STRING_LENGTH),"allocating variable names");
-	warn_if_false(fetch_vector(file,"variable_names",'s',n_variables,variable_name) == FETCH_SUCCESS,"reading \"variable_names\" from the input file");
+	warn_if_false(fetch_vector(file,"variable_names",'s',n_variables,variable_name) == FETCH_SUCCESS,
+			"reading \"variable_names\" from the input file");
+
+	double *accumulation;
+	exit_if_false(allocate_double_vector(&accumulation,n_variables),"allocating the accumulations");
+	exit_if_false(fetch_vector(file,"accumulation",'d',n_variables,accumulation) == FETCH_SUCCESS,
+			"reading \"accumulation\" from the input file");
+
+	double *implicit;
+	exit_if_false(allocate_double_vector(&implicit,n_variables),"allocating the implicit fractions");
+	exit_if_false(fetch_vector(file,"implicit",'d',n_variables,implicit) == FETCH_SUCCESS,
+			"reading \"implicit\" from the input file");
+
+	double timestep;
+	exit_if_false(fetch_value(file,"timestep",'d',&timestep) == FETCH_SUCCESS,"reading \"timestep\" from the input file");
+
+	int n_steps;
+	exit_if_false(fetch_value(file,"number_of_steps",'i',&n_steps) == FETCH_SUCCESS,"reading \"number_of_steps\" from the input file");
+
+	int n_steps_per_output;
+	exit_if_false(fetch_value(file,"number_of_steps_per_output",'i',&n_steps_per_output) == FETCH_SUCCESS,"reading \"number_of_steps_per_output\" from the input file");
+
+	int n_iterations_per_step;
+	exit_if_false(fetch_value(file,"number_of_iterations_per_step",'i',&n_iterations_per_step) == FETCH_SUCCESS,"reading \"number_of_iterations_per_step\" from the input file");
+
 	fclose(file);
+
+	//--------------------------------------------------------------------//
 
 	printf("\nreading divergences from the input file ...");
 	int n_divergences;
 	struct DIVERGENCE *divergence;
 	print_time(" done in %lf seconds",divergences_input(input_filename,&n_divergences,&divergence));
-
-	printf("\nreading accumulations from the input file ...");
-	int n_accumulations;
-	struct ACCUMULATION *accumulation;
-	print_time(" done in %lf seconds",accumulations_input(input_filename,&n_accumulations,&accumulation));
 
 	printf("\ngenerating lists of unknowns ...");
 	int n_ids, *id_to_unknown, n_unknowns, *unknown_to_id;
@@ -65,39 +87,29 @@ int main(int argc, char *argv[])
 	CSR matrix = csr_new();
 	print_time(" done in %lf seconds",assemble_matrix(matrix, n_variables, id_to_unknown, n_unknowns, unknown_to_id, face, cell, zone));
 
-	double *implicit, *mass;
-	exit_if_false(allocate_double_vector(&implicit,n_unknowns),"allocating implicit vector");
+	double *minus_theta_timestep, *mass;
+	exit_if_false(allocate_double_vector(&minus_theta_timestep,n_unknowns),"allocating implicit vector");
 	exit_if_false(allocate_double_vector(&mass,n_unknowns),"allocating mass vector");
 
-	double timestep = 1.0e-1;
-
 	{
-		int a, u, z;
+		int i, u, v, z;
 
 		for(u = 0; u < n_unknowns; u ++)
 		{
+			i = ID_TO_INDEX(unknown_to_id[u]);
 			z = ID_TO_ZONE(unknown_to_id[u]);
+			v = zone[z].variable;
 
-			implicit[u] = - timestep;
-			mass[u] = 0.0;
-			for(a = 0; a < n_accumulations; a ++)
-			{
-				if(accumulation[a].variable == zone[z].variable)
-				{
-					implicit[u] = - timestep * accumulation[a].implicit;
-					mass[u] = accumulation[a].constant;
-					if(zone[z].location == 'f')      mass[u] *= face[ID_TO_INDEX(unknown_to_id[u])].area;
-					else if(zone[z].location == 'c') mass[u] *= cell[ID_TO_INDEX(unknown_to_id[u])].area;
-					else exit_if_false(0,"recognising location");
-				}
-			}
+			minus_theta_timestep[u] = - implicit[v] * timestep;
+
+			if(zone[z].location == 'f')      mass[u] = accumulation[v] * face[i].area;
+			else if(zone[z].location == 'c') mass[u] = accumulation[v] * cell[i].area;
+			else exit_if_false(0,"recognising location");
 		}
 	}
 
 	{
-		int s, i, v, u;
-
-		int n_steps = 5;
+		int i, s, u, v;
 		
 		for(s = 1; s <= n_steps; s ++)
 		{
@@ -122,12 +134,13 @@ int main(int argc, char *argv[])
 				{
 					for(u = 0; u < n_unknowns; u ++) bn[u] = b[u];
 					csr_multiply_vector(matrix,x,bn);
-					for(u = 0; u < n_unknowns; u ++) bn[u] = mass[u] * x[u] + (timestep + implicit[u]) * bn[u];
+					for(u = 0; u < n_unknowns; u ++)
+						bn[u] = mass[u] * x[u] + (timestep + minus_theta_timestep[u]) * bn[u];
 				}
 
 				//implicit part of the RHS calculated every iteration
-				for(u = 0; u < n_unknowns; u ++) b[u] = bn[u] - implicit[u] * b[u];
-				csr_multiply_diagonal(matrix,implicit);
+				for(u = 0; u < n_unknowns; u ++) b[u] = bn[u] - minus_theta_timestep[u] * b[u];
+				csr_multiply_diagonal(matrix,minus_theta_timestep);
 				csr_add_to_diagonal(matrix,mass);
 
 				//solve the system
@@ -138,7 +151,6 @@ int main(int argc, char *argv[])
 				calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
 				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
 			}
-
 		}
 	}
 
@@ -156,13 +168,14 @@ int main(int argc, char *argv[])
 	free_vector(bn);
 	free_vector(residual);
 	free_vector(implicit);
+	free_vector(accumulation);
 	free_vector(mass);
+	free_vector(minus_theta_timestep);
 	nodes_destroy(n_nodes,node);
 	faces_destroy(n_faces,face);
 	cells_destroy(n_variables,n_cells,cell);
 	zones_destroy(zone);
 	divergences_destroy(n_divergences, divergence);
-	accumulations_destroy(n_accumulations, accumulation);
 	csr_destroy(matrix);
 
 	print_end();

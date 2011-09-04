@@ -348,21 +348,6 @@ void divergences_destroy(int n_divergences, struct DIVERGENCE *divergence)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct ACCUMULATION * accumulations_new(int n_accumulations, struct ACCUMULATION *accumulation)
-{
-	accumulation = (struct ACCUMULATION *)realloc(accumulation, n_accumulations * sizeof(struct ACCUMULATION));
-	if(accumulation == NULL) return NULL;
-
-	return accumulation;
-}
-
-void accumulations_destroy(int n_accumulations, struct ACCUMULATION *accumulation)
-{
-	free(accumulation);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 int allocate_integer_vector(int **vector, int length)
 {
 	*vector = (int *)malloc(length * sizeof(int));
