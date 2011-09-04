@@ -106,6 +106,8 @@ void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **nod
 void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
 void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **divergence);
 void write_gnuplot(int n_unknowns, int *unknown_to_id, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void write_data(char *filename, double time, int n_data, double *data);
+void read_data(char *filename, double time, int n_data, double *data);
 
 //connectivity.c
 void generate_borders(int n_cells, struct CELL *cell);

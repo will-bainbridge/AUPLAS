@@ -12,14 +12,15 @@ weight_exponent 1.0 1.0 1.0
 
 geometry_filename cavity.geometry
 case_filename cavity.case
+data_filename cavity.?.data
 
 #-------------------------------------------------------------------------#
 
 timestep 0.1
 
-number_of_steps 5
+step_range 0 10
 
-number_of_steps_per_output 10
+number_of_steps_per_output 5
 
 number_of_iterations_per_step 5
 

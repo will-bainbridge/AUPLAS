@@ -29,6 +29,8 @@ void cell_case_get(FILE *file, int n_variables, struct FACE *face, struct CELL *
 void zone_case_write(FILE *file, struct ZONE *zone);
 void zone_case_get(FILE *file, struct ZONE *zone);
 
+char * generate_timed_filename(char *filename, double time);
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell)
@@ -655,6 +657,53 @@ void write_gnuplot(int n_unknowns, int *unknown_to_id, double *x, int n_faces, s
 	free_matrix((void **)polygon);
 	free(file);
 	free_vector(filename);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+char * generate_timed_filename(char *filename, double time)
+{
+	char *sub = strchr(filename, '?');
+	exit_if_false(sub != NULL,"substitute character \"?\" not found in data filename");
+
+	char *timed_filename;
+	exit_if_false(allocate_character_vector(&timed_filename, MAX_STRING_LENGTH),"allocating timed filename");
+
+	*sub = '\0';
+	sprintf(timed_filename, "%s%013.6lf%s", filename, time, sub + 1);
+	*sub = '?';
+
+	return timed_filename;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void write_data(char *filename, double time, int n_data, double *data)
+{
+	char *timed_filename = generate_timed_filename(filename, time);
+
+	FILE *file = fopen(timed_filename,"w");
+	exit_if_false(file != NULL,"opening data file");
+
+	exit_if_false(fwrite(data, sizeof(double), n_data, file) == n_data,"writing the data");
+
+	free_vector(timed_filename);
+	fclose(file);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void read_data(char *filename, double time, int n_data, double *data)
+{
+	char *timed_filename = generate_timed_filename(filename, time);
+
+	FILE *file = fopen(timed_filename,"r");
+	exit_if_false(file != NULL,"opening data file");
+
+	exit_if_false(fread(data, sizeof(double), n_data, file) == n_data,"reading the data");
+
+	free_vector(timed_filename);
+	fclose(file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

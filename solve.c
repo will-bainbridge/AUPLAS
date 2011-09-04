@@ -12,12 +12,15 @@ int main(int argc, char *argv[])
 	exit_if_false(argc == 2,"wrong number of input arguments");
 	char *input_filename = argv[1];
 
-	printf("\nreading case filename from the input file");
-	char *case_filename;
+	printf("\nreading case and data filenames from the input file");
 	FILE *file = fopen(input_filename,"r");
 	exit_if_false(file != NULL,"opening the input file");
+	char *case_filename;
 	exit_if_false(allocate_character_vector(&case_filename,MAX_STRING_LENGTH),"allocating the case filename");
-	exit_if_false(fetch_value(file, "case_filename", 's', case_filename) == FETCH_SUCCESS,"reading \"case_filename\" from the input file");
+	exit_if_false(fetch_value(file,"case_filename",'s',case_filename)==FETCH_SUCCESS,"reading \"case_filename\" from the input file");
+	char *data_filename;
+	exit_if_false(allocate_character_vector(&data_filename,MAX_STRING_LENGTH),"allocating the data filename");
+	exit_if_false(fetch_value(file,"data_filename",'s',data_filename)==FETCH_SUCCESS,"reading \"data_filename\" from the input file");
 	fclose(file);
 
 	printf("\nreading the mesh and zones from the case file ...");
@@ -31,33 +34,25 @@ int main(int argc, char *argv[])
 	//--------------------------------------------------------------------//
 
 	printf("\nreading control from the input file");
+
 	file = fopen(input_filename,"r");
 	exit_if_false(file != NULL,"opening the input file");
 
 	char **variable_name;
 	exit_if_false(allocate_character_matrix(&variable_name,n_variables,MAX_STRING_LENGTH),"allocating variable names");
-	warn_if_false(fetch_vector(file,"variable_names",'s',n_variables,variable_name) == FETCH_SUCCESS,
-			"reading \"variable_names\" from the input file");
-
+	warn_if_false(fetch_vector(file,"variable_names",'s',n_variables,variable_name) == FETCH_SUCCESS,"reading \"variable_names\" from the input file");
 	double *accumulation;
 	exit_if_false(allocate_double_vector(&accumulation,n_variables),"allocating the accumulations");
-	exit_if_false(fetch_vector(file,"accumulation",'d',n_variables,accumulation) == FETCH_SUCCESS,
-			"reading \"accumulation\" from the input file");
-
+	exit_if_false(fetch_vector(file,"accumulation",'d',n_variables,accumulation) == FETCH_SUCCESS,"reading \"accumulation\" from the input file");
 	double *implicit;
 	exit_if_false(allocate_double_vector(&implicit,n_variables),"allocating the implicit fractions");
-	exit_if_false(fetch_vector(file,"implicit",'d',n_variables,implicit) == FETCH_SUCCESS,
-			"reading \"implicit\" from the input file");
-
+	exit_if_false(fetch_vector(file,"implicit",'d',n_variables,implicit) == FETCH_SUCCESS,"reading \"implicit\" from the input file");
 	double timestep;
 	exit_if_false(fetch_value(file,"timestep",'d',&timestep) == FETCH_SUCCESS,"reading \"timestep\" from the input file");
-
-	int n_steps;
-	exit_if_false(fetch_value(file,"number_of_steps",'i',&n_steps) == FETCH_SUCCESS,"reading \"number_of_steps\" from the input file");
-
+	int step[2];
+	exit_if_false(fetch_vector(file,"step_range",'i',2,&step) == FETCH_SUCCESS,"reading \"step_range\" from the input file");
 	int n_steps_per_output;
 	exit_if_false(fetch_value(file,"number_of_steps_per_output",'i',&n_steps_per_output) == FETCH_SUCCESS,"reading \"number_of_steps_per_output\" from the input file");
-
 	int n_iterations_per_step;
 	exit_if_false(fetch_value(file,"number_of_iterations_per_step",'i',&n_iterations_per_step) == FETCH_SUCCESS,"reading \"number_of_iterations_per_step\" from the input file");
 
@@ -81,11 +76,12 @@ int main(int argc, char *argv[])
 	exit_if_false(allocate_double_vector(&b,n_unknowns),"allocating right hand side vector");
 	exit_if_false(allocate_double_vector(&bn,n_unknowns),"allocating last timestep right hand side vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
-	print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
+	if(step[0] == 0) print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
+	else             print_time(" done in %lf seconds",read_data(data_filename, step[0]*timestep, n_unknowns, x1));
 
 	printf("\nassembling the system matrix ...");
 	CSR matrix = csr_new();
-	print_time(" done in %lf seconds",assemble_matrix(matrix, n_variables, id_to_unknown, n_unknowns, unknown_to_id, face, cell, zone));
+	print_time(" done in %lf seconds",assemble_matrix(matrix,n_variables,id_to_unknown,n_unknowns,unknown_to_id,face,cell,zone));
 
 	double *minus_theta_timestep, *mass;
 	exit_if_false(allocate_double_vector(&minus_theta_timestep,n_unknowns),"allocating implicit vector");
@@ -111,7 +107,7 @@ int main(int argc, char *argv[])
 	{
 		int i, s, u, v;
 		
-		for(s = 1; s <= n_steps; s ++)
+		for(s = step[0] + 1; s <= step[1]; s ++)
 		{
 			printf("\n");
 			printf("\n timestep > %i",s);
@@ -151,15 +147,31 @@ int main(int argc, char *argv[])
 				calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
 				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
 			}
+
+			//output
+			if((s - step[0]) % n_steps_per_output == 0)
+			{
+				printf("\n\nwriting data ...");
+				print_time(" done in %lf seconds",write_data(data_filename, s*timestep, n_unknowns, x1));
+			}
 		}
 	}
 
-	printf("\n\nwriting out plot data ...");
-	print_time(" done in %lf seconds",write_gnuplot(n_unknowns, unknown_to_id, x, n_faces, face, n_cells, cell, n_zones, zone));
+	//printf("\n\nwriting out plot data ...");
+	//print_time(" done in %lf seconds",write_gnuplot(n_unknowns, unknown_to_id, x, n_faces, face, n_cells, cell, n_zones, zone));
+	
+	if((step[1] - step[0]) % n_steps_per_output != 0)
+	{
+		printf("\n\nwriting data ...");
+		print_time(" done in %lf seconds",write_data(data_filename, step[1]*timestep, n_unknowns, x1));
+	}
 
 	printf("\ncleaning up");
 	free_vector(case_filename);
+	free_vector(data_filename);
 	free_matrix((void**)variable_name);
+	free_vector(accumulation);
+	free_vector(implicit);
 	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
 	free_vector(x);
@@ -167,8 +179,6 @@ int main(int argc, char *argv[])
 	free_vector(b);
 	free_vector(bn);
 	free_vector(residual);
-	free_vector(implicit);
-	free_vector(accumulation);
 	free_vector(mass);
 	free_vector(minus_theta_timestep);
 	nodes_destroy(n_nodes,node);
