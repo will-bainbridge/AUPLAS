@@ -17,7 +17,6 @@ int main(int argc, char *argv[])
 	exit_if_false(argc > 2,"wrong number of input arguments");
 	char *input_filename = argv[1];
 
-	printf("\nreading case and data filenames from the input file");
 	FILE *file = fopen(input_filename,"r");
 	exit_if_false(file != NULL,"opening the input file");
 	char *case_filename;
@@ -33,15 +32,13 @@ int main(int argc, char *argv[])
 	//else if(strcmp(&output_filename[strlen(output_filename)-4],".vtu"    ) == 0) output_type = VTK;
 	else exit_if_false(0,"recognising output format");
 
-	printf("\nreading the mesh and zones from the case file ...");
 	int n_variables, n_nodes, n_faces, n_cells, n_zones;
 	struct NODE *node;
 	struct FACE *face;
 	struct CELL *cell;
 	struct ZONE *zone;
-	print_time(" done in %lf seconds",read_case(case_filename, &n_variables, &n_nodes, &node, &n_faces, &face, &n_cells, &cell, &n_zones, &zone));
+	read_case(case_filename, &n_variables, &n_nodes, &node, &n_faces, &face, &n_cells, &cell, &n_zones, &zone);
 
-	printf("\nreading variable names from the input file");
 	file = fopen(input_filename,"r");
 	exit_if_false(file != NULL,"opening the input file");
 	char **variable_name;
@@ -49,11 +46,9 @@ int main(int argc, char *argv[])
 	warn_if_false(fetch_vector(file,"variable_names",'s',n_variables,variable_name) == FETCH_SUCCESS,"reading \"variable_names\" from the input file");
 	fclose(file);
 
-	printf("\ngenerating lists of unknowns ...");
 	int n_ids, *id_to_unknown, n_unknowns, *unknown_to_id;
-	print_time(" done in %lf seconds",generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
+	generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone);
 
-	printf("\nallocating unknown data");
 	double *x;
 	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating unknown vector");
 
@@ -61,7 +56,7 @@ int main(int argc, char *argv[])
 	double time;
 	for(i = 2; i < argc; i ++)
 	{
-		printf("\npost-processing \"%s\" ...",argv[i]);
+		printf("\npost-processing \"%s\"",argv[i]);
 		read_data(argv[i], &time, n_unknowns, x);
 
 		if(output_type == GNUPLOT)
@@ -75,7 +70,6 @@ int main(int argc, char *argv[])
 		}*/
 	}
 	
-	printf("\ncleaning up");
 	free_vector(case_filename);
 	free_vector(output_filename);
 	free_matrix((void**)variable_name);

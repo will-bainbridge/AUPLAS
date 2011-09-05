@@ -625,8 +625,11 @@ char * generate_timed_filename(char *filename, double time)
 	char *timed_filename;
 	exit_if_false(allocate_character_vector(&timed_filename, MAX_STRING_LENGTH),"allocating timed filename");
 
+	union { int integer; float real; } number;
+	number.real = time;
+
 	*sub = '\0';
-	sprintf(timed_filename, "%s%013.6lf%s", filename, time, sub + 1);
+	sprintf(timed_filename, "%s%i%s", filename, number.integer, sub + 1);
 	*sub = '?';
 
 	return timed_filename;
