@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
 	int output_type;
 	if(strcmp(&output_filename[strlen(output_filename)-8],".gnuplot") == 0) output_type = GNUPLOT;
-	//if(strcmp(&output_filename[strlen(output_filename)-4],".vtk"    ) == 0) output_type = VTK;
+	//else if(strcmp(&output_filename[strlen(output_filename)-4],".vtu"    ) == 0) output_type = VTK;
 	else exit_if_false(0,"recognising output format");
 
 	printf("\nreading the mesh and zones from the case file ...");
@@ -61,20 +61,18 @@ int main(int argc, char *argv[])
 	double time;
 	for(i = 2; i < argc; i ++)
 	{
-
-		printf("\nreading \"%s\" ...",argv[i]);
-		print_time(" done in %lf seconds",read_data(argv[i], &time, n_unknowns, x));
+		printf("\npost-processing \"%s\" ...",argv[i]);
+		read_data(argv[i], &time, n_unknowns, x);
 
 		if(output_type == GNUPLOT)
 		{
-			printf("\nwriting gnuplot output ...");
-			print_time(" done in %lf seconds",write_gnuplot(output_filename, time, n_variables, id_to_unknown, x,
-						n_faces, face, n_cells, cell, n_zones, zone));
+			write_gnuplot(output_filename, time, n_variables, id_to_unknown, x, n_faces, face, n_cells, cell, n_zones, zone);
 		}
-		//else if(output_type == VTK)
-		//{
-		//	write_vtk(...);
-		//}
+
+		/*if(output_type == VTK)
+		{
+			write_vtk(output_filename, time, n_variables, variable_name, n_ids, id_to_unknown, x, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+		}*/
 	}
 	
 	printf("\ncleaning up");

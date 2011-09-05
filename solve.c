@@ -110,21 +110,18 @@ int main(int argc, char *argv[])
 		
 		for(s = 1; s <= n_steps; s ++)
 		{
-			printf("\n");
-			printf("\n timestep > %i",s);
-			printf("\n    times > %7.1es %7.1es",time,time+timestep);
-			printf("\niteration > assembly solution >");
+			printf("\n\ntimestep > %i\n    time > %15.9e s\nresidual >",s,time);
 			for(v = 0; v < n_variables; v ++) printf(" %-15s",variable_name[v]);
 
 			for(i = 1; i <= n_iterations_per_step; i ++)
 			{
 				for(u = 0; u < n_unknowns; u ++) x[u] = x1[u];
 
-				printf("\n%9i >",i);
+				printf("\n%8i >",i);
 
 				//calculate the divergences
-				print_time(" %7.1es",calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
-							face, cell, zone, n_divergences, divergence));
+				calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
+						face, cell, zone, n_divergences, divergence);
 
 				//explicit and old timestep part of RHS calculated on 1st iteration only
 				if(i == 1)
@@ -141,9 +138,7 @@ int main(int argc, char *argv[])
 				csr_add_to_diagonal(matrix,mass);
 
 				//solve the system
-				print_time(" %7.1es",exit_if_false(csr_solve_umfpack(matrix,x1,b) == CSR_SUCCESS,"solving the system"));
-
-				printf(" >");
+				exit_if_false(csr_solve_umfpack(matrix,x1,b) == CSR_SUCCESS,"solving the system");
 
 				calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
 				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);

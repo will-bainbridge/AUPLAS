@@ -13,8 +13,8 @@ case_filename cylinder.case
 data_filename cylinder.?.data
 output_filename cylinder.?.gnuplot
 
-timestep 0.05
-number_of_steps 20
+timestep 0.02
+number_of_steps 400
 number_of_steps_per_output 5
 number_of_iterations_per_step 5
 
@@ -62,15 +62,15 @@ divergence 0   2 y   0 +1.00
 divergence 1   0 x   0 -1.00
 divergence 1 1,1 x 0,0 -1.00
 divergence 1 1,2 y 0,0 -1.00
-divergence 1   1 x   x +0.10
-divergence 1   1 y   y +0.05
-divergence 1   2 y   x +0.05
+divergence 1   1 x   x +0.02
+divergence 1   1 y   y +0.01
+divergence 1   2 y   x +0.01
 
 divergence 2   0 y   0 -1.00
 divergence 2 2,1 x 0,0 -1.00
 divergence 2 2,2 y 0,0 -1.00
-divergence 2   1 x   y +0.05
-divergence 2   2 x   x +0.05
-divergence 2   2 y   y +0.10
+divergence 2   1 x   y +0.01
+divergence 2   2 x   x +0.01
+divergence 2   2 y   y +0.02
 
 #-------------------------------------------------------------------------#

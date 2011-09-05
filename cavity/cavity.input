@@ -11,7 +11,7 @@ weight_exponent 1.0 1.0 1.0
 geometry_filename cavity.geometry
 case_filename cavity.case
 data_filename cavity.?.data
-output_filename cavity.?.gnuplot
+output_filename cavity.?.vtu
 
 timestep 0.1
 number_of_steps 10

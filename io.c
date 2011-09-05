@@ -710,24 +710,22 @@ void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unkn
                 {
                         u = id_to_unknown[INDEX_AND_ZONE_TO_ID(i,z[j] - &zone[0])];
                         v = z[j]->variable;
-                        if(u >= 0) data[v] = x[u];
-                        else       data[v] = z[j]->value;
-                        is_data[v] = 1;
+                        if(u >= 0) { data[v] = x[u]; is_data[v] = 1; }
                 }
 
                 temp[0] = '\0';
                 for(v = 0; v < n_variables; v ++)
                 {
-                        if(is_data[v]) sprintf(&temp[strlen(temp)]," %lf",data[v]);
+                        if(is_data[v]) sprintf(&temp[strlen(temp)]," %+.10e",data[v]);
                         else           sprintf(&temp[strlen(temp)]," NaN");
                 }
 
                 for(j = 1; j < n_polygon - 1; j ++)
                 {
-                        fprintf(file,"%lf %lf %s\n",polygon[0][0][0],polygon[0][0][1],temp);
-                        fprintf(file,"%lf %lf %s\n\n",polygon[j][0][0],polygon[j][0][1],temp);
-                        fprintf(file,"%lf %lf %s\n",polygon[0][0][0],polygon[0][0][1],temp);
-                        fprintf(file,"%lf %lf %s\n\n\n",polygon[j][1][0],polygon[j][1][1],temp);
+                        fprintf(file,"%+.10e %+.10e%s\n",polygon[0][0][0],polygon[0][0][1],temp);
+                        fprintf(file,"%+.10e %+.10e%s\n\n",polygon[j][0][0],polygon[j][0][1],temp);
+                        fprintf(file,"%+.10e %+.10e%s\n",polygon[0][0][0],polygon[0][0][1],temp);
+                        fprintf(file,"%+.10e %+.10e%s\n\n\n",polygon[j][1][0],polygon[j][1][1],temp);
                 }
         }
 
@@ -735,9 +733,171 @@ void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unkn
 
         free_matrix((void **)polygon);
         free_vector(timed_filename);
-        free_vector(temp);
-        free_vector(data);
-        free_vector(is_data);
+	free_vector(temp);
+	free_vector(data);
+	free_vector(is_data);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+/*void write_vtk(char *filename, double time, int n_variables, char **variable_name, int n_ids, int *id_to_unknown, double *x, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+{
+	char *timed_filename = generate_timed_filename(filename, time);
+
+	FILE *file = fopen(timed_filename,"w");
+	exit_if_false(file != NULL,"opening file");
+
+	int *point_used, *point_index, *id_used;
+	exit_if_false(allocate_integer_vector(&point_used,n_nodes + n_cells),"allocating point usage array");
+	exit_if_false(allocate_integer_vector(&point_index,n_nodes + n_cells),"allocating point index array");
+	exit_if_false(allocate_integer_vector(&id_used,n_ids),"allocating id usage array");
+
+	int n_points, n_elements;
+
+	fprintf(file,"<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n<UnstructuredGrid>\n");
+
+	int i, j, k, v, z, index, offset;
+
+	for(v = 0; v < n_variables; v ++)
+	{
+		for(i = 0; i < n_nodes + n_cells; i ++) point_used[i] = 0;
+		for(i = 0; i < n_ids; i ++) id_used[i] = 0;
+
+		for(z = 0; z < n_zones; z ++)
+		{
+			if(zone[z].variable != v || zone[z].condition[0] != 'u') continue;
+
+			if(zone[z].location == 'f')
+			{
+				for(i = 0; i < n_faces; i ++)
+				{
+					for(j = 0; j < face[i].n_zones; j ++)
+					{
+						if(z == (int)(face[i].zone[j] - &zone[0]))
+						{
+							id_used[INDEX_AND_ZONE_TO_ID(i,z)] = 1;
+							point_used[(int)(face[i].node[0] - &node[0])] = 1;
+							point_used[(int)(face[i].node[face[i].n_nodes - 1] - &node[0])] = 1;
+							for(k = 0; k < face[i].n_borders; k ++) point_used[n_nodes + (int)(face[i].border[k] - &cell[0])] = 1;
+						}
+					}
+				}
+			}
+			else if(zone[z].location == 'c')
+			{
+				for(i = 0; i < n_cells; i ++)
+				{
+					for(j = 0; j < cell[i].n_zones; j ++)
+					{
+						if(z == (int)(cell[i].zone[j] - &zone[0]))
+						{
+							id_used[INDEX_AND_ZONE_TO_ID(i,z)] = 1;
+							for(k = 0; k < cell[i].n_faces; k ++)
+							{
+								point_used[(int)(cell[i].face[k]->node[0] - &node[0])] = 1;
+								point_used[(int)(face[i].node[cell[i].face[k]->n_nodes - 1] - &node[0])] = 1;
+							}
+						}
+					}
+				}
+			}
+			else exit_if_false(0,"recognising the location");
+		}
+
+		n_points = 0;
+		for(i = 0; i < n_nodes + n_cells; i ++) if(point_used[i]) point_index[n_points ++] = i;
+		n_elements = 0;
+		for(i = 0; i < n_ids; i ++) if(id_used[i]) n_elements ++;
+
+		fprintf(file,"<Piece NumberOfPoints=\"%i\" NumberOfCells=\"%i\">\n", n_points, n_elements);
+
+		fprintf(file,"<CellData>\n");
+
+		fprintf(file,"<DataArray Name=\"%s\" type=\"Float64\" format=\"ascii\">\n",variable_name[v]);
+		for(i = 0; i < n_ids; i ++) if(id_used[i]) fprintf(file," %lf",x[id_to_unknown[i]]);
+		fprintf(file,"\n</DataArray>\n");
+
+		fprintf(file,"</CellData>\n");
+
+		fprintf(file,"<Points>\n");
+
+		fprintf(file,"<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+		for(i = 0; i < n_nodes; i ++) if(point_used[i]) fprintf(file," %lf %lf %lf",node[i].x[0],node[i].x[1],0.0);
+		for(i = 0; i < n_cells; i ++) if(point_used[n_nodes + i]) fprintf(file," %lf %lf %lf",cell[i].centroid[0],cell[i].centroid[1],0.0);
+		fprintf(file,"\n</DataArray>\n");
+
+		fprintf(file,"</Points>\n");
+
+		fprintf(file,"<Cells>\n");
+
+		fprintf(file,"<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n");
+		for(i = 0; i < n_ids; i ++)
+		{
+			if(id_used[i])
+			{
+				index = ID_TO_INDEX(i);
+				z = ID_TO_ZONE(i);
+
+				if(zone[z].location == 'f')
+				{
+					fprintf(file," %i",point_index[(int)((face[index].oriented[0] ? face[index].node[1] : face[index].node[0]) - &node[0])]);
+					fprintf(file," %i",point_index[n_nodes + (int)(face[index].border[0] - &cell[0])]);
+					fprintf(file," %i",point_index[(int)((face[index].oriented[0] ? face[index].node[0] : face[index].node[1]) - &node[0])]);
+					if(face[index].n_borders == 2) fprintf(file," %i",point_index[n_nodes + (int)(face[index].border[1] - &cell[0])]);
+				}
+				else if(zone[z].location == 'c')
+				{
+					for(j = 0; j < cell[index].n_faces; j ++)
+					{
+						fprintf(file," %i",point_index[(int)(cell[index].face[j]->node[!cell[index].oriented[j]] - &node[0])]);
+					}
+				}
+				else exit_if_false(0,"recognising the location");
+			}
+		}
+		fprintf(file,"\n</DataArray>\n");
+
+		fprintf(file,"<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n");
+		offset = 0;
+		for(i = 0; i < n_ids; i ++)
+		{
+			if(id_used[i])
+			{
+				index = ID_TO_INDEX(i);
+				z = ID_TO_ZONE(i);
+
+				if(zone[z].location == 'f')
+				{
+					offset += 2 + face[index].n_borders;
+				}
+				else if(zone[z].location == 'c')
+				{
+					offset += cell[index].n_faces;
+				}
+				else exit_if_false(0,"recognising the location");
+
+				fprintf(file," %i",offset);
+			}
+		}
+		fprintf(file,"\n</DataArray>\n");
+
+		fprintf(file,"<DataArray type=\"Int32\" Name=\"types\" format=\"ascii\">\n");
+		for(i = 0; i < n_elements; i ++) fprintf(file," %i",7);
+		fprintf(file,"\n</DataArray>\n");
+
+		fprintf(file,"</Cells>\n");
+
+		fprintf(file,"</Piece>\n");
+	}
+
+	fprintf(file,"</UnstructuredGrid>\n</VTKFile>");
+
+	fclose(file);
+
+	free_vector(timed_filename);
+	free_vector(point_used);
+	free_vector(point_index);
+	free_vector(id_used);
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
