@@ -4,18 +4,18 @@ number_of_variables 3
 
 variable_names pressure x-momentum y-momentum
 
-connectivity f ff ff
+connectivity f nf nf
 maximum_order 3 3 3
 weight_exponent 1.0 1.0 1.0
 
 geometry_filename cylinder.geometry
 case_filename cylinder.case
 data_filename cylinder.?.data
-output_filename cylinder.?.?.vtu
+output_filename cylinder.?.?.gnuplot
 
-timestep 0.05
+timestep 0.02
 number_of_steps 1000
-number_of_steps_per_output 20
+number_of_steps_per_output 50
 number_of_iterations_per_step 5
 
 #-------------------------------------------------------------------------#
@@ -38,7 +38,7 @@ zone f 9546:9608 1 d 0.0
 zone f 9546:9608 2 d 0.0
 
 # outlet
-zone f 9446:9470 0 d 100.0
+zone f 9446:9470 0 d 0.0
 
 # x-velocity
 zone f 9396:9445,9471:9520,9521:9545 1 d 1.0

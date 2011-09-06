@@ -194,7 +194,7 @@ void csr_print_diagonal(CSR A)
 	int i;
 	for(i = 0; i < A->n; i ++)
 	{
-		if(A->diagonal[i] >= 0) printf("%5i %15.10e\n",i,A->value[A->diagonal[i]]);
+		if(A->diagonal[i] >= 0) printf("%5i %+15.10e\n",i,A->value[A->diagonal[i]]);
 	}
 }
 
