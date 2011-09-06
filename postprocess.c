@@ -6,8 +6,6 @@
 #define GNUPLOT 0
 #define VTK 1
 
-void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unknown, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
-
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
@@ -29,7 +27,7 @@ int main(int argc, char *argv[])
 
 	int output_type;
 	if(strcmp(&output_filename[strlen(output_filename)-8],".gnuplot") == 0) output_type = GNUPLOT;
-	//else if(strcmp(&output_filename[strlen(output_filename)-4],".vtu"    ) == 0) output_type = VTK;
+	else if(strcmp(&output_filename[strlen(output_filename)-4],".vtu"    ) == 0) output_type = VTK;
 	else exit_if_false(0,"recognising output format");
 
 	int n_variables, n_nodes, n_faces, n_cells, n_zones;
@@ -61,13 +59,13 @@ int main(int argc, char *argv[])
 
 		if(output_type == GNUPLOT)
 		{
-			write_gnuplot(output_filename, time, n_variables, id_to_unknown, x, n_faces, face, n_cells, cell, n_zones, zone);
+			write_gnuplot(output_filename, time, n_variables, variable_name, id_to_unknown, x, n_faces, face, n_cells, cell, n_zones, zone);
 		}
 
-		/*if(output_type == VTK)
+		if(output_type == VTK)
 		{
 			write_vtk(output_filename, time, n_variables, variable_name, n_ids, id_to_unknown, x, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
-		}*/
+		}
 	}
 	
 	free_vector(case_filename);

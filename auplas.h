@@ -105,9 +105,10 @@ void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node,
 void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell, int *n_zones, struct ZONE **zone);
 void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
 void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **divergence);
-void write_data(char *filename, double time, int n_data, double *data);
+void write_data(char *basename, double time, int n_data, double *data);
 void read_data(char *filename, double *time, int n_data, double *data);
-void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unknown, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void write_gnuplot(char *basename, double time, int n_variables, char **variable_name, int *id_to_unknown, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
+void write_vtk(char *basename, double time, int n_variables, char **variable_name, int n_ids, int *id_to_unknown, double *x, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 
 //connectivity.c
 void generate_borders(int n_cells, struct CELL *cell);

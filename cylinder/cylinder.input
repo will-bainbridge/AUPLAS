@@ -11,11 +11,11 @@ weight_exponent 1.0 1.0 1.0
 geometry_filename cylinder.geometry
 case_filename cylinder.case
 data_filename cylinder.?.data
-output_filename cylinder.?.gnuplot
+output_filename cylinder.?.?.vtu
 
-timestep 0.02
-number_of_steps 400
-number_of_steps_per_output 5
+timestep 0.05
+number_of_steps 1000
+number_of_steps_per_output 20
 number_of_iterations_per_step 5
 
 #-------------------------------------------------------------------------#

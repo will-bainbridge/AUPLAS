@@ -29,7 +29,8 @@ void cell_case_get(FILE *file, int n_variables, struct FACE *face, struct CELL *
 void zone_case_write(FILE *file, struct ZONE *zone);
 void zone_case_get(FILE *file, struct ZONE *zone);
 
-char * generate_timed_filename(char *filename, double time);
+void generate_timed_filename(char *filename, char *basename, double time);
+void generate_timed_named_filename(char *filename, char *basename, double time, char *name);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -617,37 +618,52 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 
 ////////////////////////////////////////////////////////////////////////////////
 
-char * generate_timed_filename(char *filename, double time)
+void generate_timed_filename(char *filename, char *basename, double time)
 {
-	char *sub = strchr(filename, '?');
-	exit_if_false(sub != NULL,"substitute character \"?\" not found in data filename");
-
-	char *timed_filename;
-	exit_if_false(allocate_character_vector(&timed_filename, MAX_STRING_LENGTH),"allocating timed filename");
+	char *sub = strchr(basename, '?');
+	exit_if_false(sub != NULL,"substitute character \"?\" not found in data basename");
 
 	union { int integer; float real; } number;
 	number.real = time;
 
 	*sub = '\0';
-	sprintf(timed_filename, "%s%i%s", filename, number.integer, sub + 1);
+	sprintf(filename, "%s%i%s", basename, number.integer, sub + 1);
 	*sub = '?';
-
-	return timed_filename;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void write_data(char *filename, double time, int n_data, double *data)
+void generate_timed_named_filename(char *filename, char *basename, double time, char *name)
 {
-	char *timed_filename = generate_timed_filename(filename, time);
+	char *sub[2];
+	sub[0] = strchr(basename, '?');
+	exit_if_false(sub != NULL,"first substitute character \"?\" not found in data basename");
+	sub[1] = strchr(sub[0] + 1, '?');
+	exit_if_false(sub != NULL,"second substitute character \"?\" not found in data basename");
 
-	FILE *file = fopen(timed_filename,"w");
+	union { int integer; float real; } number;
+	number.real = time;
+
+	*sub[0] = *sub[1] = '\0';
+	sprintf(filename, "%s%i%s%s%s", basename, number.integer, sub[0] + 1, name, sub[1] + 1);
+	*sub[0] = *sub[1] = '?';
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void write_data(char *basename, double time, int n_data, double *data)
+{
+	char *filename;
+	exit_if_false(allocate_character_vector(&filename, MAX_STRING_LENGTH),"allocating filename");
+	generate_timed_filename(filename, basename, time);
+
+	FILE *file = fopen(filename,"w");
 	exit_if_false(file != NULL,"opening data file");
 
 	exit_if_false(fwrite(&time, sizeof(double), 1, file) == 1,"writing the time");
 	exit_if_false(fwrite(data, sizeof(double), n_data, file) == n_data,"writing the data");
 
-	free_vector(timed_filename);
+	free_vector(filename);
 	fclose(file);
 }
 
@@ -666,26 +682,27 @@ void read_data(char *filename, double *time, int n_data, double *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unknown, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void write_gnuplot(char *basename, double time, int n_variables, char **variable_name, int *id_to_unknown, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
+        int e, i, j, u, v;
+
         int n_polygon;
         double ***polygon;
         exit_if_false(allocate_double_pointer_matrix(&polygon,MAX(MAX_CELL_FACES,4),2),"allocating polygon memory");
 
-	char *timed_filename = generate_timed_filename(filename, time);
+	char *filename;
+	exit_if_false(allocate_character_vector(&filename, MAX_STRING_LENGTH),"allocating filename");
 
-        char *temp;
-        exit_if_false(allocate_character_vector(&temp, MAX_STRING_LENGTH),"allocating temporary string");
+	FILE **file = (FILE **)malloc(n_variables * sizeof(FILE *));
+	exit_if_false(file != NULL,"allocating files");
 
-        double *data;
-        exit_if_false(allocate_double_vector(&data,n_variables),"allocating data");
-        int *is_data;
-        exit_if_false(allocate_integer_vector(&is_data,n_variables),"allocating no data indicator");
+	for(v = 0; v < n_variables; v ++)
+	{
+		generate_timed_named_filename(filename, basename, time, variable_name[v]);
 
-        FILE *file = fopen(timed_filename,"w");
-        exit_if_false(file != NULL,"opening file");
-
-        int e, i, j, u, v;
+		file[v] = fopen(filename,"w");
+		exit_if_false(file[v] != NULL,"opening file");
+	}
 
         int nz;
         struct ZONE **z;
@@ -695,8 +712,6 @@ void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unkn
                 i = e % n_faces;
 
                 n_polygon = generate_control_volume_polygon(polygon, i, (e < n_faces ? 'f' : 'c'), face, cell);
-
-                for(v = 0; v < n_variables; v ++) is_data[v] = 0;
 
                 if(e < n_faces)
                 {
@@ -709,46 +724,38 @@ void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unkn
                         z = cell[i].zone;
                 }
 
-                for(j = 0; j < nz; j ++)
-                {
-                        u = id_to_unknown[INDEX_AND_ZONE_TO_ID(i,z[j] - &zone[0])];
-                        v = z[j]->variable;
-                        if(u >= 0) { data[v] = x[u]; is_data[v] = 1; }
-                }
-
-                temp[0] = '\0';
-                for(v = 0; v < n_variables; v ++)
-                {
-                        if(is_data[v]) sprintf(&temp[strlen(temp)]," %+.10e",data[v]);
-                        else           sprintf(&temp[strlen(temp)]," NaN");
-                }
-
-                for(j = 1; j < n_polygon - 1; j ++)
-                {
-                        fprintf(file,"%+.10e %+.10e%s\n",polygon[0][0][0],polygon[0][0][1],temp);
-                        fprintf(file,"%+.10e %+.10e%s\n\n",polygon[j][0][0],polygon[j][0][1],temp);
-                        fprintf(file,"%+.10e %+.10e%s\n",polygon[0][0][0],polygon[0][0][1],temp);
-                        fprintf(file,"%+.10e %+.10e%s\n\n\n",polygon[j][1][0],polygon[j][1][1],temp);
-                }
+		for(j = 0; j < nz; j ++)
+		{
+			u = id_to_unknown[INDEX_AND_ZONE_TO_ID(i,z[j] - &zone[0])];
+			if(u >= 0)
+			{
+				v = z[j]->variable;
+				for(j = 1; j < n_polygon - 1; j ++)
+				{
+					fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
+					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n",polygon[j][0][0],polygon[j][0][1],x[u]);
+					fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
+					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n\n",polygon[j][1][0],polygon[j][1][1],x[u]);
+				}
+			}
+		}
         }
 
-        fclose(file);
+        for(v = 0; v < n_variables; v ++) fclose(file[v]);
 
         free_matrix((void **)polygon);
-        free_vector(timed_filename);
-	free_vector(temp);
-	free_vector(data);
-	free_vector(is_data);
+        free_vector(filename);
+	free(file);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/*void write_vtk(char *filename, double time, int n_variables, char **variable_name, int n_ids, int *id_to_unknown, double *x, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void write_vtk(char *basename, double time, int n_variables, char **variable_name, int n_ids, int *id_to_unknown, double *x, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
-	char *timed_filename = generate_timed_filename(filename, time);
+	char *filename;
+	exit_if_false(allocate_character_vector(&filename, MAX_STRING_LENGTH),"allocating filename");
 
-	FILE *file = fopen(timed_filename,"w");
-	exit_if_false(file != NULL,"opening file");
+	FILE *file;
 
 	int *point_used, *point_index, *id_used;
 	exit_if_false(allocate_integer_vector(&point_used,n_nodes + n_cells),"allocating point usage array");
@@ -757,12 +764,17 @@ void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unkn
 
 	int n_points, n_elements;
 
-	fprintf(file,"<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n<UnstructuredGrid>\n");
-
 	int i, j, k, v, z, index, offset;
 
 	for(v = 0; v < n_variables; v ++)
 	{
+		generate_timed_named_filename(filename, basename, time, variable_name[v]);
+
+		file = fopen(filename,"w");
+		exit_if_false(file != NULL,"opening file");
+
+		fprintf(file,"<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n<UnstructuredGrid>\n");
+
 		for(i = 0; i < n_nodes + n_cells; i ++) point_used[i] = 0;
 		for(i = 0; i < n_ids; i ++) id_used[i] = 0;
 
@@ -817,7 +829,7 @@ void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unkn
 		fprintf(file,"<CellData>\n");
 
 		fprintf(file,"<DataArray Name=\"%s\" type=\"Float64\" format=\"ascii\">\n",variable_name[v]);
-		for(i = 0; i < n_ids; i ++) if(id_used[i]) fprintf(file," %lf",x[id_to_unknown[i]]);
+		for(i = 0; i < n_ids; i ++) if(id_used[i]) fprintf(file," %+.10e",x[id_to_unknown[i]]);
 		fprintf(file,"\n</DataArray>\n");
 
 		fprintf(file,"</CellData>\n");
@@ -825,8 +837,8 @@ void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unkn
 		fprintf(file,"<Points>\n");
 
 		fprintf(file,"<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-		for(i = 0; i < n_nodes; i ++) if(point_used[i]) fprintf(file," %lf %lf %lf",node[i].x[0],node[i].x[1],0.0);
-		for(i = 0; i < n_cells; i ++) if(point_used[n_nodes + i]) fprintf(file," %lf %lf %lf",cell[i].centroid[0],cell[i].centroid[1],0.0);
+		for(i = 0; i < n_nodes; i ++) if(point_used[i]) fprintf(file," %+.10e %+.10e %+.10e",node[i].x[0],node[i].x[1],0.0);
+		for(i = 0; i < n_cells; i ++) if(point_used[n_nodes + i]) fprintf(file," %+.10e %+.10e %+.10e",cell[i].centroid[0],cell[i].centroid[1],0.0);
 		fprintf(file,"\n</DataArray>\n");
 
 		fprintf(file,"</Points>\n");
@@ -888,19 +900,17 @@ void write_gnuplot(char *filename, double time, int n_variables, int *id_to_unkn
 		for(i = 0; i < n_elements; i ++) fprintf(file," %i",7);
 		fprintf(file,"\n</DataArray>\n");
 
-		fprintf(file,"</Cells>\n");
+		fprintf(file,"</Cells>");
 
-		fprintf(file,"</Piece>\n");
+		fprintf(file,"\n</Piece>\n</UnstructuredGrid>\n</VTKFile>");
+
+		fclose(file);
 	}
 
-	fprintf(file,"</UnstructuredGrid>\n</VTKFile>");
-
-	fclose(file);
-
-	free_vector(timed_filename);
+	free_vector(filename);
 	free_vector(point_used);
 	free_vector(point_index);
 	free_vector(id_used);
-}*/
+}
 
 ////////////////////////////////////////////////////////////////////////////////
