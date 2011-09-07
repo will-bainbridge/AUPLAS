@@ -130,7 +130,8 @@ void generate_stencils(int n_variables, char **connectivity, int *maximum_order,
 				} else if(connectivity[u][i] == 'f') {
 					cell_neighbours = cell_face_neighbours;
 					n_cell_neighbours = n_cell_face_neighbours;
-				} else { exit_if_false(0,"reconising the connectivity"); }
+				} else continue;
+				//} else { exit_if_false(0,"reconising the connectivity"); }
 
 				//loop over and add the neighbours of all the existing stencil cells
 				for(j = 0; j < n_old_stencil_cells; j ++)

@@ -733,9 +733,9 @@ void write_gnuplot(char *basename, double time, int n_variables, char **variable
 				for(k = 1; k < n_polygon - 1; k ++)
 				{
 					fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
-					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n",polygon[k][0][0],polygon[j][0][1],x[u]);
+					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n",polygon[k][0][0],polygon[k][0][1],x[u]);
 					fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
-					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n\n",polygon[k][1][0],polygon[j][1][1],x[u]);
+					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n\n",polygon[k][1][0],polygon[k][1][1],x[u]);
 				}
 			}
 		}
