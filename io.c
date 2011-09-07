@@ -684,7 +684,7 @@ void read_data(char *filename, double *time, int n_data, double *data)
 
 void write_gnuplot(char *basename, double time, int n_variables, char **variable_name, int *id_to_unknown, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
-        int e, i, j, u, v;
+        int e, i, j, k, u, v;
 
         int n_polygon;
         double ***polygon;
@@ -726,16 +726,16 @@ void write_gnuplot(char *basename, double time, int n_variables, char **variable
 
 		for(j = 0; j < nz; j ++)
 		{
-			u = id_to_unknown[INDEX_AND_ZONE_TO_ID(i,z[j] - &zone[0])];
+			u = id_to_unknown[INDEX_AND_ZONE_TO_ID(i,(int)(z[j] - &zone[0]))];
 			if(u >= 0)
 			{
 				v = z[j]->variable;
-				for(j = 1; j < n_polygon - 1; j ++)
+				for(k = 1; k < n_polygon - 1; k ++)
 				{
 					fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
-					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n",polygon[j][0][0],polygon[j][0][1],x[u]);
+					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n",polygon[k][0][0],polygon[j][0][1],x[u]);
 					fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
-					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n\n",polygon[j][1][0],polygon[j][1][1],x[u]);
+					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n\n",polygon[k][1][0],polygon[j][1][1],x[u]);
 				}
 			}
 		}
