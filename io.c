@@ -637,9 +637,9 @@ void generate_timed_named_filename(char *filename, char *basename, double time, 
 {
 	char *sub[2];
 	sub[0] = strchr(basename, '?');
-	exit_if_false(sub != NULL,"first substitute character \"?\" not found in data basename");
+	exit_if_false(sub[0] != NULL,"first substitute character \"?\" not found in data basename");
 	sub[1] = strchr(sub[0] + 1, '?');
-	exit_if_false(sub != NULL,"second substitute character \"?\" not found in data basename");
+	exit_if_false(sub[1] != NULL,"second substitute character \"?\" not found in data basename");
 
 	union { int integer; float real; } number;
 	number.real = time;
