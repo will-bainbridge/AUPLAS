@@ -11,7 +11,8 @@ INCLS		= -I./thirdparty/UFconfig \
 UMFPACKLIBS	= -L./thirdparty/UMFPACK/Lib -L./thirdparty/AMD/Lib -lumfpack -lamd
 ILUPACKLIBS	= -L./thirdparty/ilupackV2.4_GNU64_MUMPS/lib/GNU64 -L./thirdparty/AMD/Lib -lilupack -lmumps -lamd -lmetis -lsparspak -lblaslike
 #LINEARLIBS	= -llapack -lblas
-LINEARLIBS	= -Wl,--start-group -lpthread -static -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group
+#LINEARLIBS	= -Wl,--start-group -lpthread -static -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group
+LINEARLIBS	= -L./thirdparty/GotoBLAS2 -lgoto2 -lpthread
 LIBS		= $(UMFPACKLIBS) $(ILUPACKLIBS) $(LINEARLIBS) -lm -lrt
 
 MAINSRCS	= preprocess.c solve.c postprocess.c
