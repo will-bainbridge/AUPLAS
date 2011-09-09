@@ -198,10 +198,10 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 
 		for(q = 0; q < max_order; q ++)
 		{
-			point_value = 1.0;
-
 			for(i = 0; i < n_interpolant[p]; i ++)
 			{
+				point_value = 1.0;
+
 				x[0] =  0.5*polygon[p][0][0]*(1.0 - gauss_x[max_order-1][q]) +
 					0.5*polygon[p][1][0]*(1.0 + gauss_x[max_order-1][q]) -
 					interpolant[p][i]->centroid[0];
