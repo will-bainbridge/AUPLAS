@@ -70,15 +70,15 @@ int main(int argc, char *argv[])
 	print_time(" done in %lf seconds",generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
 
 	printf("\nallocating and initialising the unknowns ...");
-	double *x, *x1, *b, *bn, *residual;
-	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating old unknown vector");
-	exit_if_false(allocate_double_vector(&x1,n_unknowns),"allocating new unknown vector");
-	exit_if_false(allocate_double_vector(&b,n_unknowns),"allocating right hand side vector");
-	exit_if_false(allocate_double_vector(&bn,n_unknowns),"allocating last timestep right hand side vector");
+	double *x, *dx, *f, *f_explicit, *residual;
+	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating unknown vector");
+	exit_if_false(allocate_double_vector(&dx,n_unknowns),"allocating unknown change vector");
+	exit_if_false(allocate_double_vector(&f,n_unknowns),"allocating function vector");
+	exit_if_false(allocate_double_vector(&f_explicit,n_unknowns),"allocating explicit part of function vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
 	double time = 0.0;
-	if(initial_filename == NULL) print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x1));
-	else                         print_time(" done in %lf seconds",read_data(initial_filename, &time, n_unknowns, x1));
+	if(initial_filename == NULL) print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x));
+	else                         print_time(" done in %lf seconds",read_data(initial_filename, &time, n_unknowns, x));
 
 	printf("\nassembling the system matrix ...");
 	CSR matrix = csr_new();
@@ -105,9 +105,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
+
 	{
 		int i, s, u, v;
-		
+
 		for(s = 1; s <= n_steps; s ++)
 		{
 			printf("\n\ntimestep > %i\n    time > %15.9e s\nresidual >",s,time);
@@ -115,33 +116,26 @@ int main(int argc, char *argv[])
 
 			for(i = 1; i <= n_iterations_per_step; i ++)
 			{
-				for(u = 0; u < n_unknowns; u ++) x[u] = x1[u];
-
 				printf("\n%8i >",i);
 
-				//calculate the divergences
-				calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, b,
+				calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, f,
 						face, cell, zone, n_divergences, divergence);
 
-				//explicit and old timestep part of RHS calculated on 1st iteration only
-				if(i == 1)
-				{
-					for(u = 0; u < n_unknowns; u ++) bn[u] = b[u];
-					csr_multiply_vector(matrix,x,bn);
-					for(u = 0; u < n_unknowns; u ++)
-						bn[u] = mass[u] * x[u] + (timestep + minus_theta_timestep[u]) * bn[u];
-				}
+				for(u = 0; i == 1 && u < n_unknowns; u ++)
+					f_explicit[u] = mass[u] * x[u] + (timestep + minus_theta_timestep[u]) * f[u];
 
-				//implicit part of the RHS calculated every iteration
-				for(u = 0; u < n_unknowns; u ++) b[u] = bn[u] - minus_theta_timestep[u] * b[u];
+				for(u = 0; u < n_unknowns; u ++)
+					f[u] = f_explicit[u] - mass[u] * x[u] - minus_theta_timestep[u] * f[u];
+
 				csr_multiply_diagonal(matrix,minus_theta_timestep);
 				csr_add_to_diagonal(matrix,mass);
 
-				//solve the system
-				exit_if_false(csr_solve_umfpack(matrix,x1,b) == CSR_SUCCESS,"solving the system");
+				exit_if_false(csr_solve_umfpack(matrix,dx,f) == CSR_SUCCESS,"solving the system");
 
-				calculate_residuals(n_variables, n_unknowns, unknown_to_id, x, x1, residual, n_zones, zone);
+				calculate_residuals(n_variables, n_unknowns, unknown_to_id, dx, x, residual, n_zones, zone);
 				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
+
+				for(u = 0; u < n_unknowns; u ++) x[u] += dx[u];
 			}
 
 			time += timestep;
@@ -150,14 +144,11 @@ int main(int argc, char *argv[])
 			if(s % n_steps_per_output == 0 || s == n_steps)
 			{
 				printf("\n\nwriting data ...");
-				print_time(" done in %lf seconds",write_data(data_filename, time, n_unknowns, x1));
+				print_time(" done in %lf seconds",write_data(data_filename, time, n_unknowns, x));
 			}
 		}
 	}
 
-	//printf("\n\nwriting out plot data ...");
-	//print_time(" done in %lf seconds",write_gnuplot(n_unknowns, unknown_to_id, x, n_faces, face, n_cells, cell, n_zones, zone));
-	
 	printf("\ncleaning up");
 	free_vector(case_filename);
 	free_vector(data_filename);
@@ -167,9 +158,9 @@ int main(int argc, char *argv[])
 	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
 	free_vector(x);
-	free_vector(x1);
-	free_vector(b);
-	free_vector(bn);
+	free_vector(dx);
+	free_vector(f);
+	free_vector(f_explicit);
 	free_vector(residual);
 	free_vector(mass);
 	free_vector(minus_theta_timestep);

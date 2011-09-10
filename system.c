@@ -117,7 +117,7 @@ void assemble_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unkn
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *lhs, double *rhs, struct FACE *face, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
+void calculate_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, double *x, double *f, struct FACE *face, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
         int i, id, z, d, u;
 
@@ -135,7 +135,7 @@ void calculate_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns,
 	double *row;
 	exit_if_false(allocate_double_vector(&row,n_unknowns),"allocating the dense row");
 
-	for(i = 0; i < n_unknowns; i ++) rhs[i] = row[i] = 0.0;
+	for(i = 0; i < n_unknowns; i ++) f[i] = row[i] = 0.0;
 
 	for(u = 0; u < n_unknowns; u ++)
         {
@@ -150,7 +150,7 @@ void calculate_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns,
 		for(d = 0; d < n_divergences; d ++)
 		{
 			if(divergence[d].equation != zone[z].variable) continue;
-			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, lhs, &rhs[u], row, zone, divergence[d]);
+			calculate_divergence(n_polygon, polygon, n_interpolant, interpolant, id_to_unknown, x, &f[u], row, zone, divergence[d]);
 		}
 
 		csr_set_row(matrix, u, row);
@@ -165,7 +165,7 @@ void calculate_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *lhs, double *rhs, double *row, struct ZONE *zone, struct DIVERGENCE divergence)
+void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, struct CELL ***interpolant, int *id_to_unknown, double *x, double *f, double *row, struct ZONE *zone, struct DIVERGENCE divergence)
 {
 	int i, j, k, p, q, s, u;
 
@@ -179,13 +179,14 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 		}
 	}
 
-	double *interpolation_values, point_value, value;
-	exit_if_false(allocate_double_vector(&interpolation_values,max_stencil),"allocating interpolation values");
+	double **interp_coef, *interp_value, point_value;
+	exit_if_false(allocate_double_matrix(&interp_coef,divergence.n_variables,max_stencil),"allocating interpolation coefficients");
+	exit_if_false(allocate_double_vector(&interp_value,divergence.n_variables),"allocating interpolation values");
 
 	double *polynomial;
 	exit_if_false(allocate_double_vector(&polynomial,ORDER_TO_POWERS(max_order)),"allocating polynomial");
 
-	double x[2], normal;
+	double point[2], normal;
 
 	char trans = 'N';
 	int m, n, increment = 1;
@@ -200,80 +201,110 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 		{
 			for(i = 0; i < n_interpolant[p]; i ++)
 			{
-				point_value = 1.0;
-
-				x[0] =  0.5*polygon[p][0][0]*(1.0 - gauss_x[max_order-1][q]) +
+				point[0] = 0.5*polygon[p][0][0]*(1.0 - gauss_x[max_order-1][q]) +
 					0.5*polygon[p][1][0]*(1.0 + gauss_x[max_order-1][q]) -
 					interpolant[p][i]->centroid[0];
-				x[1] =  0.5*polygon[p][0][1]*(1.0 - gauss_x[max_order-1][q]) +
+				point[1] = 0.5*polygon[p][0][1]*(1.0 - gauss_x[max_order-1][q]) +
 					0.5*polygon[p][1][1]*(1.0 + gauss_x[max_order-1][q]) -
 					interpolant[p][i]->centroid[1];
 
-				for(j = divergence.n_variables - 1; j >= 0; j --)
+				//calculate coefficients for interpolation to the point
+				for(j = 0; j < divergence.n_variables; j ++)
 				{
 					u = divergence.variable[j];
 
 					m = ORDER_TO_POWERS(interpolant[p][i]->order[u]);
 					n = interpolant[p][i]->n_stencil[u];
 
+					//evaluate the differentiated polynomial at the point
 					for(k = 0; k < m; k ++)
 					{
 						polynomial[k] = polynomial_coefficient[divergence.differential[j]][k] *
-							integer_power(x[0],polynomial_power_x[divergence.differential[j]][k]) *
-							integer_power(x[1],polynomial_power_y[divergence.differential[j]][k]);
+							integer_power(point[0],polynomial_power_x[divergence.differential[j]][k]) *
+							integer_power(point[1],polynomial_power_y[divergence.differential[j]][k]);
 					}
 
-					//multiply polynomial and matrix
-					dgemv_(&trans, &n, &m, &alpha, interpolant[p][i]->matrix[u][0], &n, polynomial, &increment, &beta, interpolation_values, &increment);
+					//multiply polynomial and matrix to get interpolation coefficients at the point
+					dgemv_(&trans, &n, &m, &alpha, interpolant[p][i]->matrix[u][0], &n, polynomial, &increment,
+							&beta, interp_coef[j], &increment);
 
-					// ??? combine these loops once tested ???
-					if(j > 0)
+					//sum the coefficients to calculate the value at the point
+					interp_value[j] = 0;
+					for(k = 0; k < n; k ++)
 					{
-						value = 0;
+						s = interpolant[p][i]->stencil[u][k];
 
-						for(k = 0; k < n; k ++)
+						if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
 						{
-							s = interpolant[p][i]->stencil[u][k];
-
-							if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
-							{
-								value += interpolation_values[k] * lhs[id_to_unknown[s]];
-							}
-							else
-							{
-								value += interpolation_values[k] * zone[ID_TO_ZONE(s)].value;
-							}
+							interp_value[j] += interp_coef[j][k] * x[id_to_unknown[s]];
 						}
-
-						point_value *= value;
-					}
-					else
-					{
-						for(k = 0; k < n; k ++)
+						else
 						{
-							s = interpolant[p][i]->stencil[u][k];
-
-							if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
-							{
-								row[id_to_unknown[s]] += divergence.constant * normal *
-									gauss_w[max_order-1][q] * point_value *
-									interpolation_values[k] / n_interpolant[p];
-							}
-							else
-							{
-								*rhs += divergence.constant * normal *
-									gauss_w[max_order-1][q] * point_value *
-									interpolation_values[k] * zone[ID_TO_ZONE(s)].value /
-									n_interpolant[p];
-							}
+							interp_value[j] += interp_coef[j][k] * zone[ID_TO_ZONE(s)].value;
 						}
 					}
 				}
+
+				//calculate the flux and add to the function
+				point_value = 1.0;
+				for(j = 0; j < divergence.n_variables; j ++) point_value *= interp_value[j];
+				*f += divergence.constant * normal * gauss_w[max_order-1][q] * point_value / n_interpolant[p];
+				
+				//calculate the jacobian
+				for(j = 0; j < divergence.n_variables; j ++)
+				{
+					u = divergence.variable[j];
+
+					m = ORDER_TO_POWERS(interpolant[p][i]->order[u]);
+					n = interpolant[p][i]->n_stencil[u];
+
+					point_value = 1.0;
+					for(k = 0; k < divergence.n_variables; k ++) if(k != j) point_value *= interp_value[k];
+
+					for(k = 0; k < n; k ++)
+					{
+						s = interpolant[p][i]->stencil[u][k];
+
+						if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
+						{
+							row[id_to_unknown[s]] += divergence.constant * normal *
+								gauss_w[max_order-1][q] * interp_coef[j][k] *
+								point_value / n_interpolant[p];
+						}
+					}
+				}
+				
+				/*//multiply all but the last value together
+				point_value = 1.0;
+				for(j = 1; j < divergence.n_variables; j ++) point_value *= interp_value[j];
+
+				//form flux from coefficients of the last value
+				u = divergence.variable[0];
+				n = interpolant[p][i]->n_stencil[u];
+				for(k = 0; k < n; k ++)
+				{
+					s = interpolant[p][i]->stencil[u][k];
+
+					if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
+					{
+						row[id_to_unknown[s]] += divergence.constant * normal *
+							gauss_w[max_order-1][q] * point_value *
+							interp_coef[0][k] / n_interpolant[p];
+					}
+					else
+					{
+						*rhs += divergence.constant * normal *
+							gauss_w[max_order-1][q] * point_value *
+							interp_coef[0][k] * zone[ID_TO_ZONE(s)].value /
+							n_interpolant[p];
+					}
+				}*/
 			}
 		}
 	}
 
-	free_vector(interpolation_values);
+	free_matrix((void **)interp_coef);
+	free_vector(interp_value);
 	free_vector(polynomial);
 }
 
@@ -293,7 +324,7 @@ void initialise_unknowns(int n_ids, int *id_to_unknown, struct ZONE *zone, doubl
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_residuals(int n_variables, int n_unknowns, int *unknown_to_id, double *x, double *x1, double *residual, int n_zones, struct ZONE *zone)
+void calculate_residuals(int n_variables, int n_unknowns, int *unknown_to_id, double *dx, double *x, double *residual, int n_zones, struct ZONE *zone)
 {
 	int i, u;
 	double r;
@@ -310,11 +341,11 @@ void calculate_residuals(int n_variables, int n_unknowns, int *unknown_to_id, do
 	for(i = 0; i < n_unknowns; i ++)
 	{
 		u = zone[ID_TO_ZONE(unknown_to_id[i])].variable;
-		r = fabs(x1[i] - x[i]);
+		r = fabs(dx[i]);
 		residual[u] = MAX(r,residual[u]);
 
-		max[u] = MAX(x1[i],max[u]);
-		min[u] = MIN(x1[i],min[u]);
+		max[u] = MAX(x[i],max[u]);
+		min[u] = MIN(x[i],min[u]);
 	}
 
 	for(i = 0; i < n_variables; i ++) residual[i] /= max[i] - min[i];

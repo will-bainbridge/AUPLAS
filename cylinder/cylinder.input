@@ -14,9 +14,9 @@ data_filename cylinder.?.data
 output_filename cylinder.?.?.vtu
 
 timestep 0.05
-number_of_steps 1000
-number_of_steps_per_output 20
-number_of_iterations_per_step 5
+number_of_steps 100
+number_of_steps_per_output 5
+number_of_iterations_per_step 3
 
 #-------------------------------------------------------------------------#
 
@@ -52,7 +52,7 @@ zone f 9396:9445,9471:9520,9521:9545 2 d 0.0
 # d_dt( rhov ) = d_dy( -p ) + d_dx( - u*rhov ) + d_dy( - v*rhov ) + d_dx( mu*du_dy ) + d_dx( mu*dv_dx ) + d_dy( 2.0*mu*dv_dy )
 
 accumulation 0.0 1.0 1.0
-implicit 1.0 1.0 1.0
+implicit 1.0 0.5 0.5
 
 # equation variable direction differential constant
 
