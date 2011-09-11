@@ -1,7 +1,5 @@
 CC		= gcc
 CFLAGS		= -O2 -Wall
-FC		= gfortran
-FFLAGS		= -O2 -Wall
 
 INCLS		= -I./thirdparty/UFconfig \
 		  -I./thirdparty/UMFPACK/Include \
@@ -13,7 +11,7 @@ ILUPACKLIBS	= -L./thirdparty/ilupackV2.4_GNU64_MUMPS/lib/GNU64 -L./thirdparty/AM
 #LINEARLIBS	= -llapack -lblas
 #LINEARLIBS	= -Wl,--start-group -lpthread -static -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group
 LINEARLIBS	= -L./thirdparty/GotoBLAS2 -lgoto2 -lpthread
-LIBS		= $(UMFPACKLIBS) $(ILUPACKLIBS) $(LINEARLIBS) -lm -lrt
+LIBS		= $(UMFPACKLIBS) $(ILUPACKLIBS) $(LINEARLIBS) -lm -lrt -lgfortran
 
 MAINSRCS	= preprocess.c solve.c postprocess.c
 COMMONSRCS 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c
@@ -32,7 +30,7 @@ all: $(EFILE)
 
 .SECONDEXPANSION:
 $(EFILE): $$@.o $(COMMONOBJS)
-	$(FC) $(FFLAGS) -o $@ $@.o $(COMMONOBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $@.o $(COMMONOBJS) $(LIBS)
 
 $(OBJS): makefile
 	$(CC) $(CFLAGS) $(INCLS) -c $*.c
