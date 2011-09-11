@@ -32,6 +32,7 @@ void divergences_destroy(int n_divergences, struct DIVERGENCE *divergence);
 int allocate_integer_vector(int **vector, int length);
 int allocate_integer_zero_vector(int **vector, int length);
 int allocate_double_vector(double **vector, int length);
+int allocate_double_zero_vector(double **vector, int length);
 int allocate_character_vector(char **vector, int length);
 int allocate_integer_matrix(int ***matrix, int height, int width);
 int allocate_integer_zero_matrix(int ***matrix, int height, int width);

@@ -10,7 +10,7 @@
 #define ZONE_FORMAT "csisd"
 
 #define DIVERGENCE_LABEL "divergence"
-#define DIVERGENCE_FORMAT "iscsd"
+#define DIVERGENCE_FORMAT "iscsdd"
 #define MAX_DIVERGENCES 100
 #define MAX_DIVERGENCE_VARIABLES 5
 
@@ -521,6 +521,9 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 
 		//constant
 		fetch_get(fetch, i, 4, &d[n].constant);
+
+		//implicit fraction
+		fetch_get(fetch, i, 5, &d[n].implicit);
 
 		//direction
 		fetch_get(fetch, i, 2, &direction);

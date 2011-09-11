@@ -133,9 +133,9 @@ void calculate_matrix(CSR matrix, int n_ids, int *id_to_unknown, int n_unknowns,
 	exit_if_false(allocate_cell_pointer_matrix(&interpolant,max_n_polygon,2),"allocating the interpolant pointers");
 
 	double *row;
-	exit_if_false(allocate_double_vector(&row,n_unknowns),"allocating the dense row");
+	exit_if_false(allocate_double_zero_vector(&row,n_unknowns),"allocating the dense row");
 
-	for(i = 0; i < n_unknowns; i ++) f[i] = row[i] = 0.0;
+	for(i = 0; i < n_unknowns; i ++) f[i] = 0.0;
 
 	for(u = 0; u < n_unknowns; u ++)
         {
@@ -212,7 +212,6 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 				for(j = 0; j < divergence.n_variables; j ++)
 				{
 					u = divergence.variable[j];
-
 					m = ORDER_TO_POWERS(interpolant[p][i]->order[u]);
 					n = interpolant[p][i]->n_stencil[u];
 
@@ -246,19 +245,17 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 				}
 
 				//calculate the flux and add to the function
-				point_value = 1.0;
+				point_value = divergence.coefficient * normal * gauss_w[max_order-1][q] / n_interpolant[p];
 				for(j = 0; j < divergence.n_variables; j ++) point_value *= interp_value[j];
-				*f += divergence.constant * normal * gauss_w[max_order-1][q] * point_value / n_interpolant[p];
-				
+				*f -= point_value;
+
 				//calculate the jacobian
 				for(j = 0; j < divergence.n_variables; j ++)
 				{
 					u = divergence.variable[j];
-
-					m = ORDER_TO_POWERS(interpolant[p][i]->order[u]);
 					n = interpolant[p][i]->n_stencil[u];
 
-					point_value = 1.0;
+					point_value = divergence.coefficient * normal * gauss_w[max_order-1][q] / n_interpolant[p];
 					for(k = 0; k < divergence.n_variables; k ++) if(k != j) point_value *= interp_value[k];
 
 					for(k = 0; k < n; k ++)
@@ -267,38 +264,10 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 
 						if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
 						{
-							row[id_to_unknown[s]] += divergence.constant * normal *
-								gauss_w[max_order-1][q] * interp_coef[j][k] *
-								point_value / n_interpolant[p];
+							row[id_to_unknown[s]] += interp_coef[j][k] * point_value;
 						}
 					}
 				}
-				
-				/*//multiply all but the last value together
-				point_value = 1.0;
-				for(j = 1; j < divergence.n_variables; j ++) point_value *= interp_value[j];
-
-				//form flux from coefficients of the last value
-				u = divergence.variable[0];
-				n = interpolant[p][i]->n_stencil[u];
-				for(k = 0; k < n; k ++)
-				{
-					s = interpolant[p][i]->stencil[u][k];
-
-					if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
-					{
-						row[id_to_unknown[s]] += divergence.constant * normal *
-							gauss_w[max_order-1][q] * point_value *
-							interp_coef[0][k] / n_interpolant[p];
-					}
-					else
-					{
-						*rhs += divergence.constant * normal *
-							gauss_w[max_order-1][q] * point_value *
-							interp_coef[0][k] * zone[ID_TO_ZONE(s)].value /
-							n_interpolant[p];
-					}
-				}*/
 			}
 		}
 	}

@@ -44,9 +44,6 @@ int main(int argc, char *argv[])
 	double *accumulation;
 	exit_if_false(allocate_double_vector(&accumulation,n_variables),"allocating the accumulations");
 	exit_if_false(fetch_vector(file,"accumulation",'d',n_variables,accumulation) == FETCH_SUCCESS,"reading \"accumulation\" from the input file");
-	double *implicit;
-	exit_if_false(allocate_double_vector(&implicit,n_variables),"allocating the implicit fractions");
-	exit_if_false(fetch_vector(file,"implicit",'d',n_variables,implicit) == FETCH_SUCCESS,"reading \"implicit\" from the input file");
 	double timestep;
 	exit_if_false(fetch_value(file,"timestep",'d',&timestep) == FETCH_SUCCESS,"reading \"timestep\" from the input file");
 	int n_steps;
@@ -84,35 +81,41 @@ int main(int argc, char *argv[])
 	CSR matrix = csr_new();
 	print_time(" done in %lf seconds",assemble_matrix(matrix,n_variables,id_to_unknown,n_unknowns,unknown_to_id,face,cell,zone));
 
-	double *minus_theta_timestep, *mass;
-	exit_if_false(allocate_double_vector(&minus_theta_timestep,n_unknowns),"allocating implicit vector");
+	double *mass;
 	exit_if_false(allocate_double_vector(&mass,n_unknowns),"allocating mass vector");
-
 	{
-		int i, u, v, z;
+		int i, u, z;
 
 		for(u = 0; u < n_unknowns; u ++)
 		{
 			i = ID_TO_INDEX(unknown_to_id[u]);
 			z = ID_TO_ZONE(unknown_to_id[u]);
-			v = zone[z].variable;
 
-			minus_theta_timestep[u] = - implicit[v] * timestep;
-
-			if(zone[z].location == 'f')      mass[u] = accumulation[v] * face[i].area;
-			else if(zone[z].location == 'c') mass[u] = accumulation[v] * cell[i].area;
+			if(zone[z].location == 'f')      mass[u] = accumulation[zone[z].variable] * face[i].area;
+			else if(zone[z].location == 'c') mass[u] = accumulation[zone[z].variable] * cell[i].area;
 			else exit_if_false(0,"recognising location");
 		}
 	}
 
 
 	{
-		int i, s, u, v;
+		int d, i, s, u, v;
 
 		for(s = 1; s <= n_steps; s ++)
 		{
 			printf("\n\ntimestep > %i\n    time > %15.9e s\nresidual >",s,time);
 			for(v = 0; v < n_variables; v ++) printf(" %-15s",variable_name[v]);
+
+			for(d = 0; d < n_divergences; d ++)
+				divergence[d].coefficient = - divergence[d].constant * timestep * (1.0 - divergence[d].implicit);
+
+			calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, f_explicit,
+					face, cell, zone, n_divergences, divergence);
+
+			for(u = 0; u < n_unknowns; u ++) f_explicit[u] += mass[u]*x[u];
+
+			for(d = 0; d < n_divergences; d ++)
+				divergence[d].coefficient = - divergence[d].constant * timestep * divergence[d].implicit;
 
 			for(i = 1; i <= n_iterations_per_step; i ++)
 			{
@@ -121,13 +124,8 @@ int main(int argc, char *argv[])
 				calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, f,
 						face, cell, zone, n_divergences, divergence);
 
-				for(u = 0; i == 1 && u < n_unknowns; u ++)
-					f_explicit[u] = mass[u] * x[u] + (timestep + minus_theta_timestep[u]) * f[u];
+				for(u = 0; u < n_unknowns; u ++) f[u] += f_explicit[u] - mass[u] * x[u];
 
-				for(u = 0; u < n_unknowns; u ++)
-					f[u] = f_explicit[u] - mass[u] * x[u] - minus_theta_timestep[u] * f[u];
-
-				csr_multiply_diagonal(matrix,minus_theta_timestep);
 				csr_add_to_diagonal(matrix,mass);
 
 				exit_if_false(csr_solve_umfpack(matrix,dx,f) == CSR_SUCCESS,"solving the system");
@@ -154,7 +152,6 @@ int main(int argc, char *argv[])
 	free_vector(data_filename);
 	free_matrix((void**)variable_name);
 	free_vector(accumulation);
-	free_vector(implicit);
 	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
 	free_vector(x);
@@ -163,7 +160,6 @@ int main(int argc, char *argv[])
 	free_vector(f_explicit);
 	free_vector(residual);
 	free_vector(mass);
-	free_vector(minus_theta_timestep);
 	nodes_destroy(n_nodes,node);
 	faces_destroy(n_faces,face);
 	cells_destroy(n_variables,n_cells,cell);

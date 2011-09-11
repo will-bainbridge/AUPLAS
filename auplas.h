@@ -84,6 +84,8 @@ struct DIVERGENCE
 	int *differential;
 	int direction;
 	double constant;
+	double implicit;
+	double coefficient;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -369,6 +369,15 @@ int allocate_double_vector(double **vector, int length)
 	return 1;
 }
 
+int allocate_double_zero_vector(double **vector, int length)
+{
+	*vector = (double *)malloc(length * sizeof(double));
+	if(*vector == NULL) return 0;
+	int i;
+	for(i = 0; i < length; i ++) (*vector)[i] = 0.0;
+	return 1;
+}
+
 int allocate_character_vector(char **vector, int length)
 {
 	*vector = (char *)malloc(length * sizeof(char));
