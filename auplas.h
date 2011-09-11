@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 //cell order to number of powers
-#define ORDER_TO_POWERS(order) ((order+1.0)*(order+2.0)*0.5)
+#define ORDER_TO_POWERS(order) ((order+1)*(order+2)/2)
 
 //min and max macros
 #define MAX(a,b) ((a > b) ? a : b)
