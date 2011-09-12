@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
 			for(d = 0; d < n_divergences; d ++)
 				divergence[d].coefficient = - divergence[d].constant * timestep * (1.0 - divergence[d].implicit);
 
-			print_time("\n%lfs\n",calculate_divergence(f_explicit, jacobian, x, n_variables, n_ids, id_to_unknown, n_unknowns, unknown_to_id,
-					face, n_cells, cell, zone, n_divergences, divergence));
+			calculate_divergence(f_explicit, jacobian, x, n_variables, n_ids, id_to_unknown, n_unknowns, unknown_to_id,
+					face, n_cells, cell, zone, n_divergences, divergence);
 
 			for(u = 0; u < n_unknowns; u ++) f_explicit[u] += mass[u]*x[u];
 
