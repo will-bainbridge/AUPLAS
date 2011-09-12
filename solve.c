@@ -77,9 +77,9 @@ int main(int argc, char *argv[])
 	if(initial_filename == NULL) print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x));
 	else                         print_time(" done in %lf seconds",read_data(initial_filename, &time, n_unknowns, x));
 
-	printf("\nassembling the system matrix ...");
-	CSR matrix = csr_new();
-	print_time(" done in %lf seconds",assemble_matrix(matrix,n_variables,id_to_unknown,n_unknowns,unknown_to_id,face,cell,zone));
+	printf("\nassembling the divergence jacobians ...");
+	CSR jacobian = csr_new();
+	print_time(" done in %lf seconds",assemble_matrix(jacobian,n_variables,id_to_unknown,n_unknowns,unknown_to_id,face,cell,zone));
 
 	double *mass;
 	exit_if_false(allocate_double_vector(&mass,n_unknowns),"allocating mass vector");
@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
 			for(d = 0; d < n_divergences; d ++)
 				divergence[d].coefficient = - divergence[d].constant * timestep * (1.0 - divergence[d].implicit);
 
-			calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, f_explicit,
-					face, cell, zone, n_divergences, divergence);
+			calculate_divergence(f_explicit, jacobian, x, n_variables, n_ids, id_to_unknown, n_unknowns, unknown_to_id,
+					face, n_cells, cell, zone, n_divergences, divergence);
 
 			for(u = 0; u < n_unknowns; u ++) f_explicit[u] += mass[u]*x[u];
 
@@ -121,14 +121,14 @@ int main(int argc, char *argv[])
 			{
 				printf("\n%8i >",i);
 
-				calculate_matrix(matrix, n_ids, id_to_unknown, n_unknowns, unknown_to_id, x, f,
-						face, cell, zone, n_divergences, divergence);
+				calculate_divergence(f, jacobian, x, n_variables, n_ids, id_to_unknown, n_unknowns, unknown_to_id,
+						face, n_cells, cell, zone, n_divergences, divergence);
 
 				for(u = 0; u < n_unknowns; u ++) f[u] += f_explicit[u] - mass[u] * x[u];
 
-				csr_add_to_diagonal(matrix,mass);
+				csr_add_to_diagonal(jacobian,mass);
 
-				exit_if_false(csr_solve_umfpack(matrix,dx,f) == CSR_SUCCESS,"solving the system");
+				exit_if_false(csr_solve_umfpack(jacobian,dx,f) == CSR_SUCCESS,"solving the system");
 
 				calculate_residuals(n_variables, n_unknowns, unknown_to_id, dx, x, residual, n_zones, zone);
 				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 	cells_destroy(n_variables,n_cells,cell);
 	zones_destroy(zone);
 	divergences_destroy(n_divergences, divergence);
-	csr_destroy(matrix);
+	csr_destroy(jacobian);
 
 	print_end();
 
