@@ -249,7 +249,7 @@ int csr_solve_ilupack(CSR A, double *x, double *b)
 
 	if(DGNLAMGsolver(&M, &P, &param, b, x) != 0) return CSR_SOLVE_ERROR;
 
-	DGNLAMGdelete(&M,&P,&param);
+	DGNLAMGdelete(&M, &P, &param);
 
 	//convert back to numbering from 0
 	for(i = 0; i <= A->n; i ++) A->row[i] --;

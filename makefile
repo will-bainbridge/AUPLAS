@@ -1,43 +1,51 @@
 CC		= gcc
 CFLAGS		= -O2 -Wall
 
-INCLS		= -I./thirdparty/UFconfig \
-		  -I./thirdparty/UMFPACK/Include \
-		  -I./thirdparty/AMD/Include \
-		  -I./thirdparty/ilupackV2.4_GNU64_MUMPS/include
+HOME		= /media/data/Sources/AUPLAS
+THIRDPARTY	= $(HOME)/thirdparty
 
-UMFPACKLIBS	= -L./thirdparty/UMFPACK/Lib -L./thirdparty/AMD/Lib -lumfpack -lamd
-ILUPACKLIBS	= -L./thirdparty/ilupackV2.4_GNU64_MUMPS/lib/GNU64 -L./thirdparty/AMD/Lib -lilupack -lmumps -lamd -lmetis -lsparspak -lblaslike
-#LINEARLIBS	= -llapack -lblas
-#LINEARLIBS	= -Wl,--start-group -lpthread -static -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group
-LINEARLIBS	= -L./thirdparty/GotoBLAS2 -lgoto2 -lpthread
-LIBS		= $(UMFPACKLIBS) $(ILUPACKLIBS) $(LINEARLIBS) -lm -lrt -lgfortran
+#------------------------------------------------------------------------------#
 
-MAINSRCS	= preprocess.c solve.c postprocess.c
-COMMONSRCS 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c
+INCLUDES	+= -I$(THIRDPARTY)/UMFPACK/Include -I$(THIRDPARTY)/AMD/Include -I$(THIRDPARTY)/UFconfig
+LIBRARIES	+= -L$(THIRDPARTY)/UMFPACK/Lib -L$(THIRDPARTY)/AMD/Lib -lumfpack -lamd
 
-SRCS		= $(MAINSRCS) $(COMMONSRCS)
+INCLUDES	+= -I$(THIRDPARTY)/ilupackV2.4_GNU64_MUMPS/include -I$(THIRDPARTY)/AMD/Include
+LIBRARIES	+= -Wl,--start-group -L$(THIRDPARTY)/ilupackV2.4_GNU64_MUMPS/lib/GNU64 -L$(THIRDPARTY)/AMD/Lib \
+		   -lilupack -lmumps -lamd -lmetis -lsparspak -lblaslike -Wl,--end-group
 
-MAINOBJS	= $(MAINSRCS:.c=.o)
-COMMONOBJS	= $(COMMONSRCS:.c=.o)
-OBJS		= $(MAINOBJS) $(COMMONOBJS)
+#LIBRARIES	+= -llapack -lblas
+#LIBRARIES	+= -Wl,--start-group -lpthread -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -Wl,-R/opt/intel/mkl/lib/intel64
+LIBRARIES	+= -L$(THIRDPARTY)/GotoBLAS2 -Wl,-R$(THIRDPARTY)/GotoBLAS2 -lgoto2
 
-EFILE		= $(MAINSRCS:.c=)
+LIBRARIES	+= -lm -lrt -lgfortran
+
+#------------------------------------------------------------------------------#
+
+MAINSOURCES	= preprocess.c solve.c postprocess.c
+COMMONSOURCES 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c
+
+SOURCES		= $(MAINSOURCES) $(COMMONSOURCES)
+
+MAINOBJECTS	= $(MAINSOURCES:.c=.o)
+COMMONOBJECTS	= $(COMMONSOURCES:.c=.o)
+OBJECTS		= $(MAINOBJECTS) $(COMMONOBJECTS)
+
+EXECUTABLES	= $(MAINSOURCES:.c=)
 
 ################################################################################
 
-all: $(EFILE)
+all: $(EXECUTABLES)
 
 .SECONDEXPANSION:
-$(EFILE): $$@.o $(COMMONOBJS)
-	$(CC) $(CFLAGS) -o $@ $@.o $(COMMONOBJS) $(LIBS)
+$(EXECUTABLES): $$@.o $(COMMONOBJECTS)
+	$(CC) $(CFLAGS) -o $@ $@.o $(COMMONOBJECTS) $(LIBRARIES)
 
-$(OBJS): makefile
-	$(CC) $(CFLAGS) $(INCLS) -c $*.c
+$(OBJECTS): makefile
+	$(CC) $(CFLAGS) $(INCLUDES) -c $*.c
 
 -include depend
-depend: $(SRCS)
-	$(CC) -MM $(INCLS) $^ > $@
+depend: $(SOURCES)
+	$(CC) -MM $(INCLUDES) $^ > $@
 
 clean:
-	rm -f *o depend $(EFILE) *~
+	rm -f *o depend $(EXECUTABLES) *~

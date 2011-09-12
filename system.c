@@ -246,7 +246,7 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 
 				//calculate the flux and add to the function
 				point_value = divergence.coefficient * normal * gauss_w[max_order-1][q] / n_interpolant[p];
-				for(j = 0; j < divergence.n_variables; j ++) point_value *= interp_value[j];
+				for(j = 0; j < divergence.n_variables; j ++) point_value *= integer_power(interp_value[j],divergence.power[j]);
 				*f -= point_value;
 
 				//calculate the jacobian
@@ -256,7 +256,8 @@ void calculate_divergence(int n_polygon, double ***polygon, int *n_interpolant, 
 					n = interpolant[p][i]->n_stencil[u];
 
 					point_value = divergence.coefficient * normal * gauss_w[max_order-1][q] / n_interpolant[p];
-					for(k = 0; k < divergence.n_variables; k ++) if(k != j) point_value *= interp_value[k];
+					point_value *= divergence.power[j] * integer_power(interp_value[j],divergence.power[j] - 1);
+					for(k = 0; k < divergence.n_variables; k ++) if(k != j) point_value *= integer_power(interp_value[k],divergence.power[k]);
 
 					for(k = 0; k < n; k ++)
 					{

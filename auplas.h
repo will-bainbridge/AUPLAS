@@ -82,6 +82,7 @@ struct DIVERGENCE
 	int n_variables;
 	int *variable;
 	int *differential;
+	int *power;
 	int direction;
 	double constant;
 	double implicit;

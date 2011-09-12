@@ -10,7 +10,7 @@
 #define ZONE_FORMAT "csisd"
 
 #define DIVERGENCE_LABEL "divergence"
-#define DIVERGENCE_FORMAT "iscsdd"
+#define DIVERGENCE_FORMAT "icsssdd"
 #define MAX_DIVERGENCES 100
 #define MAX_DIVERGENCE_VARIABLES 5
 
@@ -507,26 +507,24 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 
 	//temporary storage
 	char direction;
-	int offset, n_diff, diff[2];
-	char *piece = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	int var_offset, dif_offset, pow_offset, dif[2];
+	char *var_string = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	char *dif_string = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
+	char *pow_string = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
 	char *temp = (char *)malloc(MAX_STRING_LENGTH * sizeof(char));
-	int *term = (int *)malloc(MAX_DIVERGENCE_VARIABLES * sizeof(int));
-	int *differential = (int *)malloc(MAX_DIVERGENCE_VARIABLES * sizeof(int));
-	exit_if_false(piece != NULL && temp != NULL && term != NULL && differential != NULL,"allocating temporary storage");
+	exit_if_false(var_string != NULL && dif_string != NULL && pow_string != NULL && temp != NULL,"allocating temporary strings");
+	int *vars = (int *)malloc(MAX_DIVERGENCE_VARIABLES * sizeof(int));
+	int *difs = (int *)malloc(MAX_DIVERGENCE_VARIABLES * sizeof(int));
+	int *pows = (int *)malloc(MAX_DIVERGENCE_VARIABLES * sizeof(int));
+	exit_if_false(vars != NULL && difs != NULL && pows != NULL,"allocating temporary data");
 
 	for(i = 0; i < n_fetch; i ++)
 	{
 		//equation
 		fetch_get(fetch, i, 0, &d[n].equation);
 
-		//constant
-		fetch_get(fetch, i, 4, &d[n].constant);
-
-		//implicit fraction
-		fetch_get(fetch, i, 5, &d[n].implicit);
-
 		//direction
-		fetch_get(fetch, i, 2, &direction);
+		fetch_get(fetch, i, 1, &direction);
 		if(direction == 'x') {
 			d[n].direction = 0;
 		} else if(direction == 'y') {
@@ -536,66 +534,71 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 			continue;
 		}
 
-		//variables
-		fetch_get(fetch, i, 1, piece);
-		//convert comma delimiters to whitespace
-		for(j = 0; j < strlen(piece); j ++) if(piece[j] == ',') piece[j] = ' ';
-		//sequentially read variables
-		offset = d[n].n_variables = 0;
-		while(offset < strlen(piece))
+		//get the variable, differential and power strings
+		fetch_get(fetch, i, 2, var_string);
+		fetch_get(fetch, i, 3, dif_string);
+		fetch_get(fetch, i, 4, pow_string);
+		for(j = 0; j < strlen(var_string); j ++) if(var_string[j] == ',') var_string[j] = ' ';
+		for(j = 0; j < strlen(dif_string); j ++) if(dif_string[j] == ',') dif_string[j] = ' ';
+		for(j = 0; j < strlen(pow_string); j ++) if(pow_string[j] == ',') pow_string[j] = ' ';
+
+		//read each variable in turn
+		var_offset = dif_offset = pow_offset = d[n].n_variables = 0;
+		while(var_offset < strlen(var_string))
 		{
-			//read the variable from the string
-			info = sscanf(&piece[offset],"%s",temp) == 1;
-			info *= sscanf(temp,"%i",&term[d[n].n_variables++]) == 1;
+			info = 1;
+
+			//read the variable index from the string
+			info *= sscanf(&var_string[var_offset],"%s",temp) == 1;
+			info *= sscanf(temp,"%i",&vars[d[n].n_variables]) == 1;
+			var_offset += strlen(temp) + 1;
+
+			//read the x and y differentials and convert to a differential index
+			info *= sscanf(&dif_string[dif_offset],"%s",temp) == 1;
+			j = dif[0] = dif[1] = 0;
+			if(info)
+			{
+				while(temp[j] != '\0')
+				{
+					dif[0] += (temp[j] == 'x');
+					dif[1] += (temp[j] == 'y');
+					j ++;
+				}
+				difs[d[n].n_variables] = differential_index[dif[0]][dif[1]];
+			}
+			dif_offset += strlen(temp) + 1;
+
+			//read the variable powers from the string
+			info *= sscanf(&pow_string[pow_offset],"%s",temp) == 1;
+			info *= sscanf(temp,"%i",&pows[d[n].n_variables]) == 1;
+			pow_offset += strlen(temp) + 1;
+
 			warn_if_false(info,"skipping divergence with unrecognised variable format");
 			if(!info) continue;
 
-			//move to the next variable in the string
-			offset += strlen(temp) + 1;
+			//next variable
+			d[n].n_variables ++;
 		}
-
-		//differentials
-		fetch_get(fetch, i, 3, piece);
-		//convert comma delimiters to whitespace
-		for(j = 0; j < strlen(piece); j ++) if(piece[j] == ',') piece[j] = ' ';
-		//sequentially read differentials
-		offset = n_diff = 0;
-		while(offset < strlen(piece))
-		{
-			//read the variables' differential string
-			info = sscanf(&piece[offset],"%s",temp) == 1;
-			warn_if_false(info,"skipping divergence with unrecognised differentail format");
-			if(!info) continue;
-
-			//count the differentials in the different dimensions
-			j = diff[0] = diff[1] = 0;
-			while(temp[j] != '\0')
-			{
-				diff[0] += (temp[j] == 'x');
-				diff[1] += (temp[j] == 'y');
-				j ++;
-			}
-			//convert to a unique differential index
-			differential[n_diff ++] = differential_index[diff[0]][diff[1]];
-			//move to the next differential in the string
-			offset += strlen(temp) + 1;
-		}
-
-		//check numbers
-		info = d[n].n_variables == n_diff;
-		warn_if_false(info,"skipping divergence with different numbers of variables and differentials");
 
 		//allocate the variable and differential arrays
 		d[n].variable = (int *)malloc(d[n].n_variables * sizeof(int)); //?? SHOULD BE MEMORY FUNCTIONS DOING THIS
 		d[n].differential = (int *)malloc(d[n].n_variables * sizeof(int));
-		exit_if_false(d[n].variable != NULL && d[n].differential != NULL,"allocating divergence variables and differentials");
+		d[n].power = (int *)malloc(d[n].n_variables * sizeof(int));
+		exit_if_false(d[n].variable != NULL && d[n].differential != NULL && d[n].power != NULL,"allocating divergence variables and differentials");
 
 		//copy over
 		for(j = 0; j < d[n].n_variables; j ++)
 		{
-			d[n].variable[j] = term[j];
-			d[n].differential[j] = differential[j];
+			d[n].variable[j] = vars[j];
+			d[n].differential[j] = difs[j];
+			d[n].power[j] = pows[j];
 		}
+
+		//constant
+		fetch_get(fetch, i, 5, &d[n].constant);
+
+		//implicit fraction
+		fetch_get(fetch, i, 6, &d[n].implicit);
 
 		//increment the number of divergences
 		n ++;
@@ -613,10 +616,13 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 	//clean up
 	fclose(file);
 	fetch_destroy(fetch);
-	free(piece);
+	free(var_string);
+	free(dif_string);
+	free(pow_string);
 	free(temp);
-	free(term);
-	free(differential);
+	free(vars);
+	free(difs);
+	free(pows);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

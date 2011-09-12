@@ -330,6 +330,7 @@ struct DIVERGENCE * divergences_new(int n_divergences, struct DIVERGENCE *diverg
                 divergence[i].n_variables = 0;
                 divergence[i].variable = NULL;
                 divergence[i].differential = NULL;
+                divergence[i].power = NULL;
         }
 
         return divergence;
@@ -342,6 +343,7 @@ void divergences_destroy(int n_divergences, struct DIVERGENCE *divergence)
         {
                 free(divergence[i].variable);
                 free(divergence[i].differential);
+                free(divergence[i].power);
         }
         free(divergence);
 }
