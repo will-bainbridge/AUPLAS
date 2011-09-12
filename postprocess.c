@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	fclose(file);
 
 	int n_ids, *id_to_unknown, n_unknowns, *unknown_to_id;
-	generate_system_lists(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone);
+	generate_lists_of_unknowns(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone);
 
 	double *x;
 	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating unknown vector");

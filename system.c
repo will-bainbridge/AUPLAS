@@ -37,7 +37,7 @@ int generate_control_volume_interpolant(struct CELL ***interpolant, int *n_inter
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void generate_system_lists(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void generate_lists_of_unknowns(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
 	int i, j;
 	
@@ -143,7 +143,7 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 	}
 	for(d = 0; d < n_divergences; d ++) max_divergence_variables = MAX(max_divergence_variables,divergence[d].n_variables);
 
-	double *polynomial, **interp_coef, *interp_value, point_value, point[2], normal;
+	double *polynomial, **interp_coef, *interp_value, point_value, point[2], location[2], normal[2];
 	exit_if_false(allocate_double_vector(&polynomial,ORDER_TO_POWERS(max_order)),"allocating polynomial");
 	exit_if_false(allocate_double_matrix(&interp_coef,max_divergence_variables,max_stencil),"allocating interpolation coefficients");
 	exit_if_false(allocate_double_vector(&interp_value,max_divergence_variables),"allocating interpolation values");
@@ -162,26 +162,27 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 		n_polygon = generate_control_volume_polygon(polygon, e, zone[z].location, face, cell);
 		n_polygon = generate_control_volume_interpolant(interpolant, n_interpolant, e, zone[z].location, face, cell);
 
-		for(d = 0; d < n_divergences; d ++)
+		for(p = 0; p < n_polygon; p ++)
 		{
-			if(divergence[d].equation != zone[z].variable) continue;
+			//polygon face normal
+			normal[0] = polygon[p][1][1] - polygon[p][0][1];
+			normal[1] = polygon[p][0][0] - polygon[p][1][0];
 
-			for(p = 0; p < n_polygon; p ++)
+			for(q = 0; q < max_order; q ++)
 			{
-				//normal
-				if(divergence[d].direction == 0) normal = polygon[p][1][1] - polygon[p][0][1];
-				else                             normal = polygon[p][0][0] - polygon[p][1][0];
+				//integration point coordinates
+				point[0] = 0.5*polygon[p][0][0]*(1.0 - gauss_x[max_order-1][q]) + 0.5*polygon[p][1][0]*(1.0 + gauss_x[max_order-1][q]);
+				point[1] = 0.5*polygon[p][0][1]*(1.0 - gauss_x[max_order-1][q]) + 0.5*polygon[p][1][1]*(1.0 + gauss_x[max_order-1][q]);
 
-				for(q = 0; q < max_order; q ++)
+				for(t = 0; t < n_interpolant[p]; t ++)
 				{
-					for(t = 0; t < n_interpolant[p]; t ++)
+					//integration location
+					location[0] = point[0] - interpolant[p][t]->centroid[0];
+					location[1] = point[1] - interpolant[p][t]->centroid[1];
+
+					for(d = 0; d < n_divergences; d ++)
 					{
-						point[0] = 0.5*polygon[p][0][0]*(1.0 - gauss_x[max_order-1][q]) +
-							0.5*polygon[p][1][0]*(1.0 + gauss_x[max_order-1][q]) -
-							interpolant[p][t]->centroid[0];
-						point[1] = 0.5*polygon[p][0][1]*(1.0 - gauss_x[max_order-1][q]) +
-							0.5*polygon[p][1][1]*(1.0 + gauss_x[max_order-1][q]) -
-							interpolant[p][t]->centroid[1];
+						if(divergence[d].equation != zone[z].variable) continue;
 
 						//calculate coefficients for interpolation to the point
 						for(i = 0; i < divergence[d].n_variables; i ++)
@@ -194,8 +195,8 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 							for(j = 0; j < m; j ++)
 							{
 								polynomial[j] = polynomial_coefficient[divergence[d].differential[i]][j] *
-									integer_power(point[0],polynomial_power_x[divergence[d].differential[i]][j]) *
-									integer_power(point[1],polynomial_power_y[divergence[d].differential[i]][j]);
+									integer_power(location[0],polynomial_power_x[divergence[d].differential[i]][j]) *
+									integer_power(location[1],polynomial_power_y[divergence[d].differential[i]][j]);
 							}
 
 							//multiply polynomial and matrix to get interpolation coefficients at the point
@@ -220,7 +221,7 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 						}
 
 						//calculate the flux and add to the function
-						point_value = divergence[d].coefficient * normal * gauss_w[max_order-1][q] / n_interpolant[p];
+						point_value = divergence[d].coefficient * normal[divergence[d].direction] * gauss_w[max_order-1][q] / n_interpolant[p];
 						for(i = 0; i < divergence[d].n_variables; i ++) point_value *= integer_power(interp_value[i],divergence[d].power[i]);
 						f[u] -= point_value;
 
@@ -230,7 +231,7 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 							v = divergence[d].variable[i];
 							n = interpolant[p][t]->n_stencil[v];
 
-							point_value = divergence[d].coefficient * normal * gauss_w[max_order-1][q] / n_interpolant[p];
+							point_value = divergence[d].coefficient * normal[divergence[d].direction] * gauss_w[max_order-1][q] / n_interpolant[p];
 							point_value *= divergence[d].power[i] * integer_power(interp_value[i],divergence[d].power[i] - 1);
 							for(j = 0; j < divergence[d].n_variables; j ++)
 								if(j != i) point_value *= integer_power(interp_value[j],divergence[d].power[j]);
