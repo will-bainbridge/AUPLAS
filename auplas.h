@@ -128,11 +128,12 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 int least_squares(int m, int n, double **matrix);
 int constrained_least_squares(int m, int n, double **matrix, int c, int *constrained);
 double integer_power(double base, int exp);
+void evaluate_polynomial(double *polynomial, int order, int differential, double *x);
 
 //system.c
 void generate_lists_of_unknowns(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void assemble_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, struct CELL *cell, struct ZONE *zone);
-void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
+void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, double *x, int n_variables, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
 void initialise_unknowns(int n_ids, int *id_to_unknown, struct ZONE *zone, double *x);
 void calculate_residuals(int n_variables, int n_unknowns, int *unknown_to_id, double *dx, double *x, double *residual, int n_zones, struct ZONE *zone);
 

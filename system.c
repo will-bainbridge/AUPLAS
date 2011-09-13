@@ -2,11 +2,11 @@
 
 #include "auplas.h"
 #include "quadrature.h"
-#include "polynomial.h"
 
 int generate_control_volume_interpolant(struct CELL ***interpolant, int *n_interpolant, int index, char location, struct FACE *face, struct CELL *cell);
 
 void dgemv_(char *, int *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
+double ddot_(int *, double *, int *, double *, int *);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -117,7 +117,7 @@ void assemble_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unkn
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
+void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, double *x, int n_variables, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
 	int c, d, e, i, j, p, q, s, t, u, v, z;
         int n_polygon, max_n_polygon = MAX(MAX_CELL_FACES,4);
@@ -143,10 +143,11 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 	}
 	for(d = 0; d < n_divergences; d ++) max_divergence_variables = MAX(max_divergence_variables,divergence[d].n_variables);
 
-	double *polynomial, **interp_coef, *interp_value, point_value, point[2], location[2], normal[2];
+	double *polynomial, **interp_coef, *interp_value, **stencil_value, point_value, point[2], location[2], normal[2];
 	exit_if_false(allocate_double_vector(&polynomial,ORDER_TO_POWERS(max_order)),"allocating polynomial");
 	exit_if_false(allocate_double_matrix(&interp_coef,max_divergence_variables,max_stencil),"allocating interpolation coefficients");
 	exit_if_false(allocate_double_vector(&interp_value,max_divergence_variables),"allocating interpolation values");
+	exit_if_false(allocate_double_matrix(&stencil_value,n_variables,max_stencil),"allocating stencil values");
 
 	char trans = 'N';
 	int m, n, increment = 1;
@@ -154,7 +155,8 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 
 	for(u = 0; u < n_unknowns; u ++)
         {
-		f[u] = 0.0;
+		if(f_explicit != NULL) f_explicit[u] = 0.0;
+		if(f_implicit != NULL) f_implicit[u] = 0.0;
 
                 e = ID_TO_INDEX(unknown_to_id[u]);
                 z = ID_TO_ZONE(unknown_to_id[u]);
@@ -180,6 +182,16 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 					location[0] = point[0] - interpolant[p][t]->centroid[0];
 					location[1] = point[1] - interpolant[p][t]->centroid[1];
 
+					//stencil values
+					for(v = 0; v < n_variables; v ++)
+					{
+						for(i = 0; i < interpolant[p][t]->n_stencil[v]; i ++)
+						{
+							s = interpolant[p][t]->stencil[v][i];
+							stencil_value[v][i] = (zone[ID_TO_ZONE(s)].condition[0] == 'u') ? x[id_to_unknown[s]] : zone[ID_TO_ZONE(s)].value;
+						}
+					}
+
 					for(d = 0; d < n_divergences; d ++)
 					{
 						if(divergence[d].equation != zone[z].variable) continue;
@@ -192,49 +204,38 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 							n = interpolant[p][t]->n_stencil[v];
 
 							//evaluate the differentiated polynomial at the point
-							for(j = 0; j < m; j ++)
-							{
-								polynomial[j] = polynomial_coefficient[divergence[d].differential[i]][j] *
-									integer_power(location[0],polynomial_power_x[divergence[d].differential[i]][j]) *
-									integer_power(location[1],polynomial_power_y[divergence[d].differential[i]][j]);
-							}
+							evaluate_polynomial(polynomial, interpolant[p][t]->order[v], divergence[d].differential[i], location);
 
 							//multiply polynomial and matrix to get interpolation coefficients at the point
-							dgemv_(&trans, &n, &m, &alpha, interpolant[p][t]->matrix[v][0], &n, polynomial, &increment,
-									&beta, interp_coef[i], &increment);
+							dgemv_(&trans, &n, &m, &alpha, interpolant[p][t]->matrix[v][0], &n,
+									polynomial, &increment, &beta, interp_coef[i], &increment);
 
 							//sum the coefficients to calculate the value at the point
-							interp_value[i] = 0;
-							for(j = 0; j < n; j ++)
-							{
-								s = interpolant[p][t]->stencil[v][j];
-
-								if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
-								{
-									interp_value[i] += interp_coef[i][j] * x[id_to_unknown[s]];
-								}
-								else
-								{
-									interp_value[i] += interp_coef[i][j] * zone[ID_TO_ZONE(s)].value;
-								}
-							}
+							interp_value[i] = ddot_(&n, stencil_value[v], &increment, interp_coef[i], &increment);
 						}
 
 						//calculate the flux and add to the function
 						point_value = divergence[d].coefficient * normal[divergence[d].direction] * gauss_w[max_order-1][q] / n_interpolant[p];
 						for(i = 0; i < divergence[d].n_variables; i ++) point_value *= integer_power(interp_value[i],divergence[d].power[i]);
-						f[u] -= point_value;
+						if(f_explicit != NULL) f_explicit[u] -= (1.0 - divergence[d].implicit) * point_value;
+						if(f_implicit != NULL) f_implicit[u] -= divergence[d].implicit * point_value;
 
 						//calculate the jacobian
+						if(jacobian == NULL) continue;
 						for(i = 0; i < divergence[d].n_variables; i ++)
 						{
 							v = divergence[d].variable[i];
 							n = interpolant[p][t]->n_stencil[v];
 
-							point_value = divergence[d].coefficient * normal[divergence[d].direction] * gauss_w[max_order-1][q] / n_interpolant[p];
-							point_value *= divergence[d].power[i] * integer_power(interp_value[i],divergence[d].power[i] - 1);
+							point_value = divergence[d].implicit * divergence[d].coefficient *
+								normal[divergence[d].direction] * gauss_w[max_order-1][q] / n_interpolant[p];
+
 							for(j = 0; j < divergence[d].n_variables; j ++)
+							{
 								if(j != i) point_value *= integer_power(interp_value[j],divergence[d].power[j]);
+							}
+
+							point_value *= divergence[d].power[i] * integer_power(interp_value[i],divergence[d].power[i] - 1);
 
 							for(j = 0; j < n; j ++)
 							{
@@ -252,7 +253,7 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 		}
 
 		//enter the calculated row into the matrix
-		csr_set_row(jacobian, u, row);
+		if(jacobian != NULL) csr_set_row(jacobian, u, row);
 	}
 
 	//clean up
@@ -263,6 +264,7 @@ void calculate_divergence(double *f, CSR jacobian, double *x, int n_variables, i
 	free_vector(polynomial);
 	free_matrix((void **)interp_coef);
 	free_vector(interp_value);
+	free_matrix((void **)stencil_value);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

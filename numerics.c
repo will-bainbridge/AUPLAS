@@ -348,7 +348,21 @@ double integer_power(double base, int exp)
 	int i;
 	double result = 1.0;
 	for(i = 0; i < exp; i ++) result *= base;
+	for(i = 0; i > exp; i --) result /= base;
 	return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void evaluate_polynomial(double *polynomial, int order, int differential, double *x)
+{
+	int i, j;
+	for(i = 0; i < ORDER_TO_POWERS(order); i ++)
+	{
+		polynomial[i] = polynomial_coefficient[differential][i];
+		for(j = 0; j < polynomial_power_x[differential][i]; j ++) polynomial[i] *= x[0];
+		for(j = 0; j < polynomial_power_y[differential][i]; j ++) polynomial[i] *= x[1];
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

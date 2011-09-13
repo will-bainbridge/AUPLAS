@@ -52,6 +52,11 @@ int main(int argc, char *argv[])
 	exit_if_false(fetch_value(file,"number_of_steps_per_output",'i',&n_steps_per_output) == FETCH_SUCCESS,"reading \"number_of_steps_per_output\" from the input file");
 	int n_iterations_per_step;
 	exit_if_false(fetch_value(file,"number_of_iterations_per_step",'i',&n_iterations_per_step) == FETCH_SUCCESS,"reading \"number_of_iterations_per_step\" from the input file");
+	int n_substeps;
+	exit_if_false(fetch_value(file,"number_of_substeps",'i',&n_substeps) == FETCH_SUCCESS,"reading \"number_of_substeps\" from the input file");
+	double *substep;
+	exit_if_false(allocate_double_vector(&substep,n_substeps),"allocating the substep fractions");
+	exit_if_false(fetch_vector(file,"substep_fractions",'d',n_substeps,substep) == FETCH_SUCCESS,"reading \"substep_fractions\" from the input file");
 
 	fclose(file);
 
@@ -67,8 +72,9 @@ int main(int argc, char *argv[])
 	print_time(" done in %lf seconds",generate_lists_of_unknowns(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
 
 	printf("\nallocating and initialising the unknowns ...");
-	double *x, *dx, *f, *f_explicit, *residual;
+	double *x, *xn, *dx, *f, *f_explicit, *residual;
 	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating unknown vector");
+	exit_if_false(allocate_double_vector(&xn,n_unknowns),"allocating old unknown vector");
 	exit_if_false(allocate_double_vector(&dx,n_unknowns),"allocating unknown change vector");
 	exit_if_false(allocate_double_vector(&f,n_unknowns),"allocating function vector");
 	exit_if_false(allocate_double_vector(&f_explicit,n_unknowns),"allocating explicit part of function vector");
@@ -97,48 +103,43 @@ int main(int argc, char *argv[])
 		}
 	}
 
-
 	{
-		int d, i, s, u, v;
+		int d, i, r, s, u, v;
 
 		for(s = 1; s <= n_steps; s ++)
 		{
 			printf("\n\ntimestep > %i\n    time > %15.9e s\nresidual >",s,time);
 			for(v = 0; v < n_variables; v ++) printf(" %-15s",variable_name[v]);
 
-			for(d = 0; d < n_divergences; d ++)
-				divergence[d].coefficient = - divergence[d].constant * timestep * (1.0 - divergence[d].implicit);
+			for(u = 0; u < n_unknowns; u ++) xn[u] = x[u];
 
-			calculate_divergence(f_explicit, jacobian, x, n_variables, n_ids, id_to_unknown, n_unknowns, unknown_to_id,
-					face, n_cells, cell, zone, n_divergences, divergence);
-
-			for(u = 0; u < n_unknowns; u ++) f_explicit[u] += mass[u]*x[u];
-
-			for(d = 0; d < n_divergences; d ++)
-				divergence[d].coefficient = - divergence[d].constant * timestep * divergence[d].implicit;
-
-			for(i = 1; i <= n_iterations_per_step; i ++)
+			for(r = 1; r <= n_substeps; r ++)
 			{
-				printf("\n%8i >",i);
+				for(d = 0; d < n_divergences; d ++) divergence[d].coefficient = - divergence[d].constant * timestep * substep[r-1];
 
-				calculate_divergence(f, jacobian, x, n_variables, n_ids, id_to_unknown, n_unknowns, unknown_to_id,
-						face, n_cells, cell, zone, n_divergences, divergence);
+				for(i = 1; i <= n_iterations_per_step; i ++)
+				{
+					printf("\n%8.8g >",r + i/pow(10,floor(log10(i))+1));
 
-				for(u = 0; u < n_unknowns; u ++) f[u] += f_explicit[u] - mass[u] * x[u];
+					calculate_divergence((i == 1 ? f_explicit : NULL), f, jacobian, x, n_variables, n_ids, id_to_unknown,
+							n_unknowns, unknown_to_id, face, n_cells, cell, zone, n_divergences, divergence);
 
-				csr_add_to_diagonal(jacobian,mass);
+					for(u = 0; u < n_unknowns; u ++) f[u] += f_explicit[u] - mass[u] * (x[u] - xn[u]);
 
-				exit_if_false(csr_solve_umfpack(jacobian,dx,f) == CSR_SUCCESS,"solving the system");
+					csr_add_to_diagonal(jacobian, mass);
 
-				calculate_residuals(n_variables, n_unknowns, unknown_to_id, dx, x, residual, n_zones, zone);
-				for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
+					exit_if_false(csr_solve_umfpack(jacobian,dx,f) == CSR_SUCCESS,"solving the system");
 
-				for(u = 0; u < n_unknowns; u ++) x[u] += dx[u];
+					calculate_residuals(n_variables, n_unknowns, unknown_to_id, dx, x, residual, n_zones, zone);
+
+					for(v = 0; v < n_variables; v ++) printf(" %15.9e",residual[v]);
+
+					for(u = 0; u < n_unknowns; u ++) x[u] += dx[u];
+				}
 			}
 
 			time += timestep;
 
-			//output
 			if(s % n_steps_per_output == 0 || s == n_steps)
 			{
 				printf("\n\nwriting data ...");
@@ -152,6 +153,7 @@ int main(int argc, char *argv[])
 	free_vector(data_filename);
 	free_matrix((void**)variable_name);
 	free_vector(accumulation);
+	free_vector(substep);
 	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
 	free_vector(x);
