@@ -22,7 +22,7 @@ LIBRARIES	+= -lm -lrt -lgfortran
 #------------------------------------------------------------------------------#
 
 MAINSOURCES	= preprocess.c solve.c postprocess.c
-COMMONSOURCES 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c
+COMMONSOURCES 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c expression.c
 
 SOURCES		= $(MAINSOURCES) $(COMMONSOURCES)
 
