@@ -1,7 +1,7 @@
 CC		= gcc
 CFLAGS		= -O2 -Wall
 
-HOME		= /media/data/Sources/AUPLAS
+HOME		= .
 THIRDPARTY	= $(HOME)/thirdparty
 
 #------------------------------------------------------------------------------#

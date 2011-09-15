@@ -338,6 +338,22 @@ int expression_simplify(EXPRESSION expression, double *substitute)
 			i ++;
 		}
 
+		/*//absorb negation into values
+		i = 0;
+		while(expression[i+1].type != END)
+		{
+			if(		expression[i].type == MINUS &&
+					(expression[i+1].type == VALUE || expression[i+1].type >= SUBSTITUTE_ZERO) &&
+					(IS_OPERATOR(expression[i-(i>0)].type) || IS_CONTROL(expression[i-(i>0)].type)))
+			{
+				expression[i].type = EMPTY;
+				expression[i+1].value = - expression[i+1].value;
+				expression_remove_empty(expression, &i);
+			}
+
+			i ++;
+		}*/
+
 		//perform operations
 		i = 1;
 		while(expression[i+1].type != END)
