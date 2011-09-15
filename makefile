@@ -1,7 +1,7 @@
 CC		= gcc
 CFLAGS		= -O2 -Wall
 
-HOME		= .
+HOME		= $(shell pwd)
 THIRDPARTY	= $(HOME)/thirdparty
 
 #------------------------------------------------------------------------------#
