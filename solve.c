@@ -135,12 +135,15 @@ int main(int argc, char *argv[])
 			if(s % n_steps_per_output == 0 || s == n_steps)
 			{
 				printf("\n\nwriting data ...");
-				print_time(" done in %lf seconds\n",write_data(data_filename, time, n_unknowns, x));
+				print_time(" done in %lf seconds",write_data(data_filename, time, n_unknowns, x));
 			}
 
 			printf("\n");
 		}
+
+		printf("\n");
 	}
+
 
 	free_vector(case_filename);
 	free_vector(data_filename);
