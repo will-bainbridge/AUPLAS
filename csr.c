@@ -263,6 +263,7 @@ int csr_solve_ilupack(CSR A, double *x, double *b)
 void csr_destroy(CSR A)
 {
 	free(A->row);
+	free(A->diagonal);
 	free(A->index);
 	free(A->value);
 	free(A);

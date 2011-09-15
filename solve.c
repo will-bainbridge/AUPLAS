@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
 	print_time(" done in %lf seconds",divergences_input(input_filename,&n_divergences,&divergence));
 
 	printf("\ngenerating lists of unknowns ...");
-	int n_ids, *id_to_unknown, n_unknowns, *unknown_to_id;
-	print_time(" done in %lf seconds",generate_lists_of_unknowns(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone));
+	int n_unknowns, *unknown_to_id;
+	print_time(" done in %lf seconds",generate_lists_of_unknowns(&n_unknowns, &unknown_to_id, n_variables, n_faces, face, n_cells, cell, n_zones, zone));
 
 	printf("\nallocating and initialising the unknowns ...");
 	double *x, *xn, *dx, *f, *f_explicit, *residual;
@@ -80,12 +80,12 @@ int main(int argc, char *argv[])
 	exit_if_false(allocate_double_vector(&f_explicit,n_unknowns),"allocating explicit part of function vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
 	double time = 0.0;
-	if(initial_filename == NULL) print_time(" done in %lf seconds",initialise_unknowns(n_ids, id_to_unknown, zone, x));
+	if(initial_filename == NULL) print_time(" done in %lf seconds",initialise_unknowns(n_unknowns, unknown_to_id, zone, x));
 	else                         print_time(" done in %lf seconds",read_data(initial_filename, &time, n_unknowns, x));
 
 	printf("\nassembling the divergence jacobians ...");
 	CSR jacobian = csr_new();
-	print_time(" done in %lf seconds",assemble_matrix(jacobian,n_variables,id_to_unknown,n_unknowns,unknown_to_id,face,cell,zone));
+	print_time(" done in %lf seconds",assemble_matrix(jacobian,n_variables,n_unknowns,unknown_to_id,face,cell,zone));
 
 	double *mass;
 	exit_if_false(allocate_double_vector(&mass,n_unknowns),"allocating mass vector");
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 				{
 					printf("\n%8.8g >",r + i/pow(10,floor(log10(i))+1));
 
-					calculate_divergence((i == 1 ? f_explicit : NULL), f, jacobian, x, n_variables, n_ids, id_to_unknown,
+					calculate_divergence((i == 1 ? f_explicit : NULL), f, jacobian, x, n_variables,
 							n_unknowns, unknown_to_id, face, n_cells, cell, zone, n_divergences, divergence);
 
 					for(u = 0; u < n_unknowns; u ++) f[u] += f_explicit[u] - mass[u] * (x[u] - xn[u]);
@@ -154,9 +154,9 @@ int main(int argc, char *argv[])
 	free_matrix((void**)variable_name);
 	free_vector(accumulation);
 	free_vector(substep);
-	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
 	free_vector(x);
+	free_vector(xn);
 	free_vector(dx);
 	free_vector(f);
 	free_vector(f_explicit);

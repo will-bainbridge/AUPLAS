@@ -37,45 +37,73 @@ int generate_control_volume_interpolant(struct CELL ***interpolant, int *n_inter
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void generate_lists_of_unknowns(int *n_ids, int **id_to_unknown, int *n_unknowns, int **unknown_to_id, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void generate_lists_of_unknowns(int *n_unknowns, int **unknown_to_id, int n_variables, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
-	int i, j;
-	
-	*n_ids = *n_unknowns = 0;
+	int e, i, j, k, s;
 
-	for(i = 0; i < n_faces; i ++) for(j = 0; j < face[i].n_zones; j ++) *n_ids = MAX(*n_ids,INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0])));
-	for(i = 0; i < n_cells; i ++) for(j = 0; j < cell[i].n_zones; j ++) *n_ids = MAX(*n_ids,INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0])));
-	(*n_ids) ++;
+	int nz;
+	struct ZONE **z;
 
-	exit_if_false(allocate_integer_vector(id_to_unknown,*n_ids),"allocating id to system indices");
+	int n_ids = INDEX_AND_ZONE_TO_ID(MAX(n_faces,n_cells),n_zones), *id_to_unknown;
+	exit_if_false(allocate_integer_vector(&id_to_unknown,n_ids),"allocating id to system indices");
 
-	for(i = 0; i < *n_ids; i ++) (*id_to_unknown)[i] = -1;
+	*n_unknowns = 0;
 
-	for(i = 0; i < n_faces; i ++) {
-		for(j = 0; j < face[i].n_zones; j ++) {
-			if(face[i].zone[j]->condition[0] == 'u') {
-				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(face[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
-			} 
+	//initialise with no unknowns
+	for(i = 0; i < n_ids; i ++) id_to_unknown[i] = -1;
+
+	//create an index for each id which corresponds to an unknown
+	for(e = 0; e < n_faces + n_cells; e ++)
+	{
+		i = e % n_faces;
+
+		if(e < n_faces)
+		{
+			nz = face[i].n_zones;
+			z = face[i].zone;
 		}
-	}
-	for(i = 0; i < n_cells; i ++) {
-		for(j = 0; j < cell[i].n_zones; j ++) {
-			if(cell[i].zone[j]->condition[0] == 'u') {
-				(*id_to_unknown)[INDEX_AND_ZONE_TO_ID(i,(int)(cell[i].zone[j]-&zone[0]))] = (*n_unknowns) ++;
+		else
+		{
+			nz = cell[i].n_zones;
+			z = cell[i].zone;
+		}
+
+		for(j = 0; j < nz; j ++)
+		{
+			if(z[j]->condition[0] == 'u')
+			{
+				id_to_unknown[INDEX_AND_ZONE_TO_ID(i,(int)(z[j]-&zone[0]))] = (*n_unknowns) ++;
 			}
 		}
 	}
 
+	//reverse the array created above
 	exit_if_false(allocate_integer_vector(unknown_to_id,*n_unknowns),"allocating system indices to ids");
+	for(i = 0; i < n_ids; i ++) if(id_to_unknown[i] >= 0) (*unknown_to_id)[id_to_unknown[i]] = i;
 
-	for(i = 0; i < *n_ids; i ++) if((*id_to_unknown)[i] >= 0) (*unknown_to_id)[(*id_to_unknown)[i]] = i;
+	//change ids in stencils to unknowns or -ve known zones
+	for(i = 0; i < n_cells; i ++)
+	{
+		for(j = 0; j < n_variables; j ++)
+		{
+			for(k = 0; k < cell[i].n_stencil[j]; k ++)
+			{
+				s = cell[i].stencil[j][k];
+				if(id_to_unknown[s] >= 0) cell[i].stencil[j][k] = id_to_unknown[s];
+				else                      cell[i].stencil[j][k] = - ID_TO_ZONE(s) - 1;
+			}
+		}
+	}
+
+	//clean up
+	free_vector(id_to_unknown);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void assemble_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, struct CELL *cell, struct ZONE *zone)
+void assemble_matrix(CSR matrix, int n_variables, int n_unknowns, int *unknown_to_id, struct FACE *face, struct CELL *cell, struct ZONE *zone)
 {
-	int i, j, k, l, p, u, v, z, id;
+	int i, j, k, l, p, s, u, z, id;
 
         int n_polygon, max_n_polygon = MAX(MAX_CELL_FACES,4);
 
@@ -102,9 +130,8 @@ void assemble_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unkn
 				{
 					for(l = 0; l < interpolant[p][j]->n_stencil[k]; l ++)
 					{
-						v = id_to_unknown[interpolant[p][j]->stencil[k][l]];
-
-						if(v >= 0) csr_insert_value(matrix, u, v, 0.0);
+						s = interpolant[p][j]->stencil[k][l];
+						if(s >= 0) csr_insert_value(matrix, u, s, 0.0);
 					}
 				}
 			}
@@ -117,7 +144,7 @@ void assemble_matrix(CSR matrix, int n_variables, int *id_to_unknown, int n_unkn
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, double *x, int n_variables, int n_ids, int *id_to_unknown, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
+void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, double *x, int n_variables, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
 	int c, d, e, i, j, p, q, s, t, u, v, z;
         int n_polygon, max_n_polygon = MAX(MAX_CELL_FACES,4);
@@ -188,7 +215,7 @@ void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, 
 						for(i = 0; i < interpolant[p][t]->n_stencil[v]; i ++)
 						{
 							s = interpolant[p][t]->stencil[v][i];
-							stencil_value[v][i] = (zone[ID_TO_ZONE(s)].condition[0] == 'u') ? x[id_to_unknown[s]] : zone[ID_TO_ZONE(s)].value;
+							stencil_value[v][i] = (s >= 0) ? x[s] : zone[-s-1].value;
 						}
 					}
 
@@ -221,8 +248,7 @@ void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, 
 						if(f_implicit != NULL) f_implicit[u] -= divergence[d].implicit * point_value;
 
 						//calculate the jacobian
-						if(jacobian == NULL) continue;
-						for(i = 0; i < divergence[d].n_variables; i ++)
+						for(i = 0; i < divergence[d].n_variables && jacobian != NULL; i ++)
 						{
 							v = divergence[d].variable[i];
 							n = interpolant[p][t]->n_stencil[v];
@@ -241,10 +267,7 @@ void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, 
 							{
 								s = interpolant[p][t]->stencil[v][j];
 
-								if(zone[ID_TO_ZONE(s)].condition[0] == 'u')
-								{
-									row[id_to_unknown[s]] += interp_coef[i][j] * point_value;
-								}
+								if(s >= 0) row[s] += interp_coef[i][j] * point_value;
 							}
 						}
 					}
@@ -269,15 +292,12 @@ void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void initialise_unknowns(int n_ids, int *id_to_unknown, struct ZONE *zone, double *x)
+void initialise_unknowns(int n_unknowns, int *unknown_to_id, struct ZONE *zone, double *x)
 {
-	int i;
-	for(i = 0; i < n_ids; i ++)
+	int u;
+	for(u = 0; u < n_unknowns; u ++)
 	{
-		if(id_to_unknown[i] >= 0)
-		{
-			x[id_to_unknown[i]] = zone[ID_TO_ZONE(i)].value;
-		}
+		x[u] = zone[ID_TO_ZONE(unknown_to_id[u])].value;
 	}
 }
 

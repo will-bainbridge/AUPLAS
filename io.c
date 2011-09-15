@@ -691,9 +691,9 @@ void read_data(char *filename, double *time, int n_data, double *data)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void write_gnuplot(char *basename, double time, int n_variables, char **variable_name, int *id_to_unknown, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void write_gnuplot(char *basename, double time, int n_variables, char **variable_name, int n_unknowns, int *unknown_to_id, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
-        int e, i, j, k, u, v;
+        int i, j, u, v, z;
 
         int n_polygon;
         double ***polygon;
@@ -713,42 +713,23 @@ void write_gnuplot(char *basename, double time, int n_variables, char **variable
 		exit_if_false(file[v] != NULL,"opening file");
 	}
 
-        int nz;
-        struct ZONE **z;
+	for(u = 0; u < n_unknowns; u ++)
+	{
+		i = ID_TO_INDEX(unknown_to_id[u]);
+		z = ID_TO_ZONE(unknown_to_id[u]);
 
-        for(e = 0; e < n_faces + n_cells; e ++)
-        {
-                i = e % n_faces;
+		n_polygon = generate_control_volume_polygon(polygon, i, zone[z].location, face, cell);
 
-                n_polygon = generate_control_volume_polygon(polygon, i, (e < n_faces ? 'f' : 'c'), face, cell);
+		v = zone[z].variable;
 
-                if(e < n_faces)
-                {
-                        nz = face[i].n_zones;
-                        z = face[i].zone;
-                }
-                else
-                {
-                        nz = cell[i].n_zones;
-                        z = cell[i].zone;
-                }
-
-		for(j = 0; j < nz; j ++)
+		for(j = 1; j < n_polygon; j ++)
 		{
-			u = id_to_unknown[INDEX_AND_ZONE_TO_ID(i,(int)(z[j] - &zone[0]))];
-			if(u >= 0)
-			{
-				v = z[j]->variable;
-				for(k = 1; k < n_polygon - 1; k ++)
-				{
-					fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
-					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n",polygon[k][0][0],polygon[k][0][1],x[u]);
-					fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
-					fprintf(file[v],"%+.10e %+.10e %+.10e\n\n\n",polygon[k][1][0],polygon[k][1][1],x[u]);
-				}
-			}
+			fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
+			fprintf(file[v],"%+.10e %+.10e %+.10e\n\n",polygon[j][0][0],polygon[j][0][1],x[u]);
+			fprintf(file[v],"%+.10e %+.10e %+.10e\n",polygon[0][0][0],polygon[0][0][1],x[u]);
+			fprintf(file[v],"%+.10e %+.10e %+.10e\n\n\n",polygon[j][1][0],polygon[j][1][1],x[u]);
 		}
-        }
+	}
 
         for(v = 0; v < n_variables; v ++) fclose(file[v]);
 
@@ -759,21 +740,20 @@ void write_gnuplot(char *basename, double time, int n_variables, char **variable
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void write_vtk(char *basename, double time, int n_variables, char **variable_name, int n_ids, int *id_to_unknown, double *x, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
+void write_vtk(char *basename, double time, int n_variables, char **variable_name, int n_unknowns, int *unknown_to_id, double *x, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone)
 {
 	char *filename;
 	exit_if_false(allocate_character_vector(&filename, MAX_STRING_LENGTH),"allocating filename");
 
 	FILE *file;
 
-	int *point_used, *point_index, *id_used;
+	int *point_used, *point_index;
 	exit_if_false(allocate_integer_vector(&point_used,n_nodes + n_cells),"allocating point usage array");
 	exit_if_false(allocate_integer_vector(&point_index,n_nodes + n_cells),"allocating point index array");
-	exit_if_false(allocate_integer_vector(&id_used,n_ids),"allocating id usage array");
 
 	int n_points, n_elements;
 
-	int i, j, k, v, z, index, offset;
+	int i, j, u, v, z, offset;
 
 	for(v = 0; v < n_variables; v ++)
 	{
@@ -785,60 +765,45 @@ void write_vtk(char *basename, double time, int n_variables, char **variable_nam
 		fprintf(file,"<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n<UnstructuredGrid>\n");
 
 		for(i = 0; i < n_nodes + n_cells; i ++) point_used[i] = 0;
-		for(i = 0; i < n_ids; i ++) id_used[i] = 0;
 
-		for(z = 0; z < n_zones; z ++)
+		n_elements = 0;
+
+		for(u = 0; u < n_unknowns; u ++)
 		{
-			if(zone[z].variable != v || zone[z].condition[0] != 'u') continue;
+			i = ID_TO_INDEX(unknown_to_id[u]);
+			z = ID_TO_ZONE(unknown_to_id[u]);
 
-			if(zone[z].location == 'f')
+			if(zone[z].variable == v)
 			{
-				for(i = 0; i < n_faces; i ++)
+				n_elements ++;
+
+				if(zone[z].location == 'f')
 				{
-					for(j = 0; j < face[i].n_zones; j ++)
+					point_used[(int)(face[i].node[0] - &node[0])] = 1;
+					point_used[(int)(face[i].node[face[i].n_nodes - 1] - &node[0])] = 1;
+					for(j = 0; j < face[i].n_borders; j ++) point_used[n_nodes + (int)(face[i].border[j] - &cell[0])] = 1;
+				}
+				else if(zone[z].location == 'c')
+				{
+					for(j = 0; j < cell[i].n_faces; j ++)
 					{
-						if(z == (int)(face[i].zone[j] - &zone[0]))
-						{
-							id_used[INDEX_AND_ZONE_TO_ID(i,z)] = 1;
-							point_used[(int)(face[i].node[0] - &node[0])] = 1;
-							point_used[(int)(face[i].node[face[i].n_nodes - 1] - &node[0])] = 1;
-							for(k = 0; k < face[i].n_borders; k ++) point_used[n_nodes + (int)(face[i].border[k] - &cell[0])] = 1;
-						}
+						point_used[(int)(cell[i].face[j]->node[0] - &node[0])] = 1;
+						point_used[(int)(face[i].node[cell[i].face[j]->n_nodes - 1] - &node[0])] = 1;
 					}
 				}
+				else exit_if_false(0,"recognising the location");
 			}
-			else if(zone[z].location == 'c')
-			{
-				for(i = 0; i < n_cells; i ++)
-				{
-					for(j = 0; j < cell[i].n_zones; j ++)
-					{
-						if(z == (int)(cell[i].zone[j] - &zone[0]))
-						{
-							id_used[INDEX_AND_ZONE_TO_ID(i,z)] = 1;
-							for(k = 0; k < cell[i].n_faces; k ++)
-							{
-								point_used[(int)(cell[i].face[k]->node[0] - &node[0])] = 1;
-								point_used[(int)(face[i].node[cell[i].face[k]->n_nodes - 1] - &node[0])] = 1;
-							}
-						}
-					}
-				}
-			}
-			else exit_if_false(0,"recognising the location");
 		}
 
 		n_points = 0;
 		for(i = 0; i < n_nodes + n_cells; i ++) if(point_used[i]) point_index[n_points ++] = i;
-		n_elements = 0;
-		for(i = 0; i < n_ids; i ++) if(id_used[i]) n_elements ++;
 
 		fprintf(file,"<Piece NumberOfPoints=\"%i\" NumberOfCells=\"%i\">\n", n_points, n_elements);
 
 		fprintf(file,"<CellData>\n");
 
 		fprintf(file,"<DataArray Name=\"%s\" type=\"Float64\" format=\"ascii\">\n",variable_name[v]);
-		for(i = 0; i < n_ids; i ++) if(id_used[i]) fprintf(file," %+.10e",x[id_to_unknown[i]]);
+		for(u = 0; u < n_unknowns; u ++) if(zone[ID_TO_ZONE(unknown_to_id[u])].variable == v) fprintf(file," %+.10e",x[u]);
 		fprintf(file,"\n</DataArray>\n");
 
 		fprintf(file,"</CellData>\n");
@@ -855,25 +820,25 @@ void write_vtk(char *basename, double time, int n_variables, char **variable_nam
 		fprintf(file,"<Cells>\n");
 
 		fprintf(file,"<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n");
-		for(i = 0; i < n_ids; i ++)
+		for(u = 0; u < n_unknowns; u ++)
 		{
-			if(id_used[i])
-			{
-				index = ID_TO_INDEX(i);
-				z = ID_TO_ZONE(i);
+			i = ID_TO_INDEX(unknown_to_id[u]);
+			z = ID_TO_ZONE(unknown_to_id[u]);
 
+			if(zone[z].variable == v)
+			{
 				if(zone[z].location == 'f')
 				{
-					fprintf(file," %i",point_index[(int)((face[index].oriented[0] ? face[index].node[1] : face[index].node[0]) - &node[0])]);
-					fprintf(file," %i",point_index[n_nodes + (int)(face[index].border[0] - &cell[0])]);
-					fprintf(file," %i",point_index[(int)((face[index].oriented[0] ? face[index].node[0] : face[index].node[1]) - &node[0])]);
-					if(face[index].n_borders == 2) fprintf(file," %i",point_index[n_nodes + (int)(face[index].border[1] - &cell[0])]);
+					fprintf(file," %i",point_index[(int)((face[i].oriented[0] ? face[i].node[1] : face[i].node[0]) - &node[0])]);
+					fprintf(file," %i",point_index[n_nodes + (int)(face[i].border[0] - &cell[0])]);
+					fprintf(file," %i",point_index[(int)((face[i].oriented[0] ? face[i].node[0] : face[i].node[1]) - &node[0])]);
+					if(face[i].n_borders == 2) fprintf(file," %i",point_index[n_nodes + (int)(face[i].border[1] - &cell[0])]);
 				}
 				else if(zone[z].location == 'c')
 				{
-					for(j = 0; j < cell[index].n_faces; j ++)
+					for(j = 0; j < cell[i].n_faces; j ++)
 					{
-						fprintf(file," %i",point_index[(int)(cell[index].face[j]->node[!cell[index].oriented[j]] - &node[0])]);
+						fprintf(file," %i",point_index[(int)(cell[i].face[j]->node[!cell[i].oriented[j]] - &node[0])]);
 					}
 				}
 				else exit_if_false(0,"recognising the location");
@@ -883,20 +848,20 @@ void write_vtk(char *basename, double time, int n_variables, char **variable_nam
 
 		fprintf(file,"<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n");
 		offset = 0;
-		for(i = 0; i < n_ids; i ++)
+		for(u = 0; u < n_unknowns; u ++)
 		{
-			if(id_used[i])
-			{
-				index = ID_TO_INDEX(i);
-				z = ID_TO_ZONE(i);
+			i = ID_TO_INDEX(unknown_to_id[u]);
+			z = ID_TO_ZONE(unknown_to_id[u]);
 
+			if(zone[z].variable == v)
+			{
 				if(zone[z].location == 'f')
 				{
-					offset += 2 + face[index].n_borders;
+					offset += 2 + face[i].n_borders;
 				}
 				else if(zone[z].location == 'c')
 				{
-					offset += cell[index].n_faces;
+					offset += cell[i].n_faces;
 				}
 				else exit_if_false(0,"recognising the location");
 
@@ -919,7 +884,6 @@ void write_vtk(char *basename, double time, int n_variables, char **variable_nam
 	free_vector(filename);
 	free_vector(point_used);
 	free_vector(point_index);
-	free_vector(id_used);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

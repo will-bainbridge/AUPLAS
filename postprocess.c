@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
 	warn_if_false(fetch_vector(file,"variable_names",'s',n_variables,variable_name) == FETCH_SUCCESS,"reading \"variable_names\" from the input file");
 	fclose(file);
 
-	int n_ids, *id_to_unknown, n_unknowns, *unknown_to_id;
-	generate_lists_of_unknowns(&n_ids, &id_to_unknown, &n_unknowns, &unknown_to_id, n_faces, face, n_cells, cell, n_zones, zone);
+	int n_unknowns, *unknown_to_id;
+	generate_lists_of_unknowns(&n_unknowns, &unknown_to_id, n_variables, n_faces, face, n_cells, cell, n_zones, zone);
 
 	double *x;
 	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating unknown vector");
@@ -59,19 +59,18 @@ int main(int argc, char *argv[])
 
 		if(output_type == GNUPLOT)
 		{
-			write_gnuplot(output_filename, time, n_variables, variable_name, id_to_unknown, x, n_faces, face, n_cells, cell, n_zones, zone);
+			write_gnuplot(output_filename, time, n_variables, variable_name, n_unknowns, unknown_to_id, x, n_faces, face, n_cells, cell, n_zones, zone);
 		}
 
 		if(output_type == VTK)
 		{
-			write_vtk(output_filename, time, n_variables, variable_name, n_ids, id_to_unknown, x, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
+			write_vtk(output_filename, time, n_variables, variable_name, n_unknowns, unknown_to_id, x, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 		}
 	}
 	
 	free_vector(case_filename);
 	free_vector(output_filename);
 	free_matrix((void**)variable_name);
-	free_vector(id_to_unknown);
 	free_vector(unknown_to_id);
 	free_vector(x);
 	nodes_destroy(n_nodes,node);
