@@ -137,6 +137,8 @@ int main(int argc, char *argv[])
 				printf("\n\nwriting data ...");
 				print_time(" done in %lf seconds\n",write_data(data_filename, time, n_unknowns, x));
 			}
+
+			printf("\n");
 		}
 	}
 
@@ -159,8 +161,6 @@ int main(int argc, char *argv[])
 	zones_destroy(zone);
 	divergences_destroy(n_divergences, divergence);
 	csr_destroy(jacobian);
-
-	printf("\n");
 
 	return 0;
 }

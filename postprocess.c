@@ -67,6 +67,8 @@ int main(int argc, char *argv[])
 			write_vtk(output_filename, time, n_variables, variable_name, n_unknowns, unknown_to_id, x, n_nodes, node, n_faces, face, n_cells, cell, n_zones, zone);
 		}
 	}
+
+	printf("\n\n");
 	
 	free_vector(case_filename);
 	free_vector(output_filename);
@@ -77,8 +79,6 @@ int main(int argc, char *argv[])
 	faces_destroy(n_faces,face);
 	cells_destroy(n_variables,n_cells,cell);
 	zones_destroy(zone);
-
-	printf("\n\n");
 
 	return 0;
 }
