@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
 	exit_if_false(argc != 2 || argc != 3,"wrong number of input arguments");
 	char *input_filename = argv[1], *initial_filename = (argc == 3) ? argv[2] : NULL;
 
-	printf("\nreading case and data filenames from the input file");
 	FILE *file = fopen(input_filename,"r");
 	exit_if_false(file != NULL,"opening the input file");
 	char *case_filename;
@@ -23,17 +22,14 @@ int main(int argc, char *argv[])
 	exit_if_false(fetch_value(file,"data_filename",'s',data_filename)==FETCH_SUCCESS,"reading \"data_filename\" from the input file");
 	fclose(file);
 
-	printf("\nreading the mesh and zones from the case file ...");
 	int n_variables, n_nodes, n_faces, n_cells, n_zones;
 	struct NODE *node;
 	struct FACE *face;
 	struct CELL *cell;
 	struct ZONE *zone;
-	print_time(" done in %lf seconds",read_case(case_filename, &n_variables, &n_nodes, &node, &n_faces, &face, &n_cells, &cell, &n_zones, &zone));
+	read_case(case_filename, &n_variables, &n_nodes, &node, &n_faces, &face, &n_cells, &cell, &n_zones, &zone);
 
 	//--------------------------------------------------------------------//
-
-	printf("\nreading control from the input file");
 
 	file = fopen(input_filename,"r");
 	exit_if_false(file != NULL,"opening the input file");
@@ -62,16 +58,13 @@ int main(int argc, char *argv[])
 
 	//--------------------------------------------------------------------//
 
-	printf("\nreading divergences from the input file ...");
 	int n_divergences;
 	struct DIVERGENCE *divergence;
-	print_time(" done in %lf seconds",divergences_input(input_filename,&n_divergences,&divergence));
+	divergences_input(input_filename,&n_divergences,&divergence);
 
-	printf("\ngenerating lists of unknowns ...");
 	int n_unknowns, *unknown_to_id;
-	print_time(" done in %lf seconds",generate_lists_of_unknowns(&n_unknowns, &unknown_to_id, n_variables, n_faces, face, n_cells, cell, n_zones, zone));
+	generate_lists_of_unknowns(&n_unknowns, &unknown_to_id, n_variables, n_faces, face, n_cells, cell, n_zones, zone);
 
-	printf("\nallocating and initialising the unknowns ...");
 	double *x, *xn, *dx, *f, *f_explicit, *residual;
 	exit_if_false(allocate_double_vector(&x,n_unknowns),"allocating unknown vector");
 	exit_if_false(allocate_double_vector(&xn,n_unknowns),"allocating old unknown vector");
@@ -80,12 +73,11 @@ int main(int argc, char *argv[])
 	exit_if_false(allocate_double_vector(&f_explicit,n_unknowns),"allocating explicit part of function vector");
 	exit_if_false(allocate_double_vector(&residual,n_variables),"allocating residuals");
 	double time = 0.0;
-	if(initial_filename == NULL) print_time(" done in %lf seconds",initialise_unknowns(n_unknowns, unknown_to_id, zone, x));
-	else                         print_time(" done in %lf seconds",read_data(initial_filename, &time, n_unknowns, x));
+	if(initial_filename == NULL) initialise_unknowns(n_unknowns, unknown_to_id, zone, x);
+	else                         read_data(initial_filename, &time, n_unknowns, x);
 
-	printf("\nassembling the divergence jacobians ...");
 	CSR jacobian = csr_new();
-	print_time(" done in %lf seconds",assemble_matrix(jacobian,n_variables,n_unknowns,unknown_to_id,face,cell,zone));
+	assemble_matrix(jacobian,n_variables,n_unknowns,unknown_to_id,face,cell,zone);
 
 	double *mass;
 	exit_if_false(allocate_double_vector(&mass,n_unknowns),"allocating mass vector");
@@ -108,7 +100,7 @@ int main(int argc, char *argv[])
 
 		for(s = 1; s <= n_steps; s ++)
 		{
-			printf("\n\ntimestep > %i\n    time > %15.9e s\nresidual >",s,time);
+			printf("\ntimestep > %i\n    time > %15.9e s\nresidual >",s,time);
 			for(v = 0; v < n_variables; v ++) printf(" %-15s",variable_name[v]);
 
 			for(u = 0; u < n_unknowns; u ++) xn[u] = x[u];
@@ -143,12 +135,11 @@ int main(int argc, char *argv[])
 			if(s % n_steps_per_output == 0 || s == n_steps)
 			{
 				printf("\n\nwriting data ...");
-				print_time(" done in %lf seconds",write_data(data_filename, time, n_unknowns, x));
+				print_time(" done in %lf seconds\n",write_data(data_filename, time, n_unknowns, x));
 			}
 		}
 	}
 
-	printf("\ncleaning up");
 	free_vector(case_filename);
 	free_vector(data_filename);
 	free_matrix((void**)variable_name);
@@ -169,7 +160,7 @@ int main(int argc, char *argv[])
 	divergences_destroy(n_divergences, divergence);
 	csr_destroy(jacobian);
 
-	print_end();
+	printf("\n");
 
 	return 0;
 }

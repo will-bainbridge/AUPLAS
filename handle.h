@@ -32,6 +32,4 @@
 		fflush(stdout); \
 	} while(0)
 
-#define print_end() printf("\n\n")
-
 #endif

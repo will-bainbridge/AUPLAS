@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	cells_destroy(n_variables,n_cells,cell);
 	zones_destroy(zone);
 
-	print_end();
+	printf("\n\n");
 
 	return 0;
 }
