@@ -44,7 +44,7 @@ Create a third party directory and download and unpack the required software int
 	wget ...
 	tar -xf ...
 
-Currently the program requires UMFPACK and ILUPACK to be installed here. BLAS and LAPACK are also necessary, depending on your system. See the makefile for the expected paths and versions.
+Currently the program requires UMFPACK and ILUPACK to be installed here. BLAS and LAPACK are also necessary. See the makefile for the expected paths and versions.
 
 Move back into the base directory and build the sources
 
