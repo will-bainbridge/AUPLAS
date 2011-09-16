@@ -53,6 +53,9 @@ int main(int argc, char *argv[])
 	double *substep;
 	exit_if_false(allocate_double_vector(&substep,n_substeps),"allocating the substep fractions");
 	exit_if_false(fetch_vector(file,"substep_fractions",'d',n_substeps,substep) == FETCH_SUCCESS,"reading \"substep_fractions\" from the input file");
+	char *constant;
+	exit_if_false(allocate_character_vector(&constant,MAX_STRING_LENGTH),"allocating the constants");
+	exit_if_false(fetch_value(file,"constants",'s',constant),"reading \"constants\" from the input file");
 
 	fclose(file);
 
@@ -60,7 +63,7 @@ int main(int argc, char *argv[])
 
 	int n_divergences;
 	struct DIVERGENCE *divergence;
-	divergences_input(input_filename,&n_divergences,&divergence);
+	divergences_input(input_filename, constant, &n_divergences, &divergence);
 
 	int n_unknowns, *unknown_to_id;
 	generate_lists_of_unknowns(&n_unknowns, &unknown_to_id, n_variables, n_faces, face, n_cells, cell, n_zones, zone);
@@ -96,7 +99,7 @@ int main(int argc, char *argv[])
 	}
 
 	{
-		int d, i, r, s, u, v;
+		int i, r, s, u, v;
 
 		for(s = 1; s <= n_steps; s ++)
 		{
@@ -107,13 +110,11 @@ int main(int argc, char *argv[])
 
 			for(r = 1; r <= n_substeps; r ++)
 			{
-				for(d = 0; d < n_divergences; d ++) divergence[d].coefficient = - divergence[d].constant * timestep * substep[r-1];
-
 				for(i = 1; i <= n_iterations_per_step; i ++)
 				{
 					printf("\n%8.8g >",r + i/pow(10,floor(log10(i))+1));
 
-					calculate_divergence((i == 1 ? f_explicit : NULL), f, jacobian, x, n_variables,
+					calculate_divergence((i == 1 ? f_explicit : NULL), f, jacobian, x, - timestep * substep[r-1], n_variables,
 							n_unknowns, unknown_to_id, face, n_cells, cell, zone, n_divergences, divergence);
 
 					for(u = 0; u < n_unknowns; u ++) f[u] += f_explicit[u] - mass[u] * (x[u] - xn[u]);
@@ -150,6 +151,7 @@ int main(int argc, char *argv[])
 	free_matrix((void**)variable_name);
 	free_vector(accumulation);
 	free_vector(substep);
+	free_vector(constant);
 	free_vector(unknown_to_id);
 	free_vector(x);
 	free_vector(xn);

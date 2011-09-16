@@ -26,6 +26,15 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+
+#include "csr.h"
+#include "expression.h"
+#include "handle.h"
+
 struct NODE
 {
 	double x[2];
@@ -84,20 +93,10 @@ struct DIVERGENCE
 	int *differential;
 	int *power;
 	int direction;
-	double constant;
 	double implicit;
-	double coefficient;
+	EXPRESSION constant;
 };
 
-////////////////////////////////////////////////////////////////////////////////
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-
-#include "csr.h"
-#include "handle.h"
 #include "memory.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +106,7 @@ void read_geometry(char *filename, int *n_nodes, struct NODE **node, int *n_face
 void write_case(char *filename, int n_variables, int n_nodes, struct NODE *node, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void read_case(char *filename, int *n_variables, int *n_nodes, struct NODE **node, int *n_faces, struct FACE **face, int *n_cells, struct CELL **cell, int *n_zones, struct ZONE **zone);
 void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int *n_zones, struct ZONE **zone);
-void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **divergence);
+void divergences_input(char *filename, char *constant, int *n_divergences, struct DIVERGENCE **divergence);
 void write_data(char *basename, double time, int n_data, double *data);
 void read_data(char *filename, double *time, int n_data, double *data);
 void write_gnuplot(char *basename, double time, int n_variables, char **variable_name, int n_unknowns, int *unknown_to_id, double *x, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
@@ -133,7 +132,7 @@ void evaluate_polynomial(double *polynomial, int order, int differential, double
 //system.c
 void generate_lists_of_unknowns(int *n_unknowns, int **unknown_to_id, int n_variables, int n_faces, struct FACE *face, int n_cells, struct CELL *cell, int n_zones, struct ZONE *zone);
 void assemble_matrix(CSR matrix, int n_variables, int n_unknowns, int *unknown_to_id, struct FACE *face, struct CELL *cell, struct ZONE *zone);
-void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, double *x, int n_variables, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
+void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, double *x, double coefficient, int n_variables, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence);
 void initialise_unknowns(int n_unknowns, int *unknown_to_id, struct ZONE *zone, double *x);
 void calculate_residuals(int n_variables, int n_unknowns, int *unknown_to_id, double *dx, double *x, double *residual, int n_zones, struct ZONE *zone);
 

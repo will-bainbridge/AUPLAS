@@ -10,7 +10,7 @@
 #define ZONE_FORMAT "csisd"
 
 #define DIVERGENCE_LABEL "divergence"
-#define DIVERGENCE_FORMAT "icsssdd"
+#define DIVERGENCE_FORMAT "icsssds"
 #define MAX_DIVERGENCES 100
 #define MAX_DIVERGENCE_VARIABLES 5
 
@@ -485,7 +485,7 @@ void zones_input(char *filename, int n_faces, struct FACE *face, int n_cells, st
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **divergence)
+void divergences_input(char *filename, char *constant, int *n_divergences, struct DIVERGENCE **divergence)
 {
 	//open the file
 	FILE *file = fopen(filename,"r");
@@ -594,11 +594,18 @@ void divergences_input(char *filename, int *n_divergences, struct DIVERGENCE **d
 			d[n].power[j] = pows[j];
 		}
 
-		//constant
-		fetch_get(fetch, i, 5, &d[n].constant);
-
 		//implicit fraction
-		fetch_get(fetch, i, 6, &d[n].implicit);
+		fetch_get(fetch, i, 5, &d[n].implicit);
+
+		//constant expression
+		strcpy(temp, constant);
+		j = strlen(temp);
+		fetch_get(fetch, i, 6, &temp[j]);
+		d[n].constant = expression_generate(temp);
+		warn_if_false(d[n].constant != NULL,"skipping divergence for which the expression generation failed");
+		if(d[n].constant == NULL) continue;
+
+		//printf("divergence %i expression -> ",n); expression_print(d[n].constant); printf("\n");
 
 		//increment the number of divergences
 		n ++;

@@ -1,0 +1,52 @@
+#-------------------------------------------------------------------------#
+
+number_of_variables 1
+
+variable_names temperature
+
+connectivity ff
+maximum_order 3
+weight_exponent 2.0
+
+geometry_filename cavity.geometry
+case_filename cavity.case
+data_filename cavity.?.data
+output_filename cavity.?.?.gnuplot
+
+timestep 0.01
+number_of_steps 1
+number_of_steps_per_output 1
+number_of_iterations_per_step 1
+
+number_of_substeps 1
+substep_fractions 1.0
+
+#-------------------------------------------------------------------------#
+
+# total 712 faces and 456 volumes
+# north boundary faces 604 -> 617
+#  east boundary faces 618 -> 631
+# south boundary faces 632 -> 645
+#  west boundary faces 646 -> 659
+
+# zones / unknowns and boundary conditions
+# label id location indices variable condition value
+
+zone c 0:455 0 u 0.0
+zone f 604:617 0 d 1.0
+zone f 618:631,632:645,646:659 0 d 0.0
+
+#-------------------------------------------------------------------------#
+
+accumulation 0.0
+
+# equation direction variable differential power implicit expression
+
+constants A=1.0;D=0.01;
+
+divergence 0 x 0 x 1 1.0 D
+divergence 0 y 0 y 1 1.0 D
+divergence 0 x 0 0 1 1.0 A*4*$0*($0-1)*(2*$1-1)
+divergence 0 y 0 0 1 1.0 A*4*$1*(1-$1)*(2*$0-1)
+
+#-------------------------------------------------------------------------#

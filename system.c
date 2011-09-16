@@ -144,7 +144,7 @@ void assemble_matrix(CSR matrix, int n_variables, int n_unknowns, int *unknown_t
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, double *x, int n_variables, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
+void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, double *x, double coefficient, int n_variables, int n_unknowns, int *unknown_to_id, struct FACE *face, int n_cells, struct CELL *cell, struct ZONE *zone, int n_divergences, struct DIVERGENCE *divergence)
 {
 	int c, d, e, i, j, p, q, s, t, u, v, z;
         int n_polygon, max_n_polygon = MAX(MAX_CELL_FACES,4);
@@ -170,7 +170,7 @@ void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, 
 	}
 	for(d = 0; d < n_divergences; d ++) max_divergence_variables = MAX(max_divergence_variables,divergence[d].n_variables);
 
-	double *polynomial, **interp_coef, *interp_value, **stencil_value, point_value, point[2], location[2], normal[2];
+	double *polynomial, **interp_coef, *interp_value, **stencil_value, point_value, constant, point[2], location[2], normal[2];
 	exit_if_false(allocate_double_vector(&polynomial,ORDER_TO_POWERS(max_order)),"allocating polynomial");
 	exit_if_false(allocate_double_matrix(&interp_coef,max_divergence_variables,max_stencil),"allocating interpolation coefficients");
 	exit_if_false(allocate_double_vector(&interp_value,max_divergence_variables),"allocating interpolation values");
@@ -223,6 +223,9 @@ void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, 
 					{
 						if(divergence[d].equation != zone[z].variable) continue;
 
+						//evaluate the divergence constant
+						exit_if_false(expression_evaluate(&constant, divergence[d].constant, point),"evaluating a divergence constant");
+
 						//calculate coefficients for interpolation to the point
 						for(i = 0; i < divergence[d].n_variables; i ++)
 						{
@@ -242,7 +245,7 @@ void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, 
 						}
 
 						//calculate the flux and add to the function
-						point_value = divergence[d].coefficient * normal[divergence[d].direction] * gauss_w[max_order-1][q] / n_interpolant[p];
+						point_value = constant * coefficient * normal[divergence[d].direction] * gauss_w[max_order-1][q] / n_interpolant[p];
 						for(i = 0; i < divergence[d].n_variables; i ++) point_value *= integer_power(interp_value[i],divergence[d].power[i]);
 						if(f_explicit != NULL) f_explicit[u] -= (1.0 - divergence[d].implicit) * point_value;
 						if(f_implicit != NULL) f_implicit[u] -= divergence[d].implicit * point_value;
@@ -253,7 +256,7 @@ void calculate_divergence(double *f_explicit, double *f_implicit, CSR jacobian, 
 							v = divergence[d].variable[i];
 							n = interpolant[p][t]->n_stencil[v];
 
-							point_value = divergence[d].implicit * divergence[d].coefficient *
+							point_value = constant * divergence[d].implicit * coefficient *
 								normal[divergence[d].direction] * gauss_w[max_order-1][q] / n_interpolant[p];
 
 							for(j = 0; j < divergence[d].n_variables; j ++)

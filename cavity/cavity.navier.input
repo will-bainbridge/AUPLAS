@@ -67,23 +67,25 @@ zone        f 646:659        2         d   0.0
 
 accumulation 0.0 0.0 0.0
 
-# equation direction variable differential power constant implicit
+# equation direction variable differential power implicit expression
 
-divergence 0 x   1   0   1 +1.00 1.0
-divergence 0 y   2   0   1 +1.00 1.0
+constants rho=1.0;mu=0.01;
 
-divergence 1 x   0   0   1 -1.00 1.0
-divergence 1 x 1,1 0,0 1,1 -1.00 1.0
-divergence 1 y 1,2 0,0 1,1 -1.00 1.0
-divergence 1 x   1   x   1 +0.02 1.0
-divergence 1 y   1   y   1 +0.01 1.0
-divergence 1 y   2   x   1 +0.01 1.0
+divergence 0 x   1   0   1 1.0 rho
+divergence 0 y   2   0   1 1.0 rho
 
-divergence 2 y   0   0   1 -1.00 1.0
-divergence 2 x 2,1 0,0 1,1 -1.00 1.0
-divergence 2 y 2,2 0,0 1,1 -1.00 1.0
-divergence 2 x   1   y   1 +0.01 1.0
-divergence 2 x   2   x   1 +0.01 1.0
-divergence 2 y   2   y   1 +0.02 1.0
+divergence 1 x   0   0   1 1.0 0-1
+divergence 1 x   1 0,0   2 1.0 0-rho
+divergence 1 y 1,2 0,0 1,1 1.0 0-rho
+divergence 1 x   1   x   1 1.0 2*mu/rho
+divergence 1 y   1   y   1 1.0 mu/rho
+divergence 1 y   2   x   1 1.0 mu/rho
+
+divergence 2 y   0   0   1 1.0 0-1
+divergence 2 x 2,1 0,0 1,1 1.0 0-rho
+divergence 2 y   2 0,0   2 1.0 0-rho
+divergence 2 x   1   y   1 1.0 mu/rho
+divergence 2 x   2   x   1 1.0 mu/rho
+divergence 2 y   2   y   1 1.0 2*mu/rho
 
 #-------------------------------------------------------------------------#
