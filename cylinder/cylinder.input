@@ -56,7 +56,7 @@ zone f 9396:9445,9471:9520,9521:9545 2 d 0.0
 
 accumulation 0.0 1.0 1.0
 
-# equation direction variable differential power implcicit expression
+# equation direction variable differential power implicit expression
 
 constants rho=1.0;mu=0.01;
 
