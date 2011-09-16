@@ -49,6 +49,7 @@ Currently the program requires UMFPACK and ILUPACK to be installed here. BLAS an
 Move back into the base directory and build the sources
 
 	cd ..
+	make depend
 	make
 
 USAGE

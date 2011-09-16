@@ -51,4 +51,4 @@ depend: $(ALLSOURCE)
 	$(COMPILER) -MM $(INCLUDE) $^ | sed 's|^\(.*\.o\)|$(BUILDPATH)/\1|g'  > $(BUILDPATH)/$@
 
 clean:
-	rm -f $(BUILDPATH)/*o $(BUILDPATH)/depend
+	rm -f $(BUILDPATH)/*o
