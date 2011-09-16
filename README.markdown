@@ -13,7 +13,7 @@ AUPLAS is provided under the terms of the Eclipse Public License v1.0. See LICEN
 DESCRIPTION
 -----------
 
-* AUPLAS will be a PDE solver, written in C, following on from IMMASHIN <https://github.com/maninthemail/IMMASHIN>. It is not yet functional.
+* AUPLAS is a 2D unstructured finite volume PDE solver, written in C.
 * The equations to be solved are specified at runtime in an "accumulation equals divergences" format.
 * The control volumes used for each variable/zone in the system are arbitrarily centred (staggered) on either volumes or faces in the mesh.
 * Gradients are calculated using a Least-Squares approach. The stencils used and the orders of the interpolating polynomials are arbitrary and determined at runtime.
