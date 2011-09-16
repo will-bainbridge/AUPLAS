@@ -1,51 +1,54 @@
-CC		= gcc
-CFLAGS		= -O2 -Wall
+COMPILER	= gcc
+FLAG		= -O2 -Wall
 
-HOME		= $(shell pwd)
-THIRDPARTY	= $(HOME)/thirdparty
+HOMEPATH	= $(shell pwd)
+BUILDPATH	= $(HOMEPATH)/src
+THIRDPATH	= $(HOMEPATH)/thirdparty
 
 #------------------------------------------------------------------------------#
 
-INCLUDES	+= -I$(THIRDPARTY)/UMFPACK/Include -I$(THIRDPARTY)/AMD/Include -I$(THIRDPARTY)/UFconfig
-LIBRARIES	+= -L$(THIRDPARTY)/UMFPACK/Lib -L$(THIRDPARTY)/AMD/Lib -lumfpack -lamd
+INCLUDE		+= -I$(THIRDPATH)/UMFPACK/Include -I$(THIRDPATH)/AMD/Include -I$(THIRDPATH)/UFconfig
+LIBRARY		+= -L$(THIRDPATH)/UMFPACK/Lib -L$(THIRDPATH)/AMD/Lib -lumfpack -lamd
 
-INCLUDES	+= -I$(THIRDPARTY)/ilupackV2.4_GNU64_MUMPS/include -I$(THIRDPARTY)/AMD/Include
-LIBRARIES	+= -Wl,--start-group -L$(THIRDPARTY)/ilupackV2.4_GNU64_MUMPS/lib/GNU64 -L$(THIRDPARTY)/AMD/Lib \
+INCLUDE		+= -I$(THIRDPATH)/ilupackV2.4_GNU64_MUMPS/include -I$(THIRDPATH)/AMD/Include
+LIBRARY		+= -Wl,--start-group -L$(THIRDPATH)/ilupackV2.4_GNU64_MUMPS/lib/GNU64 -L$(THIRDPATH)/AMD/Lib \
 		   -lilupack -lmumps -lamd -lmetis -lsparspak -lblaslike -Wl,--end-group
 
-#LIBRARIES	+= -llapack -lblas
-#LIBRARIES	+= -Wl,--start-group -lpthread -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -Wl,-R/opt/intel/mkl/lib/intel64
-LIBRARIES	+= -L$(THIRDPARTY)/GotoBLAS2 -Wl,-R$(THIRDPARTY)/GotoBLAS2 -lgoto2
+#LIBRARY	+= -llapack -lblas
+#LIBRARY	+= -Wl,--start-group -lpthread -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -Wl,-R/opt/intel/mkl/lib/intel64
+LIBRARY		+= -L$(THIRDPATH)/GotoBLAS2 -Wl,-R$(THIRDPATH)/GotoBLAS2 -lgoto2
 
-LIBRARIES	+= -lm -lrt -lgfortran
+LIBRARY		+= -lm -lrt -lgfortran
 
 #------------------------------------------------------------------------------#
 
-MAINSOURCES	= preprocess.c solve.c postprocess.c
-COMMONSOURCES 	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c expression.c
+MAINFILES	= preprocess.c solve.c postprocess.c
+COMMONFILES	= io.c fetch.c geometry.c numerics.c memory.c system.c csr.c connectivity.c expression.c
 
-SOURCES		= $(MAINSOURCES) $(COMMONSOURCES)
+MAINSOURCE	= $(addprefix $(BUILDPATH)/,$(MAINFILES))
+COMMONSOURCE 	= $(addprefix $(BUILDPATH)/,$(COMMONFILES))
+ALLSOURCE	= $(MAINSOURCE) $(COMMONSOURCE)
 
-MAINOBJECTS	= $(MAINSOURCES:.c=.o)
-COMMONOBJECTS	= $(COMMONSOURCES:.c=.o)
-OBJECTS		= $(MAINOBJECTS) $(COMMONOBJECTS)
+MAINOBJECT	= $(MAINSOURCE:.c=.o)
+COMMONOBJECT	= $(COMMONSOURCE:.c=.o)
+ALLOBJECT	= $(MAINOBJECT) $(COMMONOBJECT)
 
-EXECUTABLES	= $(MAINSOURCES:.c=)
+EXECUTABLES	= $(MAINFILES:.c=)
 
 ################################################################################
 
 all: $(EXECUTABLES)
 
 .SECONDEXPANSION:
-$(EXECUTABLES): $$@.o $(COMMONOBJECTS)
-	$(CC) $(CFLAGS) -o $@ $@.o $(COMMONOBJECTS) $(LIBRARIES)
+$(EXECUTABLES): $(BUILDPATH)/$$@.o $(COMMONOBJECT)
+	$(COMPILER) $(FLAG) -o $@ $(BUILDPATH)/$@.o $(COMMONOBJECT) $(LIBRARY)
 
-$(OBJECTS): makefile
-	$(CC) $(CFLAGS) $(INCLUDES) -c $*.c
+$(ALLOBJECT): makefile
+	$(COMPILER) $(FLAG) -c $*.c -o $*.o $(INCLUDE)
 
--include depend
-depend: $(SOURCES)
-	$(CC) -MM $(INCLUDES) $^ > $@
+-include $(BUILDPATH)/depend
+depend: $(ALLSOURCE)
+	$(COMPILER) -MM $(INCLUDE) $^ | sed 's|^\(.*\.o\)|$(BUILDPATH)/\1|g'  > $(BUILDPATH)/$@
 
 clean:
-	rm -f *o depend $(EXECUTABLES) *~
+	rm -f $(BUILDPATH)/*o $(BUILDPATH)/depend
