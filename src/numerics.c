@@ -107,8 +107,8 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 				//unknowns
 				if(s_condition[0] == 'u')
 				{
-					//fit unknowns to centroid points
-					/*x[0] = s_centroid[0] - cell[c].centroid[0];
+					/*//fit unknowns to centroid points
+					x[0] = s_centroid[0] - cell[c].centroid[0];
 					x[1] = s_centroid[1] - cell[c].centroid[1];
 
 					for(j = 0; j < n_powers; j ++)
@@ -124,15 +124,15 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 
 					for(j = 0; j < n_powers; j ++) matrix[j][i] = 0.0;
 
-					for(j = 0; j < order; j ++) 
+					for(j = 0; j <= order; j ++) 
 					{
 						for(k = 0; k < n_polygon; k ++)
 						{
-							x[0] =  0.5*polygon[k][0][0]*(1.0 - gauss_x[order-1][j]) +
-								0.5*polygon[k][1][0]*(1.0 + gauss_x[order-1][j]) -
+							x[0] =  0.5*polygon[k][0][0]*(1.0 - gauss_x[order][j]) +
+								0.5*polygon[k][1][0]*(1.0 + gauss_x[order][j]) -
 								cell[c].centroid[0];
-							x[1] =  0.5*polygon[k][0][1]*(1.0 - gauss_x[order-1][j]) +
-								0.5*polygon[k][1][1]*(1.0 + gauss_x[order-1][j]) -
+							x[1] =  0.5*polygon[k][0][1]*(1.0 - gauss_x[order][j]) +
+								0.5*polygon[k][1][1]*(1.0 + gauss_x[order][j]) -
 								cell[c].centroid[1];
 
 							for(l = 0; l < n_powers; l ++)
@@ -143,7 +143,7 @@ void calculate_cell_reconstruction_matrices(int n_variables, double *weight_expo
 									(1.0 / (polynomial_power_x[d][l] + 1.0)) *
 									integer_power(x[0],polynomial_power_x[d][l]+1) *
 									integer_power(x[1],polynomial_power_y[d][l]) *
-									s_weight * gauss_w[order-1][j] * 0.5 *
+									s_weight * gauss_w[order][j] * 0.5 *
 									(polygon[k][1][1] - polygon[k][0][1]) / s_area;
 							}
 						}

@@ -4,11 +4,11 @@ number_of_variables 3
 
 variable_names pressure x-velocity y-velocity
 
-connectivity f ff ff
+connectivity n f f
 maximum_order 3 3 3
-weight_exponent 1.0 1.0 1.0
+weight_exponent 2.0 2.0 2.0
 
-geometry_filename cavity.geometry
+geometry_filename cavity.tri.geometry
 case_filename cavity.case
 data_filename cavity.?.data
 output_filename cavity.?.?.gnuplot
@@ -23,6 +23,32 @@ substep_fractions 1.0
 
 #-------------------------------------------------------------------------#
 
+# total 1204 faces and 588 cells
+# north boundary faces 1148 -> 1161
+#  east boundary faces 1162 -> 1175
+# south boundary faces 1176 -> 1189
+#  west boundary faces 1190 -> 1203
+
+#zone f 0:1203 0 u 0.0
+#zone c 0:587 1 u 0.0
+#zone c 0:587 2 u 0.0
+#zone f 1148:1161 1 d 1.0
+#zone f 1148:1161 2 d 0.0
+#zone f 1162:1175,1176:1189,1190:1203 1 d 0.0
+#zone f 1162:1175,1176:1189,1190:1203 2 d 0.0
+
+#zone f 0:1161,1176:1203 0 u 0.0
+##zone c 0:587 0 u 0.0
+#zone c 0:587 1 u 0.0
+#zone c 0:587 2 u 0.0
+#zone f 1148:1161,1176:1189 1 d 0.0
+#zone f 1148:1161,1176:1189 2 d 0.0
+#zone f 1162:1175 0 d 0.0
+#zone f 1190:1203 1 d 1.0
+#zone f 1190:1203 2 d 0.0
+
+#-------------------------------------------------------------------------#
+
 # total 712 faces and 456 volumes
 # north boundary faces 604 -> 617
 #  east boundary faces 618 -> 631
@@ -30,31 +56,32 @@ substep_fractions 1.0
 #  west boundary faces 646 -> 659
 
 # zones / unknowns and boundary conditions
-# label id location indices variable condition value
+# label location indices variable condition value
 
 # lid driven
-#    location indices variable condition value
-zone        f   0:711        0         u   0.0
-zone        c   0:455        1         u   0.0
-zone        c   0:455        2         u   0.0
-zone        f 604:617        1         d   1.0
-zone        f 604:617        2         d   0.0
-zone        f 618:631        1         d   0.0
-zone        f 618:631        2         d   0.0
-zone        f 632:645        1         d   0.0
-zone        f 632:645        2         d   0.0
-zone        f 646:659        1         d   0.0
-zone        f 646:659        2         d   0.0
+#zone f 0:711 0 u 0.0
+#zone c 0:455 1 u 0.0
+#zone c 0:455 2 u 0.0
+#zone f 604:617 1 d 1.0
+#zone f 604:617 2 d 0.0
+#zone f 618:631,632:645,646:659 1 d 0.0
+#zone f 618:631,632:645,646:659 2 d 0.0
 
-# velocity inlet to pressure outlet
+zone c 0:455 0 u 0.0
+zone f 0:711 1 u 0.0
+zone f 0:711 2 u 0.0
+zone f 604:617 1 d 1.0
+zone f 604:617 2 d 0.0
+zone f 618:631,632:645,646:659 1 d 0.0
+zone f 618:631,632:645,646:659 2 d 0.0
+
+## velocity inlet to pressure outlet
 #zone f 0:617,632:711 0 u 0.0
 #zone c 0:455 1 u 0.0
 #zone c 0:455 2 u 0.0
-#zone f 604:617 1 d 0.0
-#zone f 604:617 2 d 0.0
+#zone f 604:617,632:645 1 d 0.0
+#zone f 604:617,632:645 2 d 0.0
 #zone f 618:631 0 d 100.0
-#zone f 632:645 1 d 0.0
-#zone f 632:645 2 d 0.0
 #zone f 646:659 1 d 1.0
 #zone f 646:659 2 d 0.0
 
@@ -75,15 +102,15 @@ divergence 0 x   1   0   1 1.0 rho
 divergence 0 y   2   0   1 1.0 rho
 
 divergence 1 x   0   0   1 1.0 0-1
-divergence 1 x   1 0,0   2 1.0 0-rho
-divergence 1 y 1,2 0,0 1,1 1.0 0-rho
+#divergence 1 x   1 0,0   2 1.0 0-rho
+#divergence 1 y 1,2 0,0 1,1 1.0 0-rho
 divergence 1 x   1   x   1 1.0 2*mu/rho
 divergence 1 y   1   y   1 1.0 mu/rho
 divergence 1 y   2   x   1 1.0 mu/rho
 
 divergence 2 y   0   0   1 1.0 0-1
-divergence 2 x 2,1 0,0 1,1 1.0 0-rho
-divergence 2 y   2 0,0   2 1.0 0-rho
+#divergence 2 x 2,1 0,0 1,1 1.0 0-rho
+#divergence 2 y   2 0,0   2 1.0 0-rho
 divergence 2 x   1   y   1 1.0 mu/rho
 divergence 2 x   2   x   1 1.0 mu/rho
 divergence 2 y   2   y   1 1.0 2*mu/rho

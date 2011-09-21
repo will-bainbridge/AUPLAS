@@ -4,7 +4,7 @@ number_of_variables 1
 
 variable_names temperature
 
-connectivity ff
+connectivity n
 maximum_order 3
 weight_exponent 2.0
 
@@ -23,18 +23,30 @@ substep_fractions 1.0
 
 #-------------------------------------------------------------------------#
 
+# zones / unknowns and boundary conditions
+# label id location indices variable condition value
+
+# tri mesh
 # total 712 faces and 456 volumes
 # north boundary faces 604 -> 617
 #  east boundary faces 618 -> 631
 # south boundary faces 632 -> 645
 #  west boundary faces 646 -> 659
 
-# zones / unknowns and boundary conditions
-# label id location indices variable condition value
-
 zone c 0:455 0 u 0.0
 zone f 604:617 0 d 1.0
 zone f 618:631,632:645,646:659 0 d 0.0
+
+# quad mesh
+# total 1204 faces and 588 cells
+# north boundary faces 1148 -> 1161
+#  east boundary faces 1162 -> 1175
+# south boundary faces 1176 -> 1189
+#  west boundary faces 1190 -> 1203
+
+#zone c 0:587 0 u 0.0
+#zone f 1148:1161 0 d 1.0
+#zone f 1162:1175,1176:1189,1190:1203 0 d 0.0
 
 #-------------------------------------------------------------------------#
 
@@ -42,7 +54,7 @@ accumulation 0.0
 
 # equation direction variable differential power implicit expression
 
-constants A=1.0;D=0.01;
+constants A=1.0;D=0.02;
 
 divergence 0 x 0 x 1 1.0 D
 divergence 0 y 0 y 1 1.0 D
