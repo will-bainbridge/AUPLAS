@@ -4,7 +4,7 @@ number_of_variables 3
 
 variable_names pressure x-velocity y-velocity
 
-connectivity n f f
+connectivity f ff ff
 maximum_order 3 3 3
 weight_exponent 2.0 2.0 2.0
 
@@ -16,7 +16,7 @@ output_filename cavity.?.?.gnuplot
 timestep 0.01
 number_of_steps 1
 number_of_steps_per_output 1
-number_of_iterations_per_step 10
+number_of_iterations_per_step 5
 
 number_of_substeps 1
 substep_fractions 1.0
@@ -59,17 +59,9 @@ substep_fractions 1.0
 # label location indices variable condition value
 
 # lid driven
-#zone f 0:711 0 u 0.0
-#zone c 0:455 1 u 0.0
-#zone c 0:455 2 u 0.0
-#zone f 604:617 1 d 1.0
-#zone f 604:617 2 d 0.0
-#zone f 618:631,632:645,646:659 1 d 0.0
-#zone f 618:631,632:645,646:659 2 d 0.0
-
-zone c 0:455 0 u 0.0
-zone f 0:711 1 u 0.0
-zone f 0:711 2 u 0.0
+zone f 0:711 0 u 0.0
+zone c 0:455 1 u 0.0
+zone c 0:455 2 u 0.0
 zone f 604:617 1 d 1.0
 zone f 604:617 2 d 0.0
 zone f 618:631,632:645,646:659 1 d 0.0
